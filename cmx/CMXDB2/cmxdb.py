@@ -243,6 +243,10 @@ class CMXDB():
             self.show_creds()
             return
 
+        if command == 'hosts':
+            self.show_hosts()
+            return
+
         else:
             print("Unknown Command")
             return
