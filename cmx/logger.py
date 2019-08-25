@@ -71,13 +71,13 @@ class CMXLogAdapter(logging.LoggerAdapter):
         #Make it purdy
         host_ip = colored(self.extra['host'], 'white') #colored adds 8chars before, 6chars after items - because hex
         host_port = colored(self.extra['port'], 'white')
-        host_name = colored(self.extra['hostname'], 'magenta')
+        host_name = colored(self.hostname, 'magenta')
 
         return u'{:<19} {:<24} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                                     module_name,
                                                     host_ip,
                                                     host_port,
-                                                    self.hostname,
+                                                    host_name,
                                                     msg), kwargs
 
     def info(self, msg, *args, **kwargs):
