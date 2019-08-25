@@ -21,7 +21,7 @@ setup(name='crackmapextreme',
     install_requires=[
     ],
     entry_points={
-        'console_scripts': [ 'cme = cmx.crackmapextreme:main','cmx = cmx.crackmapextreme:main', 'cmxdb = cmx.cmxdb:main', 'cmxdb2 = cmx.CMXDB2.cmxdb:main'],
+        'console_scripts': [ 'cme = cmx.crackmapextreme:main','cmx = cmx.crackmapextreme:main', 'cmxdb = cmx.CMXDB2.cmxdb:main'],
     },
     include_package_data=True,
     zip_safe=False)
