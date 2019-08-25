@@ -42,10 +42,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
     def __init__(self, logger_name='CMX', extra=None):
         self.logger = logging.getLogger(logger_name)
         self.extra = extra
-        if self.extra['hostname']:
-            self.hostname = self.extra['hostname']  
-        else:
-            self.hostname = self.extra['host']
+        self.hostname = ''
 
     def process(self, msg, kwargs):
         if self.extra is None:
