@@ -157,6 +157,42 @@ class CMXDB():
         else:
             print('Not connected to a database yet')
 
+
+    def show_hosts(self, filterTerm=None, credType=None):
+
+        pd.set_option('display.max_colwidth', 68)
+        if self.connection:
+            with self.connection:
+                try:
+                        # if we're returning a single credential by ID
+                    if self.is_computer_valid(filterTerm):
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM computers WHERE id=? LIMIT 1", [filterTerm])))
+
+                    elif credType:
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM computers WHERE credtype=?", [credType])))
+
+                    # if we're filtering by username
+                    elif filterTerm and filterTerm != '':
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM computers WHERE LOWER(hostname) "
+                            "LIKE LOWER(?)", ['%{}%'.format(filterTerm)])))
+
+                    # otherwise return all credentials
+                    else:
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM computers",
+                            self.connection, index_col='id'), "green"))
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    # for result in results:
+                    print('')
+        else:
+            print('Not connected to a database yet')
+
+
     def is_credential_valid(self, credentialID):
         """
         Check if this credential ID is valid.
