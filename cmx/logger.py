@@ -77,7 +77,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
                                                     module_name,
                                                     host_ip,
                                                     host_port,
-                                                    self.host_name,
+                                                    self.hostname,
                                                     msg), kwargs
 
     def info(self, msg, *args, **kwargs):
