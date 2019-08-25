@@ -165,7 +165,7 @@ class CMXDB():
             with self.connection:
                 try:
                         # if we're returning a single credential by ID
-                    if self.is_computer_valid(filterTerm):
+                    if self.is_credential_valid(filterTerm):
                         print(colored(pd.read_sql_query(
                             "SELECT * FROM computers WHERE id=? LIMIT 1", [filterTerm])))
 
