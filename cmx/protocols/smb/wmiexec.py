@@ -162,7 +162,7 @@ class WMIEXEC:
         self.__smbconnection.deleteFile(self.__share, self.__output)
 
     def disable_notifications(self):
-        command = self.__shell + """FOR /F %a IN ('reg QUERY hku 2^>NUL ^| FIND "HKEY_USERS"') DO (reg add "%a\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.SecurityAndMaintenance" /v "Enabled" /d "0" /t REG_DWORD)'"""
+        command = self.__shell + """FOR /F %a IN ('REG.EXE QUERY hku 2^>NUL ^| FIND "HKEY_USERS"') DO REG.EXE add "%a\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.SecurityAndMaintenance" /v "Enabled" /d "0" /t REG_DWORD'"""
 
         logging.debug('notifications being disabling using: ' + command)
         self.__win32Process.Create(command, self.__pwd, None)
