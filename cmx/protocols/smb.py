@@ -2070,13 +2070,12 @@ class smb(connection):
             Nothing, but
             outputs to a filename (passed in after the option)
         """
-        self.logger.announce('Starting Relay Profiling')
+
         if self.server_os.lower().find('windows') != -1 and self.signing is False:
             with sem:
                 with open(self.args.gen_relay_list, 'a+') as relay_list:
                     if self.host not in relay_list.read():
                         relay_list.write(self.host + '\n')
-        self.logger.announce('Relay Profiling Finished')
            
 
 
