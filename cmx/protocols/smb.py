@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import socket
-import os
 import ntpath
 from impacket.smbconnection import SMBConnection, SessionError
 from impacket.smb import SMB_DIALECT
 from impacket.smb3structs import SMB2_DIALECT_002, SMB2_DIALECT_21
-from impacket.examples.secretsdump import RemoteOperations, SAMHashes, LSASecrets, NTDSHashes
+from impacket.examples.secretsdump import RemoteOperations, SAMHashes
+from impacket.examples.secretsdump import LSASecrets, NTDSHashes
 from impacket.dcerpc.v5 import lsat, lsad
 from impacket.dcerpc.v5.rpcrt import DCERPCException
 from impacket.dcerpc.v5.transport import DCERPCTransportFactory
@@ -35,7 +35,7 @@ from functools import wraps
 from traceback import format_exc
 from io import StringIO
 
-#added for powerview functionality
+# added for powerview functionality
 from impacket.dcerpc.v5 import transport, scmr, srvs
 from impacket.dcerpc.v5 import wkst, samr
 from impacket.nt_errors import STATUS_MORE_ENTRIES
@@ -82,14 +82,18 @@ def requires_smb_server(func):
             methods = kwargs['methods']
 
         if not payload and self.args.execute:
-            if not self.args.no_output: get_output = True
+            if not self.args.no_output:
+                get_output = True
 
         if get_output or (methods and ('smbexec' in methods)):
             if not smb_server:
                 logging.debug('Starting SMB server using share {}'.format(smb_share_name))
 
-                #Need to calculate user/pass/hash thing here. 
-                smb_server = CMXSMBServer(self.logger, smb_share_name, verbose=self.args.verbose, username=self.args.username, password=self.args.password)
+                # Need to calculate user/pass/hash thing here.
+                smb_server = CMXSMBServer(self.logger, smb_share_name,
+                                          verbose=self.args.verbose,
+                                          username=self.args.username,
+                                          password=self.args.password)
                 smb_server.start()
 
         output = func(self, *args, **kwargs)
@@ -116,18 +120,18 @@ class smb(connection):
     Longer class information....
 
     Attributes:
-        domain          : 
+        domain          :
         server_os       : string ~ Windows Server 2012 R2 Datacenter 9600
         os_arch         : int ~ 32 | 64
-        hash            : string 
-        lmhash          : 
-        nthash          : 
-        remote_ops      : 
-        bootkey         : 
-        output_filename : 
-        smbv            : 
-        signing         : 
-        smb_share_name  : 
+        hash            : string
+        lmhash          :
+        nthash          :
+        remote_ops      :
+        bootkey         :
+        output_filename :
+        smbv            :
+        signing         :
+        smb_share_name  :
 
     """
 
@@ -257,19 +261,23 @@ class smb(connection):
         Defaults to wmiexec
 
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
 
-        if self.args.exec_method: methods = [self.args.exec_method]
-        if not methods : methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
+        if self.args.exec_method:
+            methods = [self.args.exec_method]
+
+        if not methods:
+            methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
 
         if not payload and self.args.execute:
             payload = self.args.execute
-            if not self.args.no_output: get_output = True
+            if not self.args.no_output:
+                get_output = True
 
         for method in methods:
 
@@ -340,11 +348,11 @@ class smb(connection):
     @requires_admin
     def ps_execute(self, payload=None, get_output=False, methods=None, force_ps32=False, dont_obfs=False):
         """Execute a powershell command
-        
+
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
@@ -360,11 +368,11 @@ class smb(connection):
     @requires_admin
     def wmi(self, wmi_query=None, namespace=None):
         """Execute via WMI
-        
+
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
@@ -436,17 +444,17 @@ class smb(connection):
 #   create_smbv1_conn
 #   create_smbv3_conn
 #   create_conn_obj
-#   
+#
 ###############################################################################
 
 
     def create_smbv1_conn(self):
         """Setup connection using smbv1
-        
+
         Args:
-            
+  
         Raises:
-            
+
         Returns:
 
         """
