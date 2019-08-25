@@ -677,6 +677,7 @@ class smb(connection):
 
         self.domain    = self.conn.getServerDomain()
         self.hostname  = self.conn.getServerName()
+        self.logger.hostname = self.hostname
         self.server_os = self.conn.getServerOS()
         self.signing   = self.conn.isSigningRequired()
         self.os_arch   = self.get_os_arch()

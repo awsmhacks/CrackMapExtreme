@@ -42,6 +42,10 @@ class CMXLogAdapter(logging.LoggerAdapter):
     def __init__(self, logger_name='CMX', extra=None):
         self.logger = logging.getLogger(logger_name)
         self.extra = extra
+        if self.extra['hostname']:
+            self.hostname = self.extra['hostname']  
+        else:
+        self.hostname = self.extra['host']
 
     def process(self, msg, kwargs):
         if self.extra is None:
@@ -55,7 +59,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         if len(self.extra) == 1 and ('module' in self.extra.keys()):
             return u'{:<65} {}'.format(colored(self.extra['module'], 'cyan', attrs=['bold']), msg), kwargs
 
-        #If the logger is being called from CMXServer
+        #If the logger is being called from a CMXServer
         if len(self.extra) == 2 and ('module' in self.extra.keys()) and ('host' in self.extra.keys()):
             return u'{:<19} {:<24} {:<20} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                                 colored(self.extra['module'], 'cyan', attrs=['bold']),
@@ -76,7 +80,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
                                                     module_name,
                                                     host_ip,
                                                     host_port,
-                                                    host_name if self.extra['hostname'] else 'NONE',
+                                                    self.host_name,
                                                     msg), kwargs
 
     def info(self, msg, *args, **kwargs):
