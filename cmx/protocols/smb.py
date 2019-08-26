@@ -1720,8 +1720,8 @@ class smb(connection):
             SAM.dump()
             SAM.export(self.output_filename)
 
-            self.logger.announce('Added {} SAM hashes to the database'.format(highlight(add_sam_hash.sam_hashes)))
-            self.logger.announce('Saved {} hashes to {}.sam'.format(highlight(add_sam_hash.sam_hashes),
+            self.logger.success('Added {} SAM hashes to the database'.format(highlight(add_sam_hash.sam_hashes)))
+            self.logger.success('Saved {} hashes to {}.sam'.format(highlight(add_sam_hash.sam_hashes),
                                                                              self.output_filename))
 
             #except Exception as e:
