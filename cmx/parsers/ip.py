@@ -7,7 +7,7 @@ def parse_targets(target):
     if netaddr.ip.nmap.valid_nmap_range(target):
         return list(netaddr.ip.nmap.iter_nmap_range(target))
     else:
-        return [t.strip()]
+        return [target.strip()]
 
 #        if '-' in target:
 #            ip_range = target.split('-')
