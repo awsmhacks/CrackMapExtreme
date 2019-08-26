@@ -1412,7 +1412,11 @@ class smb(connection):
                 dce.disconnect()
                 return list()
 
-        dce.disconnect()
+        try:
+            dce.disconnect()
+        except:
+            pass
+
         self.logger.announce('Finished Domain Group Enum')
         return list()
 
@@ -1518,7 +1522,10 @@ class smb(connection):
                 dce.disconnect()
                 return list()
 
-        dce.disconnect()
+        try:
+            dce.disconnect()
+        except:
+            pass
         self.logger.announce('Finished Domain Users Enum')
         return list()
 
@@ -2140,7 +2147,7 @@ class smb(connection):
 
         self.local_users()
         time.sleep(1)
-        
+
         self.local_groups()
         self.rid_brute(maxRid=4000)
         time.sleep(1)
