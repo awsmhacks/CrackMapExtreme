@@ -952,7 +952,7 @@ class smb(connection):
                             # r has the clases defined here: 
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                            self.logger.highlight("{}:  {}\\{} ".format(user['RelativeId'], self.hostname, user['Name']))
+                            self.logger.highlight("{}\\{:<15} :{} ".format(self.hostname, user['Name'], user['RelativeId']))
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
@@ -1456,7 +1456,7 @@ class smb(connection):
                             resp2.dump()
 
                         domains = resp2['Buffer']['Buffer']
-                        tmddomain = domains[0]['Name']
+                        tmpdomain = domains[0]['Name']
 
                         self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
                         resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
