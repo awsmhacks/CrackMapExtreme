@@ -697,6 +697,13 @@ class smb(connection):
             logging.debug("SMBv3.0 dialect used")
 
         self.output_filename = '{}/{}_{}_{}'.format(cfg.LOGS_PATH,self.hostname, self.host, datetime.now().strftime("%Y-%m-%d_%H%M%S"))
+        self.logger.info("Info thing") 
+        self.logger.error("Error thing")
+        self.logger.debug("Debug thing")
+        self.logger.success("Success thing")
+        self.logger.announce("Announce thing")
+        self.logger.results("Results thing")
+        self.logger.highlight("Highlight thing")
 
         if not self.domain:
             self.domain = self.hostname
