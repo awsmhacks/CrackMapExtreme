@@ -1361,7 +1361,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
-                        
+
                         self.logger.success('Domain Groups enumerated')
                         self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
 
@@ -2131,22 +2131,26 @@ class smb(connection):
         """
         #import time
 
-        self.logger.announce("You asked for it")
-        self.logger.announce("                ")
+        self.logger.announce("Running sessions,loggedon,rid-brute,disks,shares,local+domain users/groups/computers, and dumping SAM")
+        print('')
 
-        self.disks()
         self.sessions()
         self.loggedon()
+
         self.local_users()
         self.local_groups()
         self.rid_brute(maxRid=4000)
+
+        self.disks()
         self.shares()
+
+        self.users()
         self.groups()
         self.computers()
+
         self.sam()
 
         #time.sleep(3)        #tried sleeping between sam/lsa. still only rarely works. something about the connection gets killed between the two
         #self.lsa()                    #might be something to do with remoteops start/kill
 
-        self.logger.announce("Holy Moly it all worked????")
-        self.logger.announce("Reminder:  Not running lsa, ntds")
+        self.logger.announce("HACKED HACKED HACKED HACKED")
