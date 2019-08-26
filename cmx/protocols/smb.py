@@ -1583,7 +1583,7 @@ class smb(connection):
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
                         self.logger.success('Domain Computers enumerated')
-                        self.logger.highlight("   {} Domain Computer Accounts".format(tmpdomain))
+                        self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 #need one for workstations and second gets the DomainControllers
@@ -1614,13 +1614,14 @@ class smb(connection):
                                     #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
                                 #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                                self.logger.highlight('{:<20} isDC=False  rid: {}'.format(user['Name'], user['RelativeId']))
+                                self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                                 info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
                                     info.dump()
                                 samr.hSamrCloseHandle(dce, r['UserHandle'])
-
+                            
+                        self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
                             for user in respServs['Buffer']['Buffer']:
                                 #servers
                                 r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
@@ -1631,7 +1632,7 @@ class smb(connection):
                                 # r has the clases defined here: 
                                     #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
-                                self.logger.highlight('{:<20} isDC=True  rid: {}'.format(user['Name'], user['RelativeId']))
+                                self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                                 info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
