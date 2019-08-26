@@ -17,4 +17,3 @@ def parse_targets(target):
             print("Error getting IP Info for {}".format(target.strip()))
             return list()
         return [t]
-
