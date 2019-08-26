@@ -800,7 +800,6 @@ class smb(connection):
                     logging.debug('Get netsessions via hNetrSessionEnum...')
                     self.logger.success('Sessions enumerated on {} !'.format(self.host))
                     resp = srvs.hNetrSessionEnum(dce, '\x00', '\x00', 10)  #no clue why \x00 is used for client and username?? but it works!
-                    self.logger.success('Sessions enumerated!')
 
                     for session in resp['InfoStruct']['SessionInfo']['Level10']['Buffer']:
                         userName = session['sesi10_username'][:-1]
@@ -858,7 +857,7 @@ class smb(connection):
                     for wksta_user in resp['UserInfo']['WkstaUserInfo']['Level1']['Buffer']:
                         wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
                         #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
-                        self.logger.highlight("{} is currently logged on {} : {}".format(wkst_username, self.host, self.hostname))
+                        self.logger.highlight("{} is currently logged on {} ({})".format(wkst_username, self.host, self.hostname))
 
                     return list()
 
@@ -930,6 +929,8 @@ class smb(connection):
                     domainHandle = resp['DomainHandle']
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
+
+                    self.logger.success('Local Users enumerated on {} !'.format(self.host))
                     self.logger.highlight("   Local User Accounts")
 
                     while status == STATUS_MORE_ENTRIES:
@@ -1017,7 +1018,6 @@ class smb(connection):
                         resp2.dump()
 
                     domains = resp2['Buffer']['Buffer']
-                    self.logger.info('Looking up groups on: '+ domains[0]['Name'])
                     resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
 
                     logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
@@ -1033,6 +1033,7 @@ class smb(connection):
                     domainHandle = resp['DomainHandle']
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
+                    self.logger.success('Local Groups enumerated on: {}'.format(self.host))
                     self.logger.highlight("   Local Group Accounts")
 
                     while status == STATUS_MORE_ENTRIES:
@@ -1272,6 +1273,8 @@ class smb(connection):
                 #self.db.add_share(hostid, share_name, share_remark, read, write)
 
             #self.logger.debug('Enumerated shares')
+            self.logger.success('Shares enumerated on: {}'.format(self.host))
+
             self.logger.highlight('{:<15} {:<15} {}'.format('Share', 'Permissions', 'Remark'))
             self.logger.highlight('{:<15} {:<15} {}'.format('-----', '-----------', '------'))
             for share in permissions:
@@ -1357,6 +1360,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
+                        self.logger.success('Domain Groups enumerated from: {}'.format(self.host))
                         self.logger.highlight("   Domain Group Accounts")
                         while status == STATUS_MORE_ENTRIES:
                             try:
@@ -1369,7 +1373,6 @@ class smb(connection):
                                 if str(e).find('STATUS_MORE_ENTRIES') < 0:
                                     raise
                                 resp = e.get_packet()
-
 
                             for group in resp['Buffer']['Buffer']:
                                 gid = group['RelativeId']
@@ -1386,7 +1389,7 @@ class smb(connection):
                                     info.dump()
 
                                 #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                                self.logger.highlight('Group: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                                self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
 
                                 samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
@@ -1596,7 +1599,8 @@ class smb(connection):
                                 # r has the clases defined here: 
                                     #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
-                                self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                                #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                                self.logger.highlight('Computer: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                                 info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
