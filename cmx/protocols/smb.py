@@ -1620,7 +1620,8 @@ class smb(connection):
                                 if self.debug:
                                     info.dump()
                                 samr.hSamrCloseHandle(dce, r['UserHandle'])
-
+                                
+                            print('')
                             self.logger.success('Domain Computers enumerated')
                             self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
                             for user in respComps['Buffer']['Buffer']:
