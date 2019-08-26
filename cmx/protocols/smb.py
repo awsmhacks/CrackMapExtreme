@@ -1058,7 +1058,7 @@ class smb(connection):
                             if self.debug:
                                 info.dump()
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            self.logger.highlight('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                            self.logger.highlight('Group: {:<20}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
 
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
                         enumerationContext = resp['EnumerationContext'] 
@@ -1169,7 +1169,7 @@ class smb(connection):
                     domain = resp['ReferencedDomains']['Domains'][item['DomainIndex']]['Name']
                     user   = item['Name']
                     sid_type = SID_NAME_USE.enumItems(item['Use']).name
-                    self.logger.highlight("{}: {}\\{} ({})".format(rid, domain, user, sid_type))
+                    self.logger.highlight("{}\\{:<15} :{} ({})".format(domain, user, rid, sid_type))
                     entries.append({'rid': rid, 'domain': domain, 'username': user, 'sidtype': sid_type})
 
             soFar += SIMULTANEOUS
