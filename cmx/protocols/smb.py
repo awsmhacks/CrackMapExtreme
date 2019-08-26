@@ -1474,7 +1474,7 @@ class smb(connection):
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
                         self.logger.success('Domain Users enumerated')
-                        self.logger.highlight("   {} Domain User Accounts".format(tmpdomain))
+                        self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
