@@ -1582,8 +1582,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
-                        self.logger.success('Domain Computers enumerated')
-                        self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
+
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 #need one for workstations and second gets the DomainControllers
@@ -1603,24 +1602,6 @@ class smb(connection):
                                 resp = e.get_packet()
 
 
-                            for user in respComps['Buffer']['Buffer']:
-                                #workstations
-                                r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                                logging.debug('Dump of hSamrOpenUser response:')
-                                if self.debug:
-                                    r.dump()
-
-                                # r has the clases defined here: 
-                                    #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-
-                                #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                                self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
-                                info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                if self.debug:
-                                    info.dump()
-                                samr.hSamrCloseHandle(dce, r['UserHandle'])
-
                             self.logger.success('Domain Controllers enumerated')
                             self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
                             for user in respServs['Buffer']['Buffer']:
@@ -1639,6 +1620,27 @@ class smb(connection):
                                 if self.debug:
                                     info.dump()
                                 samr.hSamrCloseHandle(dce, r['UserHandle'])
+
+                            self.logger.success('Domain Computers enumerated')
+                            self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
+                            for user in respComps['Buffer']['Buffer']:
+                                #workstations
+                                r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
+                                logging.debug('Dump of hSamrOpenUser response:')
+                                if self.debug:
+                                    r.dump()
+
+                                # r has the clases defined here: 
+                                    #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+
+                                #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                                self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                                info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
+                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                                if self.debug:
+                                    info.dump()
+                                samr.hSamrCloseHandle(dce, r['UserHandle'])
+
 
                             enumerationContext = resp['EnumerationContext'] 
                             status = resp['ErrorCode']
