@@ -1621,7 +1621,7 @@ class smb(connection):
                                     info.dump()
                                 samr.hSamrCloseHandle(dce, r['UserHandle'])
                             
-                        self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
+                            self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
                             for user in respServs['Buffer']['Buffer']:
                                 #servers
                                 r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
