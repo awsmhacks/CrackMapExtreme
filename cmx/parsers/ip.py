@@ -11,7 +11,13 @@ def parse_targets(target):
     if netaddr.ip.nmap.valid_nmap_range(target):
         return list(netaddr.ip.nmap.iter_nmap_range(target))
     else:
-        return [socket.gethostbyname(target.strip())]
+        try:
+            t = socket.gethostbyname(target.strip())
+            return [t]
+        except:
+            print ("Could not resolve {}".format(target.strip()))
+
+        return list()
 
 #        if '-' in target:
 #            ip_range = target.split('-')
