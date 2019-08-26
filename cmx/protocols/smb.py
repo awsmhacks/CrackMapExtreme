@@ -909,9 +909,9 @@ class smb(connection):
                     logging.debug('Dump of hSamrConnect response:') 
                     if self.debug:
                         resp.dump()
-
-                    serverHandle = resp['ServerHandle'] 
+                    
                     self.logger.debug('Looking up host name')
+                    serverHandle = resp['ServerHandle'] 
                     resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
                     logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
                     if self.debug:
@@ -926,7 +926,7 @@ class smb(connection):
                         resp.dump()
 
                     resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-                    
+
                     logging.debug('Dump of hSamrOpenDomain response:')
                     if self.debug:
                         resp.dump()
