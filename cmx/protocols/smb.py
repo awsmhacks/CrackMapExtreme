@@ -1344,8 +1344,9 @@ class smb(connection):
                             resp2.dump()
 
                         domains = resp2['Buffer']['Buffer']
+                        tmpdomain = domains[0]['Name']
 
-                        logging.info('Looking up groups in domain: '+ domains[0]['Name'])
+                        logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
                         resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
                         logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
                         if self.debug:
@@ -1361,7 +1362,7 @@ class smb(connection):
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
                         self.logger.success('Domain Groups enumerated from: {}'.format(self.host))
-                        self.logger.highlight("   Domain Group Accounts")
+                        self.logger.highlight("         Domain Group Accounts")
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1449,6 +1450,7 @@ class smb(connection):
                             resp2.dump()
 
                         domains = resp2['Buffer']['Buffer']
+                        tmddomain = domains[0]['Name']
 
                         self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
                         resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
@@ -1465,7 +1467,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
-                        self.logger.highlight("   Domain User Accounts")
+                        self.logger.highlight("      Domain User Accounts")
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
