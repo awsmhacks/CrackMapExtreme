@@ -13,11 +13,11 @@ def parse_targets(target):
     else:
         try:
             t = socket.gethostbyname(target.strip())
-            return [t]
         except:
             print ("Could not resolve {}".format(target.strip()))
+            return list()
 
-        return list()
+        return [t]
 
 #        if '-' in target:
 #            ip_range = target.split('-')
