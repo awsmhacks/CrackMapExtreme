@@ -1706,7 +1706,7 @@ class smb(connection):
 
         def add_sam_hash(sam_hash, host_id):
             add_sam_hash.sam_hashes += 1
-            self.logger.results(sam_hash)
+            self.logger.success(sam_hash)
             username,_,lmhash,nthash,_,_,_ = sam_hash.split(':')
             self.db.add_credential('hash', self.hostname, username, ':'.join((lmhash, nthash)), pillaged_from=host_id)
         add_sam_hash.sam_hashes = 0
@@ -1757,7 +1757,7 @@ class smb(connection):
 
         def add_lsa_secret(secret):
             add_lsa_secret.secrets += 1
-            self.logger.results(secret)
+            self.logger.success(secret)
         add_lsa_secret.secrets = 0
 
         if self.remote_ops and self.bootkey:
@@ -1773,7 +1773,7 @@ class smb(connection):
             LSA.dumpSecrets()
             LSA.exportSecrets(self.output_filename)
 
-            self.logger.announce('Saved {} LSA secrets to {}.secrets'.format(highlight(add_lsa_secret.secrets),
+            self.logger.success('Saved {} LSA secrets to {}.secrets'.format(highlight(add_lsa_secret.secrets),
                                                                             self.output_filename))
 
             try:
