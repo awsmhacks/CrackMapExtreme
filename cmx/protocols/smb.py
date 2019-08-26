@@ -1565,7 +1565,7 @@ class smb(connection):
                             resp2.dump()
 
                         domains = resp2['Buffer']['Buffer']
-                        tmddomain = domains[0]['Name']
+                        tmpdomain = domains[0]['Name']
 
                         self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
                         resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
@@ -2170,4 +2170,4 @@ class smb(connection):
         #time.sleep(3)        #tried sleeping between sam/lsa. still only rarely works. something about the connection gets killed between the two
         #self.lsa()                    #might be something to do with remoteops start/kill
 
-        self.logger.announce("HACKED HACKED HACKED HACKED")
+        self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
