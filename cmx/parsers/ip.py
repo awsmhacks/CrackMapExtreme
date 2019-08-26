@@ -11,41 +11,4 @@ def parse_targets(target):
     if netaddr.ip.nmap.valid_nmap_range(target):
         return list(netaddr.ip.nmap.iter_nmap_range(target))
     else:
-        try:
-            t = socket.gethostbyname(target.strip())
-        except:
-            print ("Could not resolve {}".format(target.strip()))
-            return list()
-
-        return [t]
-
-#        if '-' in target:
-#            ip_range = target.split('-')
-#            try:
-#                hosts = IPRange(ip_range[0], ip_range[1])
-#            except AddrFormatError:
-#                try:
-#                    start_ip = IPAddress(ip_range[0])
-#    
-#                    start_ip_words = list(start_ip.words)
-#                    start_ip_words[-1] = ip_range[1]
-#                    start_ip_words = [str(v) for v in start_ip_words]
-#    
-#                    end_ip = IPAddress('.'.join(start_ip_words))
-#    
-#                    t = IPRange(start_ip, end_ip)
-#                except AddrFormatError:
-#                    t = target
-#        else:
-#            try:
-#                t = IPNetwork(target)
-#            except AddrFormatError:
-#                t = target
-#    else:
-#        t = target
-#
-#    if type(t) == IPNetwork or type(t) == IPRange:
-#        return list(t)
-#    else:
-#        return [t.strip()]
-
+        return list(socket.gethostbyname(target.strip()))
