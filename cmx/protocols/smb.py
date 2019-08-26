@@ -1498,7 +1498,7 @@ class smb(connection):
                                 # r has the clases defined here: 
                                     #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
                                 #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                                self.logger.highlight('{:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                                self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
 
                                 info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
