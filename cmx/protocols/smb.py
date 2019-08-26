@@ -1706,7 +1706,7 @@ class smb(connection):
 
         def add_sam_hash(sam_hash, host_id):
             add_sam_hash.sam_hashes += 1
-            self.logger.success(sam_hash)
+            self.logger.highlight(sam_hash)
             username,_,lmhash,nthash,_,_,_ = sam_hash.split(':')
             self.db.add_credential('hash', self.hostname, username, ':'.join((lmhash, nthash)), pillaged_from=host_id)
         add_sam_hash.sam_hashes = 0
