@@ -223,7 +223,10 @@ class smb(connection):
         return parser
 
     def proto_logger(self):
-        """Sets up logger."""
+        """
+        Sets up logger.
+        First thing called for a connection, inside proto_flow()
+        """
         self.logger = CMXLogAdapter(extra={
                                         'protocol': 'SMB',
                                         'host': self.host,
@@ -949,7 +952,8 @@ class smb(connection):
                                 r.dump()
                             # r has the clases defined here: 
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-                            self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                            #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                            self.logger.highlight("{}: {}\\{} ".format(user['RelativeId'], domainHandle, user['Name']))
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')

@@ -32,8 +32,46 @@ logging.FileHandler.emit = antiansi_emit
 
 class CMXLogAdapter(logging.LoggerAdapter):
     '''
-    This class is designed to look like a Logger, so that you can call 
-    debug(), info(), warning(), error(), exception(), critical() and log()
+    This class is used as the logger for CMX. Extending the logging abilities with 
+    colors and attributes(bold).
+
+    The following display regardless of --verbose:
+        info, error, success, results, announce, highlight.
+    Depending on the context a log function was called from, results may vary. Check the function definition for more info
+ 
+    info -      Used to display general output 
+    error -     Used to display an error occured during execution over a connection
+    success -   Used to display a successful authentication or connection
+    highlight - Used to display results in yellow
+    announce -  Used to inform the user of an execution or action being launched 
+    results -   Used for result outputs that have long lines
+    debug -     Used for debugging in --verbose mode
+
+    Examples:
+
+    info - self.logger.info("Info Msg") 
+        Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  [*] Info Msg
+
+    error - self.logger.error("Error Msg")
+        Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  [-] Error Msg
+
+    success - self.logger.success("Success Msg")
+        Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  [+] Success Msg
+
+    highlight - self.logger.highlight("Highlight Msg")
+        Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  Highlight Msg
+
+    announce - self.logger.announce("Announce Msg")
+        Aug.26.19 10:33:02     [!] Announce Msg [!]
+
+    results - self.logger.results("Results Msg")
+        Aug.26.19 10:33:02  Results Msg
+
+
+    Debug only shows with --verbose enabled
+    debug - self.logger.debug("debug Msg")
+        DEBUG debug Msg
+
     '''
 
     # For Impacket's TDS library
@@ -81,6 +119,15 @@ class CMXLogAdapter(logging.LoggerAdapter):
                                                     msg), kwargs
 
     def info(self, msg, *args, **kwargs):
+        """[*] Displays information to user
+        
+        If called from an operation inside a protocol ouputs 
+            Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  [*] <Info Msg>
+        
+        When used to list information, such as when used to list modules
+            [*] Module           Module Description 
+        """
+
         try:
             if 'protocol' in self.extra.keys() and not called_from_cmd_args():
                 return
@@ -91,14 +138,33 @@ class CMXLogAdapter(logging.LoggerAdapter):
         self.logger.info(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
+        """[-] Error messages that need to be relayed to a user due to failures
+
+        Called from anywhere
+            Aug.26.19 10:51:42  SMB         10.10.33.125:445  WIN10E  [-] <error msg>
+        """
+
         msg = u'{}'.format(colored(msg, 'red'))
         msg, kwargs = self.process(u'{} {}'.format(colored('[-]', 'red', attrs=['bold']), msg), kwargs)
         self.logger.error(msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
+        """DEBUG debug messages only output during --verbose and prepend no special formatting
+        
+        Called from anywhere
+            DEBUG <msg>
+        """
         pass
 
     def success(self, msg, *args, **kwargs):
+        """[+] Success messages inform the user of a successful authentication 
+
+        If called from an operation inside a protocol ouputs:
+            Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  [+] Success Msg
+
+        Used to also show successful events occuring locally, such as clearing obfuscated scripts         
+            [+] Cleared cached obfuscated PowerShell scripts
+        """
         try:
             if 'protocol' in self.extra.keys() and not called_from_cmd_args():
                 return
@@ -109,6 +175,11 @@ class CMXLogAdapter(logging.LoggerAdapter):
         self.logger.info(msg, *args, **kwargs)
 
     def announce(self, msg, *args, **kwargs):
+        """ [!] Announcements are broadcast statements informing the user of an operation start/complete
+
+        Called from anywhere
+            Aug.26.19 11:25:45         [!] <Announcement Message> [!]
+        """
 
         msg, kwargs = u'{:<26} {:<13} {} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                         colored("[!]", 'green', 'on_grey', attrs=['bold']), 
@@ -118,6 +189,11 @@ class CMXLogAdapter(logging.LoggerAdapter):
         self.logger.info(msg, *args, **kwargs)
 
     def results(self, msg, *args, **kwargs):
+        """[!] Results are used for information returned from an operation that is to long for success
+
+        Called from anywhere
+            Aug.26.19 11:25:45  <Results message>
+        """
 
         msg, kwargs = u'{:<19} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"), 
                                         colored(msg, 'yellow', attrs=['bold'])), kwargs
@@ -126,6 +202,8 @@ class CMXLogAdapter(logging.LoggerAdapter):
 
 
     def highlight(self, msg, *args, **kwargs):
+        """
+        """
         try:
             if 'protocol' in self.extra.keys() and not called_from_cmd_args():
                 return
