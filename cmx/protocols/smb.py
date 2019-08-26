@@ -895,9 +895,8 @@ class smb(connection):
         users = []
         self.logger.announce('Checking Local Users')
 
-
         try:
-            rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password)
+            rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
             try:
@@ -906,22 +905,28 @@ class smb(connection):
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
                     resp = samr.hSamrConnect(dce)  
+
                     logging.debug('Dump of hSamrConnect response:') 
                     if self.debug:
                         resp.dump()
+
                     serverHandle = resp['ServerHandle'] 
                     self.logger.debug('Looking up host name')
                     resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
                     logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
                     if self.debug:
                         resp2.dump()
+
                     domains = resp2['Buffer']['Buffer']
                     logging.debug('Looking up localusers on: '+ domains[0]['Name'])
                     resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+
                     logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
                     if self.debug:
                         resp.dump()
+
                     resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    
                     logging.debug('Dump of hSamrOpenDomain response:')
                     if self.debug:
                         resp.dump()
