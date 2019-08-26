@@ -1361,8 +1361,10 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
-                        self.logger.success('Domain Groups enumerated from: {}'.format(self.host))
-                        self.logger.highlight("         Domain Group Accounts")
+                        
+                        self.logger.success('Domain Groups enumerated')
+                        self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
+
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1467,7 +1469,8 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
-                        self.logger.highlight("      Domain User Accounts")
+                        self.logger.success('Domain Users enumerated')
+                        self.logger.highlight("   {} Domain User Accounts".format(tmpdomain))
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1555,6 +1558,7 @@ class smb(connection):
                             resp2.dump()
 
                         domains = resp2['Buffer']['Buffer']
+                        tmddomain = domains[0]['Name']
 
                         self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
                         resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
@@ -1571,7 +1575,8 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
-                        self.logger.highlight("   Domain Computer Accounts")
+                        self.logger.success('Domain Computers enumerated')
+                        self.logger.highlight("   {} Domain Computer Accounts".format(tmpdomain))
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 #need one for workstations and second gets the DomainControllers
