@@ -2136,17 +2136,27 @@ class smb(connection):
 
         self.sessions()
         self.loggedon()
+        time.sleep(1)
 
         self.local_users()
+        time.sleep(1)
+        
         self.local_groups()
         self.rid_brute(maxRid=4000)
+        time.sleep(1)
 
         self.disks()
         self.shares()
+        time.sleep(1)
 
         self.users()
+        time.sleep(1)
+
         self.groups()
+        time.sleep(1)
+
         self.computers()
+        time.sleep(1)
 
         self.sam()
 
