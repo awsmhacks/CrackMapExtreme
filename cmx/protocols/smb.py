@@ -1306,7 +1306,6 @@ class smb(connection):
 
 
 
-
     @requires_dc
     def groups(self):
         """
@@ -1620,7 +1619,7 @@ class smb(connection):
                                 if self.debug:
                                     info.dump()
                                 samr.hSamrCloseHandle(dce, r['UserHandle'])
-                                
+
                             print('')
                             self.logger.success('Domain Computers enumerated')
                             self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
