@@ -1757,7 +1757,7 @@ class smb(connection):
 
         def add_lsa_secret(secret):
             add_lsa_secret.secrets += 1
-            self.logger.success(secret)
+            self.logger.highlight(secret)
         add_lsa_secret.secrets = 0
 
         if self.remote_ops and self.bootkey:
