@@ -700,13 +700,6 @@ class smb(connection):
             logging.debug("SMBv3.0 dialect used")
 
         self.output_filename = '{}/{}_{}_{}'.format(cfg.LOGS_PATH,self.hostname, self.host, datetime.now().strftime("%Y-%m-%d_%H%M%S"))
-        self.logger.info("Info thing") 
-        self.logger.error("Error thing")
-        self.logger.debug("Debug thing")
-        self.logger.success("Success thing")
-        self.logger.announce("Announce thing")
-        self.logger.results("Results thing")
-        self.logger.highlight("Highlight thing")
 
         if not self.domain:
             self.domain = self.hostname
@@ -756,7 +749,8 @@ class smb(connection):
 
                     for disk in resp['DiskInfoStruct']['Buffer']:
                         if disk['Disk'] != '\x00':
-                            self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
+                            #self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
+                            self.logger.highlight("Found Disk: {}:\\ ".format(disk['Disk']))
                     return list()
 
                 except Exception as e: #failed function
@@ -861,8 +855,10 @@ class smb(connection):
                     self.logger.success('Loggedon-Users enumerated on {} !'.format(self.host))
 
                     for wksta_user in resp['UserInfo']['WkstaUserInfo']['Level1']['Buffer']:
-                        wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
+                        wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
                         self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
+                        self.logger.highlight("{} is currently logged on  {}".format(wkst_username, self.hostname))
+
                     
                     return list()
 
@@ -934,7 +930,7 @@ class smb(connection):
                     domainHandle = resp['DomainHandle']
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
-                    self.logger.highlight("   :Local User Accounts:")
+                    self.logger.highlight("   Local User Accounts")
 
                     while status == STATUS_MORE_ENTRIES:
                         try:

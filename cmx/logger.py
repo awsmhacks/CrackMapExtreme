@@ -72,6 +72,15 @@ class CMXLogAdapter(logging.LoggerAdapter):
     debug - self.logger.debug("debug Msg")
         DEBUG debug Msg
 
+
+    self.logger.info("Info thing") 
+    self.logger.error("Error thing")
+    self.logger.debug("Debug thing")
+    self.logger.success("Success thing")
+    self.logger.announce("Announce thing")
+    self.logger.results("Results thing")
+    self.logger.highlight("Highlight thing")
+
     '''
 
     # For Impacket's TDS library
