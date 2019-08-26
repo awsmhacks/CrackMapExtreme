@@ -189,7 +189,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         Called from anywhere
             Aug.26.19 11:25:45         [!] <Announcement Message> [!]
         """
-
+        return
         msg, kwargs = u'{:<26} {:<13} {} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                         colored("[!]", 'green', 'on_grey', attrs=['bold']), 
                                         colored(msg, 'green','on_grey'),
