@@ -805,7 +805,8 @@ class smb(connection):
                     for session in resp['InfoStruct']['SessionInfo']['Level10']['Buffer']:
                         userName = session['sesi10_username'][:-1]
                         sourceIP = session['sesi10_cname'][:-1][2:]
-                        self.logger.results('User: {} has session originating from {}'.format(userName, sourceIP))
+                        #self.logger.results('User: {} has session originating from {}'.format(userName, sourceIP))
+                        self.logger.highlight("{} has session originating from {} on {}".format(userName, sourceIP, self.host,))
                     return list()
 
                 except Exception as e: #failed function
@@ -856,10 +857,9 @@ class smb(connection):
 
                     for wksta_user in resp['UserInfo']['WkstaUserInfo']['Level1']['Buffer']:
                         wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
-                        self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
-                        self.logger.highlight("{} is currently logged on  {}".format(wkst_username, self.hostname))
+                        #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
+                        self.logger.highlight("{} is currently logged on {} : {}".format(wkst_username, self.host, self.hostname))
 
-                    
                     return list()
 
                 except Exception as e: #failed function
@@ -1033,6 +1033,8 @@ class smb(connection):
                     domainHandle = resp['DomainHandle']
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
+                    self.logger.highlight("   Local Group Accounts")
+
                     while status == STATUS_MORE_ENTRIES:
                         try:
                             resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1054,7 +1056,9 @@ class smb(connection):
                             logging.debug('Dump of hSamrQueryInformationGroup response:')
                             if self.debug:
                                 info.dump()
-                            self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                            #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                            self.logger.highlight('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
@@ -1134,6 +1138,7 @@ class smb(connection):
 
         soFar = 0
         SIMULTANEOUS = 1000
+        self.logger.highlight("   RID Information")
         for j in range(maxRid//SIMULTANEOUS+1):
             if (maxRid - soFar) // SIMULTANEOUS == 0:
                 sidsToCheck = (maxRid - soFar) % SIMULTANEOUS
@@ -1352,6 +1357,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
+                        self.logger.highlight("   Domain Group Accounts")
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1379,7 +1385,8 @@ class smb(connection):
                                 if self.debug:
                                     info.dump()
 
-                                self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                                #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                                self.logger.highlight('Group: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
 
                                 samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
@@ -1455,6 +1462,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
+                        self.logger.highlight("   Domain User Accounts")
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1477,8 +1485,9 @@ class smb(connection):
 
                                 # r has the clases defined here: 
                                     #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+                                #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                                self.logger.highlight('{:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
 
-                                self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                                 info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
@@ -1557,6 +1566,7 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
+                        self.logger.highlight("   Domain Computer Accounts")
                         while status == STATUS_MORE_ENTRIES:
                             try:
                                 #need one for workstations and second gets the DomainControllers
