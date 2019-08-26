@@ -1733,7 +1733,7 @@ class smb(connection):
         -https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/hh994565(v%3Dws.11)#windows-logon-cached-password-verifiers
         -https://support.microsoft.com/en-us/help/913485/cached-credentials-security-in-windows-server-2003-in-windows-xp-and-i
             tldr; 
-            dcc's are password verifiers used to locally verify a password is good. 
+            DCC's are password "verifiers" used to locally verify a password is good. 
             These cant be used (passed) to other machines as they are not really a password.
         
         Args:
@@ -2136,8 +2136,8 @@ class smb(connection):
         Returns:
 
         """
-        #import time
 
+        print('')
         self.logger.announce("Running sessions,loggedon,rid-brute,disks,shares,local+domain users/groups/computers, and dumping SAM")
         print('')
 
@@ -2169,5 +2169,5 @@ class smb(connection):
 
         #time.sleep(3)        #tried sleeping between sam/lsa. still only rarely works. something about the connection gets killed between the two
         #self.lsa()                    #might be something to do with remoteops start/kill
-
+        print('')
         self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
