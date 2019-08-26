@@ -29,7 +29,7 @@ from cmx.helpers.misc import *
 from cmx.helpers.powershell import create_ps_command
 from cmx.helpers.powerview import RPCRequester
 from cmx import config as cfg
-from time import time
+import time
 from datetime import datetime
 from functools import wraps
 from traceback import format_exc
