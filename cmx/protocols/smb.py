@@ -1620,7 +1620,8 @@ class smb(connection):
                                 if self.debug:
                                     info.dump()
                                 samr.hSamrCloseHandle(dce, r['UserHandle'])
-                            
+
+                            self.logger.success('Domain Controllers enumerated')
                             self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
                             for user in respServs['Buffer']['Buffer']:
                                 #servers
