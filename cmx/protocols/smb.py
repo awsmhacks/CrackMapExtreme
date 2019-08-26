@@ -934,8 +934,8 @@ class smb(connection):
                     domainHandle = resp['DomainHandle']
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
-                    self.logger.highlight("{}:  {}\\{} ".format('RID', 'Hostname', 'Username'))
-                    
+                    self.logger.highlight("   :Local User Accounts:")
+
                     while status == STATUS_MORE_ENTRIES:
                         try:
                             resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
