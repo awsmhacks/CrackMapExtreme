@@ -1690,7 +1690,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Dumping SAM hashes')
+        self.logger.announce('Dumping SAM hashes on {}'.format(self.host))
 
         self.enable_remoteops()
         host_id = self.db.get_computers(filterTerm=self.host)[0][0]
@@ -1743,7 +1743,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Dumping LSA Secrets')
+        self.logger.announce('Dumping LSA Secrets on {}'.format(self.host))
         self.enable_remoteops()
 
         def add_lsa_secret(secret):
