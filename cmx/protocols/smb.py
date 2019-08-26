@@ -1752,6 +1752,7 @@ class smb(connection):
         Returns:
 
         """
+        
         self.logger.announce('Dumping LSA Secrets on {}'.format(self.host))
         self.enable_remoteops()
 
