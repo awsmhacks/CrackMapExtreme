@@ -12,7 +12,7 @@ class CMXModule:
 
     '''
 
-    name = 'kerboast'
+    name = 'kerberoast'
     description = "Kerberoasts all found SPNs for the current domain"
     supported_protocols = ['smb']
     opsec_safe = True
@@ -64,7 +64,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
 
         if len(data):
             if self.command.find('sekurlsa::logonpasswords') != -1:
-                creds = self.parse_mimikatz(data)
+                creds = ''
                 if len(creds):
                     for cred_set in creds:
                         credtype, domain, username, password,_,_ = cred_set
