@@ -64,7 +64,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
 
         if len(data):
             if self.command.find('sekurlsa::logonpasswords') != -1:
-                creds = ''
+                creds = None
                 if len(creds):
                     for cred_set in creds:
                         credtype, domain, username, password,_,_ = cred_set
@@ -81,3 +81,5 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
             log_name = 'Kerberoasted_{}_on_{}.log'.format(response.client_address[0], datetime.now().strftime("%b.%d.%y_at_%H%M"))
             write_log(str(data, 'utf-8'), log_name)
             context.log.info("Saved raw Kerberoast output to {}/{}".format(cfg.LOGS_PATH,log_name))
+        else:
+            context.log.info("No Results ¯\\_(ツ)_/¯")
