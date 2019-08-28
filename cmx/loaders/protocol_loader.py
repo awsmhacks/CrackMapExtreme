@@ -19,11 +19,9 @@ class protocol_loader:
 
         for path in protocol_paths:
             for protocol in path.iterdir():
-                if protocol.is_dir():
+                if protocol.is_dir() and not protocol.name == '__pycache__'::
                     protocol_path = protocol
                     protocol_name = protocol.stem
-    
-                    protocols[protocol_name] = {'path' : protocol.with_suffix('.py') }
     
                     db_file_path = protocol / 'database.py'
                     db_nav_path = protocol / 'db_navigator.py'
