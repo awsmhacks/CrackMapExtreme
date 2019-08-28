@@ -327,11 +327,9 @@ class RemoteShell(cmd.Cmd):
         if len(self.__outputBuffer.strip('\r\n')) > 0:
             print(self.__outputBuffer)
             self.__outputBuffer = ''
+
         else:
-            if PY2:
-                self.__pwd = ntpath.normpath(ntpath.join(self.__pwd, s.decode(sys.stdin.encoding)))
-            else:
-                self.__pwd = ntpath.normpath(ntpath.join(self.__pwd, s))
+            self.__pwd = ntpath.normpath(ntpath.join(self.__pwd, s))
             self.execute_remote('cd ')
             self.__pwd = self.__outputBuffer.strip('\r\n')
             self.prompt = (self.__pwd + '>')
