@@ -1,2 +1,4 @@
 include README.md
-recursive-include cmx *
+recursive-include cmx/data *
+recursive-include cmx/modules *
+recursive-include cmx/thirdparty *
