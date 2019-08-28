@@ -65,7 +65,7 @@ class module_loader:
 
         for path in modules_paths:
             for module in path.iterdir():
-                if module.name != 'example_module.py':
+                if module.name != 'example_module.py' and module.name != '__pycache__':
                     m = self.load_module(module)
                     if m and (self.args.protocol in m.supported_protocols):
                         modules[m.name] = {'path': module, 'description': m.description, 'options': m.options.__doc__}

@@ -20,6 +20,7 @@ import sqlite3
 import os
 import sys
 import logging
+import pdb 
 
 def main():
 
@@ -34,6 +35,7 @@ def main():
     targets = []
     server_port_dict = {'http': 80, 'https': 443, 'smb': 445}
     current_workspace = cfg.WORKSPACE
+    hasPassList = False
 
     if args.verbose:
         setup_debug_logger()
@@ -49,6 +51,7 @@ def main():
     if hasattr(args, 'password') and args.password:
         for passw in args.password:
             if Path(passw).is_file():   #If it was a file passed in
+                hasPassList = True
                 args.password.remove(passw)
                 args.password.append(open(passw, 'r'))
 
@@ -85,14 +88,6 @@ def main():
             else:
                 targets.extend(parse_targets(target))
 
-    # Clean obfuscation scripts
-    if hasattr(args, 'clear_obfscripts') and args.clear_obfscripts:
-        shutil.rmtree(cfg.OBF_PATH)
-        os.mkdir(cfg.OBF_PATH)
-        logger.success('Cleared cached obfuscated PowerShell scripts')
-
-    if hasattr(args, 'obfs') and args.obfs:
-        powershell.obfuscate_ps_scripts = True
 
     p_loader = protocol_loader()
     protocol_path = p_loader.get_protocols()[args.protocol]['path']
@@ -167,11 +162,11 @@ def main():
     try:
         '''
             Open all the greenlet threads
-            **Unless we interactive
         '''
 
         pool = Pool(args.threads)
         jobs = []
+        
         for target in targets:
             jobs.append(pool.spawn(protocol_object, args, db, str(target)))
 
