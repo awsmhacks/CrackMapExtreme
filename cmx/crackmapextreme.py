@@ -20,6 +20,7 @@ import sqlite3
 import os
 import sys
 import logging
+import pdb 
 
 def main():
 
@@ -34,6 +35,7 @@ def main():
     targets = []
     server_port_dict = {'http': 80, 'https': 443, 'smb': 445}
     current_workspace = cfg.WORKSPACE
+    hasPassList = False
 
     if args.verbose:
         setup_debug_logger()
@@ -49,6 +51,7 @@ def main():
     if hasattr(args, 'password') and args.password:
         for passw in args.password:
             if Path(passw).is_file():   #If it was a file passed in
+                hasPassList = True
                 args.password.remove(passw)
                 args.password.append(open(passw, 'r'))
 
@@ -163,7 +166,9 @@ def main():
 
         pool = Pool(args.threads)
         jobs = []
+        pdb.set_trace()
         for target in targets:
+            #pdb.set_trace()
             jobs.append(pool.spawn(protocol_object, args, db, str(target)))
 
         for job in jobs:
