@@ -363,8 +363,8 @@ class RemoteShell(cmd.Cmd):
 
     def get_output(self):
         logging.debug('inside wmi.RemoteShell.get_output')
+        
         def output_callback(data):
-            logging.debug('inside wmi.RemoteShell.output_callback')
             try:
                 self.__outputBuffer += data.decode(CODEC)
             except UnicodeDecodeError:
