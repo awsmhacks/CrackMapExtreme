@@ -1521,6 +1521,11 @@ class smb(connection):
 
                         status = STATUS_MORE_ENTRIES
                         enumerationContext = 0
+
+                        resp = samr.hSamrLookupNamesInDomain(dce, domainHandle, (self.username,))
+                        print('here')
+                        resp.dump()
+                        print('ended')
                         self.logger.success('Domain Users enumerated')
                         self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
                         while status == STATUS_MORE_ENTRIES:
