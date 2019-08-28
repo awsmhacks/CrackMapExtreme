@@ -166,9 +166,8 @@ def main():
 
         pool = Pool(args.threads)
         jobs = []
-        pdb.set_trace()
+        
         for target in targets:
-            #pdb.set_trace()
             jobs.append(pool.spawn(protocol_object, args, db, str(target)))
 
         for job in jobs:
