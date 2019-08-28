@@ -176,7 +176,7 @@ class connection(object):
                     except IndexError:
                         self.logger.error("Invalid database credential ID!")
 
-###############################################################################
+
         # If we get a list of usernames AND passwords we want to loop through each user and try the password
         if isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
             print('yep')
@@ -253,4 +253,3 @@ class connection(object):
                                                 else:
                                                     if self.plaintext_login(user, f_pass.strip()): return True
                                         password.seek(0)
-###############################################################################
