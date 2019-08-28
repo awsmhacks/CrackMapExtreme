@@ -364,6 +364,7 @@ class RemoteShell(cmd.Cmd):
     def get_output(self):
         logging.debug('inside wmi.RemoteShell.get_output')
         def output_callback(data):
+            logging.debug('inside wmi.RemoteShell.output_callback')
             try:
                 self.__outputBuffer += data.decode(CODEC)
             except UnicodeDecodeError:
@@ -393,6 +394,7 @@ class RemoteShell(cmd.Cmd):
         self.__transferClient.deleteFile(self.__share, self.__output)
 
     def execute_remote(self, data):
+        logging.debug('inside wmi.RemoteShell.execute_remote')
         command = self.__shell + data 
         if self.__noOutput is False:
             command += ' 1> ' + '\\\\127.0.0.1\\%s' % self.__share + self.__output  + ' 2>&1'
@@ -401,6 +403,7 @@ class RemoteShell(cmd.Cmd):
         self.get_output()
 
     def send_data(self, data):
+        logging.debug('inside wmi.RemoteShell.send_data')
         self.execute_remote(data)
         print(self.__outputBuffer)
         self.__outputBuffer = ''
