@@ -418,10 +418,54 @@ class smb(connection):
     @requires_smb_server
     def interactive(self, payload=None, get_output=False, methods=None):
         self.logger.announce("Bout to get shellular")
+
+        if not methods:
+            methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
+
+        for method in methods:
+            if method == 'wmiexec':
+                try:
+                    exec_method = WMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
+                    logging.debug('Interactive shell using wmiexec')
+                    break
+                except:
+                    logging.debug('Error launching shell via wmiexec, traceback:')
+                    logging.debug(format_exc())
+                    continue
+
+            elif method == 'mmcexec':
+                try:
+                    exec_method = MMCEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
+                    logging.debug('Interactive shell using mmcexec')
+                    break
+                except:
+                    logging.debug('Error launching shell via mmcexec, traceback:')
+                    logging.debug(format_exc())
+                    continue
+
+            elif method == 'atexec':
+                try:
+                    exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
+                    logging.debug('Interactive shell using atexec')
+                    break
+                except:
+                    logging.debug('Error launching shell via atexec, traceback:')
+                    logging.debug(format_exc())
+                    continue
+
+            elif method == 'smbexec':
+                try:
+                    exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
+                    logging.debug('Interactive shell using smbexec')
+                    break
+                except:
+                    logging.debug('Error launching shell via smbexec, traceback:')
+                    logging.debug(format_exc())
+                    return 'fail'
+
+
         try:
-            executer = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-            logging.debug('back from smbexec ')
-            executer.run(self.host, self.host)
+            exec_method.run(self.host, self.host)
         except Exception as e:
             logging.debug('b {}'.format(str(e)))
         
