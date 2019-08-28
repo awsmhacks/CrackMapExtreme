@@ -123,11 +123,11 @@ class WMIEXEC:
         self.__output = gen_random_string(6)
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
 
-        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1"'.format(local_ip, self.__share_name, self.__output)
+        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, self.__share_name, self.__output)
         #adding creds gets past systems disallowing guest-auth
-        command = 'cmd.exe /Q /c "net use /persistent:no \\\\{}\\{} /user:{} {} & '.format(local_ip, self.__share_name, self.__username, self.__password) + command
+        command = 'cmd.exe /Q /c "net use /persistent:no \\\\{}\\{} /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
 
-        logging.debug('wmi Executing_fileless command: ' + command)
+        logging.debug('wmi Executing_fileless command: {}'.format(command))
 
         self.__win32Process.Create(command, self.__pwd, None)
         self.get_output_fileless()
