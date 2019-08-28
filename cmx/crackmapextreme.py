@@ -40,6 +40,12 @@ def main():
 
     logging.debug('Passed args:\n' + pformat(vars(args)))
 
+    if hasattr(args, 'username') and args.username:
+        for user in args.username:
+            if Path(user).is_file():    #If it was a file passed in
+                args.username.remove(user)
+                args.username.append(open(user, 'r'))
+
     if hasattr(args, 'password') and args.password:
         for passw in args.password:
             if Path(passw).is_file():   #If it was a file passed in
@@ -51,12 +57,6 @@ def main():
             if Path(ntlm_hash).is_file():   #If it was a file passed in
                 args.hash.remove(ntlm_hash)
                 args.hash.append(open(ntlm_hash, 'r'))
-
-    if hasattr(args, 'username') and args.username:
-        for user in args.username:
-            if Path(user).is_file():    #If it was a file passed in
-                args.username.remove(user)
-                args.username.append(open(user, 'r'))
 
     if hasattr(args, 'cred_id') and args.cred_id:
         for cred_id in args.cred_id:
