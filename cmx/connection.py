@@ -178,7 +178,7 @@ class connection(object):
 
 ###############################################################################
         # If we get a list of usernames AND passwords we want to loop through each user and try the password
-        if isinstance(args.password[0], IOBase) and isinstance(args.username[0], IOBase):
+        if isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
             print('yep')
             for password in self.args.password:
                 for f_pass in password:
