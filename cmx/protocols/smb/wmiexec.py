@@ -207,7 +207,7 @@ class WMIEXEC:
         self.shell = None
         
         try:
-            self.shell = RemoteShell(self.__share, self.win32Process, self.__smbconnection)
+            self.shell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
             self.shell.cmdloop()
 
         except  (Exception, KeyboardInterrupt) as e:
