@@ -19,7 +19,7 @@ class protocol_loader:
 
         for path in protocol_paths:
             for protocol in path.iterdir():
-                if protocol.is_dir() and not protocol.name == '__pycache__'::
+                if protocol.is_dir() and not protocol.name == '__pycache__':
                     protocol_path = protocol
                     protocol_name = protocol.stem
     
