@@ -207,7 +207,7 @@ class WMIEXEC:
         self.shell = None
         
         try:
-            self.shell = RemoteShell(self.__share, self.win32Process, self.smbConnection)
+            self.shell = RemoteShell(self.__share, self.win32Process, self.__smbconnection)
             self.shell.cmdloop()
 
         except  (Exception, KeyboardInterrupt) as e:
@@ -215,15 +215,15 @@ class WMIEXEC:
                 import traceback
                 traceback.print_exc()
             logging.error(str(e))
-            if smbConnection is not None:
-                smbConnection.logoff()
+            if self.__smbconnection is not None:
+                self.__smbconnection.logoff()
             dcom.disconnect()
             sys.stdout.flush()
             sys.exit(1)
 
         try:
-            if smbConnection is not None:
-                smbConnection.logoff()
+            if self.__smbconnection is not None:
+                self.__smbconnection.logoff()
             dcom.disconnect()
 
         except  (Exception, KeyboardInterrupt) as e:
