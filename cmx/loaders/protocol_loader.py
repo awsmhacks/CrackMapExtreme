@@ -10,7 +10,7 @@ class protocol_loader:
         self.cmx_path = cfg.CMX_HOME
 
     def load_protocol(self, protocol_path):
-        protocol = imp.load_source('protocol', str(protocol_path))
+        protocol = imp.load_source('protocol', str(protocol_path.with_suffix('.py')))
         return protocol
 
     def get_protocols(self):
