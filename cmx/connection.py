@@ -187,7 +187,7 @@ class connection(object):
                             for usr in user:
                                 if not self.over_fail_limit(usr.strip()):
                                     if self.plaintext_login(self.domain, usr.strip(), f_pass.strip()): return True
-                            password.seek(0)
+                            user.seek(0)
                             
 
         else:  #not a list of users AND passwords
