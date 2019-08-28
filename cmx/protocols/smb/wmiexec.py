@@ -205,6 +205,7 @@ class WMIEXEC:
     def run(self, addr, dummy):
         
         self.shell = None
+        logging.debug('inside wmishell.run')
         
         try:
             self.shell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
