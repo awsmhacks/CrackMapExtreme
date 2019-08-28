@@ -1526,8 +1526,10 @@ class smb(connection):
                         print('here')
                         resp.dump()
                         print('ended')
+                        pdb.set_trace()
                         rid = resp['RelativeIds']['Element'][0]['Data']
                         print(rid)
+
                         self.logger.success('Domain Users enumerated')
                         self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
                         while status == STATUS_MORE_ENTRIES:
