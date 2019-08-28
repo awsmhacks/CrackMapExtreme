@@ -246,6 +246,8 @@ class RemoteShell(cmd.Cmd):
         self.__noOutput = False
         self.intro = "   .... i'm in \n Type help for extra shell commands"
 
+        logging.debug('inside wmi.RemoteShell.init')
+
         # We don't wanna deal with timeouts from now on.
         if self.__transferClient is not None:
             self.__transferClient.setTimeout(100000)
@@ -254,6 +256,7 @@ class RemoteShell(cmd.Cmd):
             self.__noOutput = True
 
     def do_shell(self, s):
+        logging.debug('inside wmi.RemoteShell.do_shell')
         os.system(s)
 
     def do_help(self, line):
@@ -324,6 +327,7 @@ class RemoteShell(cmd.Cmd):
         return False
 
     def do_cd(self, s):
+        logging.debug('inside wmi.RemoteShell.do_cd')
         self.execute_remote('cd ' + s)
         if len(self.__outputBuffer.strip('\r\n')) > 0:
             print(self.__outputBuffer)
@@ -337,6 +341,7 @@ class RemoteShell(cmd.Cmd):
             self.__outputBuffer = ''
 
     def default(self, line):
+        logging.debug('inside wmi.RemoteShell.default')
         # Let's try to guess if the user is trying to change drive
         if len(line) == 2 and line[1] == ':':
             # Execute the command and see if the drive is valid
@@ -357,6 +362,7 @@ class RemoteShell(cmd.Cmd):
                 self.send_data(line)
 
     def get_output(self):
+        logging.debug('inside wmi.RemoteShell.get_output')
         def output_callback(data):
             try:
                 self.__outputBuffer += data.decode(CODEC)
