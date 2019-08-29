@@ -733,7 +733,6 @@ class smb(connection):
         self.logger.hostname = self.hostname   
         dialect = self.conn.getDialect()
 
-        print (self.conn.getNMBServer())
         #print (self.conn.getServerDomain())            # OCEAN
         #print (self.conn.getServerName())              # WIN7-PC
         #print (self.conn.getServerOS())                # WIndows 6.1 Build 7601
