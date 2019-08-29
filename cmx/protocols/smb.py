@@ -750,10 +750,6 @@ class smb(connection):
         #print (self.conn.doesSupportNTLMv2())          # True
         #print (self.conn.isLoginRequired())            # True
 
-
-    def getClientName(self):
-
-
         if dialect == SMB_DIALECT:
             self.smbv = '1'
             logging.debug("SMBv1 dialect used")
@@ -767,7 +763,8 @@ class smb(connection):
             self.smbv = '3.0'
             logging.debug("SMBv3.0 dialect used")
 
-        self.output_filename = '{}/{}_{}_{}'.format(cfg.LOGS_PATH,self.hostname, self.host, datetime.now().strftime("%Y-%m-%d_%H%M%S"))
+        if self.args.domain:
+            self.domain = self.args.domain
 
         if not self.domain:
             self.domain = self.hostname
@@ -781,12 +778,10 @@ class smb(connection):
         except:
             pass
 
-        if self.args.domain:
-            self.domain = self.args.domain
-
         if self.args.local_auth:
             self.domain = self.hostname
 
+        self.output_filename = '{}/{}_{}_{}'.format(cfg.LOGS_PATH,self.hostname, self.host, datetime.now().strftime("%Y-%m-%d_%H%M%S"))
         #Re-connect since we logged off
         self.create_conn_obj()
 
