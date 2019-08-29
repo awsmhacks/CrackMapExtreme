@@ -1588,10 +1588,10 @@ class smb(connection):
                 logging.debug('a {}'.format(str(e)))
                 dce.disconnect()
                 pass
-            except DCERPCException as e:
-                logging.debug('b {}'.format(str(e)))
-                dce.disconnect()
-                return list()
+        except DCERPCException as e:
+            logging.debug('b {}'.format(str(e)))
+            dce.disconnect()
+            return list()
 
         try:
             dce.disconnect()
