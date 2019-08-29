@@ -159,6 +159,8 @@ class smb(connection):
     def proto_args(parser, std_parser, module_parser):
         smb_parser = parser.add_parser('smb', help="Attacks and enum over SMB", parents=[std_parser, module_parser])
         smb_parser.add_argument("-H", '--hash', metavar="HASH", dest='hash', nargs='+', default=[], help='NTLM hash(es) or file(s) containing NTLM hashes')
+        smb_parser.add_argument("-tgt", '--tgticket', metavar="TGT", dest='tgt', nargs='+', default=[], help='KerberosTGT')
+        smb_parser.add_argument("-tgs", '--tgservice', metavar="TGS", dest='tgs', nargs='+', default=[], help='KerberosTGS')
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
         smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
         igroup = smb_parser.add_mutually_exclusive_group()
@@ -688,7 +690,6 @@ class smb(connection):
         :param string kdcHost: hostname or IP Address for the KDC. If None, the domain will be used (it needs to resolve tho)
         :param struct TGT: If there's a TGT available, send the structure here and it will be used
         :param struct TGS: same for TGS. See smb3.py for the format
-        :param bool useCache: whether or not we should use the ccache for credentials lookup. If TGT or TGS are specified this is False
 
         :return: None, raises a Session Error if error.
         """
