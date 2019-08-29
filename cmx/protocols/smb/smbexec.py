@@ -1,6 +1,5 @@
 
-# taken from: https://github.com/SecureAuthCorp/impacket/blob/master/examples/smbexec.py
-
+# smbexec runs as SYSTEM
 # SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
 #
 # This software is provided under under a slightly modified version
