@@ -1392,96 +1392,95 @@ class smb(connection):
         users = []
         self.logger.announce('Starting Domain Group Enum')
 
-        for dc_ip in self.get_dc_ips():
+        try:
+            rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
+            dce = rpctransport.get_dce_rpc()
+            dce.connect()
             try:
-                rpctransport = transport.SMBTransport(dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
-                dce = rpctransport.get_dce_rpc()
-                dce.connect()
+                logging.debug('Get net groups Binding start')
+                dce.bind(samr.MSRPC_UUID_SAMR)
                 try:
-                    logging.debug('Get net groups Binding start')
-                    dce.bind(samr.MSRPC_UUID_SAMR)
-                    try:
-                        logging.debug('Connect w/ hSamrConnect...')
-                        resp = samr.hSamrConnect(dce)  
-                        logging.debug('Dump of hSamrConnect response:') 
-                        if self.debug:
-                            resp.dump()
-                        serverHandle = resp['ServerHandle'] 
+                    logging.debug('Connect w/ hSamrConnect...')
+                    resp = samr.hSamrConnect(dce)  
+                    logging.debug('Dump of hSamrConnect response:') 
+                    if self.debug:
+                        resp.dump()
+                    serverHandle = resp['ServerHandle'] 
 
-                        self.logger.debug('Looking up reachable domain(s)')
-                        resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                        logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
-                        if self.debug:
-                            resp2.dump()
+                    self.logger.debug('Looking up reachable domain(s)')
+                    resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    if self.debug:
+                        resp2.dump()
 
-                        domains = resp2['Buffer']['Buffer']
-                        tmpdomain = domains[0]['Name']
+                    domains = resp2['Buffer']['Buffer']
+                    tmpdomain = domains[0]['Name']
 
-                        logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
-                        resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                        logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
-                        if self.debug:
-                            resp.dump()
+                    logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
+                    resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    if self.debug:
+                        resp.dump()
 
-                        resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-                        logging.debug('Dump of hSamrOpenDomain response:')
-                        if self.debug:
-                            resp.dump()
- 
-                        domainHandle = resp['DomainHandle']
+                    resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    logging.debug('Dump of hSamrOpenDomain response:')
+                    if self.debug:
+                        resp.dump()
 
-                        status = STATUS_MORE_ENTRIES
-                        enumerationContext = 0
+                    domainHandle = resp['DomainHandle']
 
-                        self.logger.success('Domain Groups enumerated')
-                        self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
+                    status = STATUS_MORE_ENTRIES
+                    enumerationContext = 0
 
-                        while status == STATUS_MORE_ENTRIES:
-                            try:
-                                resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                                logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
-                                if self.debug:
-                                    resp.dump()
+                    self.logger.success('Domain Groups enumerated')
+                    self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
 
-                            except DCERPCException as e:
-                                if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                    raise
-                                resp = e.get_packet()
+                    while status == STATUS_MORE_ENTRIES:
+                        try:
+                            resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
+                            logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
+                            if self.debug:
+                                resp.dump()
 
-                            for group in resp['Buffer']['Buffer']:
-                                gid = group['RelativeId']
-                                r = samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
-                                logging.debug('Dump of hSamrOpenUser response:')
-                                if self.debug:
-                                    r.dump()
+                        except DCERPCException as e:
+                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
+                                raise
+                            resp = e.get_packet()
 
-                                info = samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
-                                #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
+                        for group in resp['Buffer']['Buffer']:
+                            gid = group['RelativeId']
+                            r = samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
+                            logging.debug('Dump of hSamrOpenUser response:')
+                            if self.debug:
+                                r.dump()
 
-                                logging.debug('Dump of hSamrQueryInformationGroup response:')
-                                if self.debug:
-                                    info.dump()
+                            info = samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
+                            #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
 
-                                #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                                self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                            logging.debug('Dump of hSamrQueryInformationGroup response:')
+                            if self.debug:
+                                info.dump()
 
-                                samr.hSamrCloseHandle(dce, r['GroupHandle'])
+                            #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                            self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
 
-                            enumerationContext = resp['EnumerationContext'] 
-                            status = resp['ErrorCode']
+                            samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
-                    except Exception as e:
-                        logging.debug('a {}'.format(str(e)))
-                        dce.disconnect()
-                        pass
-                except DCERPCException:
+                        enumerationContext = resp['EnumerationContext'] 
+                        status = resp['ErrorCode']
+
+                except Exception as e:
                     logging.debug('a {}'.format(str(e)))
                     dce.disconnect()
                     pass
-            except DCERPCException as e:
-                logging.debug('b {}'.format(str(e)))
+            except DCERPCException:
+                logging.debug('a {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                pass
+        except DCERPCException as e:
+            logging.debug('b {}'.format(str(e)))
+            dce.disconnect()
+            return list()
 
         try:
             dce.disconnect()
@@ -1504,91 +1503,91 @@ class smb(connection):
         """
         users = []
         self.logger.announce('Starting Domain Users Enum')
-        for dc_ip in self.get_dc_ips():
+
+        try:
+            rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
+            dce = rpctransport.get_dce_rpc()
+            dce.connect()
             try:
-                rpctransport = transport.SMBTransport(dc_ip, 445, r'\samr', username=self.username, password=self.password)
-                dce = rpctransport.get_dce_rpc()
-                dce.connect()
+                logging.debug('NetUsers Binding start')
+                dce.bind(samr.MSRPC_UUID_SAMR)
                 try:
-                    logging.debug('NetUsers Binding start')
-                    dce.bind(samr.MSRPC_UUID_SAMR)
-                    try:
-                        logging.debug('Connect w/ hSamrConnect...')
-                        resp = samr.hSamrConnect(dce)  
-                        logging.debug('Dump of hSamrConnect response:') 
-                        if self.debug:
-                            resp.dump()
-                        serverHandle = resp['ServerHandle'] 
+                    logging.debug('Connect w/ hSamrConnect...')
+                    resp = samr.hSamrConnect(dce)  
+                    logging.debug('Dump of hSamrConnect response:') 
+                    if self.debug:
+                        resp.dump()
+                    serverHandle = resp['ServerHandle'] 
 
-                        self.logger.debug('Looking up domain name(s)')
-                        resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                        logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
-                        if self.debug:
-                            resp2.dump()
+                    self.logger.debug('Looking up domain name(s)')
+                    resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    if self.debug:
+                        resp2.dump()
 
-                        domains = resp2['Buffer']['Buffer']
-                        tmpdomain = domains[0]['Name']
+                    domains = resp2['Buffer']['Buffer']
+                    tmpdomain = domains[0]['Name']
 
-                        self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
-                        resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                        logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
-                        if self.debug:
-                            resp.dump()
+                    self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
+                    resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    if self.debug:
+                        resp.dump()
 
-                        resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-                        logging.debug('Dump of hSamrOpenDomain response:')
-                        if self.debug:
-                            resp.dump()
- 
-                        domainHandle = resp['DomainHandle']
+                    resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    logging.debug('Dump of hSamrOpenDomain response:')
+                    if self.debug:
+                        resp.dump()
 
-                        status = STATUS_MORE_ENTRIES
-                        enumerationContext = 0
+                    domainHandle = resp['DomainHandle']
 
-                        self.logger.success('Domain Users enumerated')
-                        self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
-                        while status == STATUS_MORE_ENTRIES:
-                            try:
-                                resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                                logging.debug('Dump of hSamrEnumerateUsersInDomain response:')
-                                if self.debug:
-                                    resp.dump()
+                    status = STATUS_MORE_ENTRIES
+                    enumerationContext = 0
 
-                            except DCERPCException as e:
-                                if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                    raise
-                                resp = e.get_packet()
+                    self.logger.success('Domain Users enumerated')
+                    self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
+                    while status == STATUS_MORE_ENTRIES:
+                        try:
+                            resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
+                            logging.debug('Dump of hSamrEnumerateUsersInDomain response:')
+                            if self.debug:
+                                resp.dump()
+
+                        except DCERPCException as e:
+                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
+                                raise
+                            resp = e.get_packet()
 
 
-                            for user in resp['Buffer']['Buffer']:
-                                #users
-                                r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                                logging.debug('Dump of hSamrOpenUser response:')
-                                if self.debug:
-                                    r.dump()
+                        for user in resp['Buffer']['Buffer']:
+                            #users
+                            r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
+                            logging.debug('Dump of hSamrOpenUser response:')
+                            if self.debug:
+                                r.dump()
 
-                                # r has the clases defined here: 
-                                    #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-                                #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                                self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
+                            # r has the clases defined here: 
+                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+                            #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                            self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
 
-                                info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                if self.debug:
-                                    info.dump()
-                                samr.hSamrCloseHandle(dce, r['UserHandle'])
+                            info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
+                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                            if self.debug:
+                                info.dump()
+                            samr.hSamrCloseHandle(dce, r['UserHandle'])
 
-                            enumerationContext = resp['EnumerationContext'] 
-                            status = resp['ErrorCode']
+                        enumerationContext = resp['EnumerationContext'] 
+                        status = resp['ErrorCode']
 
-                    except Exception as e:
-                        logging.debug('a {}'.format(str(e)))
-                        dce.disconnect()
-                        pass
-                except DCERPCException:
+                except Exception as e:
                     logging.debug('a {}'.format(str(e)))
                     dce.disconnect()
                     pass
+            except DCERPCException:
+                logging.debug('a {}'.format(str(e)))
+                dce.disconnect()
+                pass
             except DCERPCException as e:
                 logging.debug('b {}'.format(str(e)))
                 dce.disconnect()
@@ -1614,122 +1613,122 @@ class smb(connection):
         """
         comps = []
         self.logger.announce('Starting Domain Computers Enum')
-        for dc_ip in self.get_dc_ips():
+
+        try:
+            rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
+            dce = rpctransport.get_dce_rpc()
+            dce.connect()
             try:
-                rpctransport = transport.SMBTransport(dc_ip, 445, r'\samr', username=self.username, password=self.password)
-                dce = rpctransport.get_dce_rpc()
-                dce.connect()
+                logging.debug('NetUsers Binding start')
+                dce.bind(samr.MSRPC_UUID_SAMR)
                 try:
-                    logging.debug('NetUsers Binding start')
-                    dce.bind(samr.MSRPC_UUID_SAMR)
-                    try:
-                        logging.debug('Connect w/ hSamrConnect...')
-                        resp = samr.hSamrConnect(dce)  
-                        logging.debug('Dump of hSamrConnect response:') 
-                        if self.debug:
-                            resp.dump()
-                        serverHandle = resp['ServerHandle'] 
+                    logging.debug('Connect w/ hSamrConnect...')
+                    resp = samr.hSamrConnect(dce)  
+                    logging.debug('Dump of hSamrConnect response:') 
+                    if self.debug:
+                        resp.dump()
+                    serverHandle = resp['ServerHandle'] 
 
-                        self.logger.debug('Looking up domain name(s)')
-                        resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                        logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
-                        if self.debug:
-                            resp2.dump()
+                    self.logger.debug('Looking up domain name(s)')
+                    resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    if self.debug:
+                        resp2.dump()
 
-                        domains = resp2['Buffer']['Buffer']
-                        tmpdomain = domains[0]['Name']
+                    domains = resp2['Buffer']['Buffer']
+                    tmpdomain = domains[0]['Name']
 
-                        self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
-                        resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                        logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
-                        if self.debug:
-                            resp.dump()
+                    self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
+                    resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    if self.debug:
+                        resp.dump()
 
-                        resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-                        logging.debug('Dump of hSamrOpenDomain response:')
-                        if self.debug:
-                            resp.dump()
- 
-                        domainHandle = resp['DomainHandle']
+                    resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    logging.debug('Dump of hSamrOpenDomain response:')
+                    if self.debug:
+                        resp.dump()
 
-                        status = STATUS_MORE_ENTRIES
-                        enumerationContext = 0
+                    domainHandle = resp['DomainHandle']
 
-                        while status == STATUS_MORE_ENTRIES:
-                            try:
-                                #need one for workstations and second gets the DomainControllers
-                                respComps = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, samr.USER_WORKSTATION_TRUST_ACCOUNT, enumerationContext=enumerationContext)
-                                respServs = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, samr.USER_SERVER_TRUST_ACCOUNT, enumerationContext=enumerationContext)
-                                
-                                logging.debug('Dump of hSamrEnumerateUsersInDomain Comps response:')
-                                if self.debug:
-                                    respComps.dump()
-                                logging.debug('Dump of hSamrEnumerateUsersInDomain Servs response:')
-                                if self.debug:
-                                    respServs.dump()
+                    status = STATUS_MORE_ENTRIES
+                    enumerationContext = 0
 
-                            except DCERPCException as e:
-                                if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                    raise
-                                resp = e.get_packet()
+                    while status == STATUS_MORE_ENTRIES:
+                        try:
+                            #need one for workstations and second gets the DomainControllers
+                            respComps = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, samr.USER_WORKSTATION_TRUST_ACCOUNT, enumerationContext=enumerationContext)
+                            respServs = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, samr.USER_SERVER_TRUST_ACCOUNT, enumerationContext=enumerationContext)
+                            
+                            logging.debug('Dump of hSamrEnumerateUsersInDomain Comps response:')
+                            if self.debug:
+                                respComps.dump()
+                            logging.debug('Dump of hSamrEnumerateUsersInDomain Servs response:')
+                            if self.debug:
+                                respServs.dump()
+
+                        except DCERPCException as e:
+                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
+                                raise
+                            resp = e.get_packet()
 
 
-                            self.logger.success('Domain Controllers enumerated')
-                            self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
-                            for user in respServs['Buffer']['Buffer']:
-                                #servers
-                                r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                                logging.debug('Dump of hSamrOpenUser response:')
-                                if self.debug:
-                                    r.dump()
+                        self.logger.success('Domain Controllers enumerated')
+                        self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
+                        for user in respServs['Buffer']['Buffer']:
+                            #servers
+                            r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
+                            logging.debug('Dump of hSamrOpenUser response:')
+                            if self.debug:
+                                r.dump()
 
-                                # r has the clases defined here: 
-                                    #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+                            # r has the clases defined here: 
+                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
-                                self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
-                                info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                if self.debug:
-                                    info.dump()
-                                samr.hSamrCloseHandle(dce, r['UserHandle'])
+                            self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                            info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
+                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                            if self.debug:
+                                info.dump()
+                            samr.hSamrCloseHandle(dce, r['UserHandle'])
 
-                            print('')
-                            self.logger.success('Domain Computers enumerated')
-                            self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
-                            for user in respComps['Buffer']['Buffer']:
-                                #workstations
-                                r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                                logging.debug('Dump of hSamrOpenUser response:')
-                                if self.debug:
-                                    r.dump()
+                        print('')
+                        self.logger.success('Domain Computers enumerated')
+                        self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
+                        for user in respComps['Buffer']['Buffer']:
+                            #workstations
+                            r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
+                            logging.debug('Dump of hSamrOpenUser response:')
+                            if self.debug:
+                                r.dump()
 
-                                # r has the clases defined here: 
-                                    #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+                            # r has the clases defined here: 
+                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
-                                #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                                self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
-                                info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                if self.debug:
-                                    info.dump()
-                                samr.hSamrCloseHandle(dce, r['UserHandle'])
+                            #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                            self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                            info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
+                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                            if self.debug:
+                                info.dump()
+                            samr.hSamrCloseHandle(dce, r['UserHandle'])
 
 
-                            enumerationContext = resp['EnumerationContext'] 
-                            status = resp['ErrorCode']
+                        enumerationContext = resp['EnumerationContext'] 
+                        status = resp['ErrorCode']
 
-                    except Exception as e:
-                        logging.debug('a {}'.format(str(e)))
-                        dce.disconnect()
-                        pass
-                except DCERPCException:
+                except Exception as e:
                     logging.debug('a {}'.format(str(e)))
                     dce.disconnect()
                     pass
-            except DCERPCException as e:
-                logging.debug('b {}'.format(str(e)))
+            except DCERPCException:
+                logging.debug('a {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                pass
+        except DCERPCException as e:
+            logging.debug('b {}'.format(str(e)))
+            dce.disconnect()
+            return list()
 
         self.logger.announce('Finished Domain Computer Enum')
         return list()
