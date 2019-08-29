@@ -674,7 +674,7 @@ class smb(connection):
             return False
 
 
-    def kerberosLogin(self, user, password, domain='', ntlm_hash, aesKey='', kdcHost=None, TGT=None,
+    def kerberosLogin(self, user, password, domain='', ntlm_hash='', aesKey='', kdcHost=None, TGT=None,
                       TGS=None):
         """
         logins into the target system explicitly using Kerberos. Hashes are used if RC4_HMAC is supported.
