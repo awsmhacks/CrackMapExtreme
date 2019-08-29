@@ -1781,7 +1781,7 @@ class smb(connection):
         if self.remote_ops and self.bootkey:
             #try:
             SAMFileName = self.remote_ops.saveSAM()
-            self.logger.success('SAM hashes dumps:')
+            self.logger.success('SAM hashes dump:')
             SAM = SAMHashes(SAMFileName, self.bootkey, isRemote=True, perSecretCallback=lambda secret: add_sam_hash(secret, host_id))
 
             #self.logger.announce('Dumping SAM hashes')
