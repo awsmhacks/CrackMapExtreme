@@ -51,7 +51,7 @@ class CMXModule:
             request.send_response(200)
             request.end_headers()
             request.wfile.write(self.ps_script.encode())
-            
+
         else:
             request.send_response(404)
             request.end_headers()
@@ -67,7 +67,7 @@ class CMXModule:
         if len(data):
             #buf = StringIO(data).readlines()
             lines = data.decode().split("             ")
-            #pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
+            #pdb.set_trace()
             for line in lines:
                 #line = line.replace('\r\n', '\n').strip()
                 context.log.results(line)
