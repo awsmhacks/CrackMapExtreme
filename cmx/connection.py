@@ -177,9 +177,10 @@ class connection(object):
                         self.logger.error("Invalid database credential ID!")
 
 
-        # If we get a list of usernames AND passwords we want to loop through each user and try the password
+        
         if isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
-            print('yep')
+        # If we get a list of usernames AND passwords
+        # we want to loop through each user and try the password
             for password in self.args.password:
                 for f_pass in password:
                     with sem:
@@ -189,9 +190,8 @@ class connection(object):
                                     if self.plaintext_login(self.domain, usr.strip(), f_pass.strip()): return True
                             user.seek(0)
                             
-
-        else:  #not a list of users AND passwords
-            print('nope')
+        else:  
+            # not a list of users AND passwords
             for user in self.args.username:
                 if isinstance(user, IOBase):
                     for usr in user:
