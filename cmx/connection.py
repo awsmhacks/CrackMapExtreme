@@ -177,8 +177,37 @@ class connection(object):
                         self.logger.error("Invalid database credential ID!")
 
 
-        
-        if isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
+        if self.args.hash:
+            for user in self.args.username:
+                if isinstance(user, IOBase): #list of users
+                    for usr in user:
+                        with sem:
+                            for ntlm_hash in self.args.hash:
+                                if not isinstance(ntlm_hash, IOBase): # Not a list of hashes
+                                    if not self.over_fail_limit(usr.strip()):
+                                        if self.hash_login(self.domain, usr.strip(), ntlm_hash): return True
+
+                                elif isinstance(ntlm_hash, IOBase):
+                                    for f_hash in ntlm_hash:
+                                        if not self.over_fail_limit(usr.strip()):
+                                            if self.hash_login(self.domain, usr.strip(), f_hash.strip()): return True
+                                    ntlm_hash.seek(0)
+
+                elif not isinstance(user, IOBase): #not a list of users
+                        with sem:
+                            for ntlm_hash in self.args.hash:
+                                if not isinstance(ntlm_hash, IOBase): # Not a list of hashes
+                                    if not self.over_fail_limit(usr.strip()):
+                                        if self.hash_login(self.domain, usr.strip(), ntlm_hash): return True
+
+                                elif isinstance(ntlm_hash, IOBase):
+                                    for f_hash in ntlm_hash:
+                                        if not self.over_fail_limit(usr.strip()):
+                                            if self.hash_login(self.domain, usr.strip(), f_hash.strip()): return True
+                                    ntlm_hash.seek(0)
+
+
+        elif isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
         # If we get a list of usernames AND passwords
         # we want to loop through each user and try the password
             for password in self.args.password:
@@ -191,65 +220,37 @@ class connection(object):
                             user.seek(0)
                             
         else:  
-            # not a list of users AND passwords
+            # not a list of users AND (passwords or hashes)
             for user in self.args.username:
-                if isinstance(user, IOBase):
+                if isinstance(user, IOBase): #list of users
                     for usr in user:
-                        if self.args.hash:
-                            with sem:
-                                for ntlm_hash in self.args.hash:
-                                    if not isinstance(ntlm_hash, IOBase):
+                        with sem:
+                            for password in self.args.password:
+                                if not isinstance(password, IOBase): # Not a list of passwds
+                                    if not self.over_fail_limit(usr.strip()):
+                                        if self.plaintext_login(self.domain, usr.strip(), password): return True
+
+                                elif isinstance(password, IOBase):
+                                    for f_pass in password:
                                         if not self.over_fail_limit(usr.strip()):
-                                            if self.hash_login(self.domain, usr.strip(), ntlm_hash): return True
-    
-                                    elif isinstance(ntlm_hash, IOBase):
-                                        for f_hash in ntlm_hash:
-                                            if not self.over_fail_limit(usr.strip()):
-                                                if self.hash_login(self.domain, usr.strip(), f_hash.strip()): return True
-                                        ntlm_hash.seek(0)
+                                            if self.plaintext_login(self.domain, usr.strip(), f_pass.strip()): return True
+                                    password.seek(0)
 
-                        elif self.args.password:
-                            with sem:
-                                for password in self.args.password:
-                                    if not isinstance(password, IOBase):
-                                        if not self.over_fail_limit(usr.strip()):
-                                            if self.plaintext_login(self.domain, usr.strip(), password): return True
-    
-                                    elif isinstance(password, IOBase):
-                                        for f_pass in password:
-                                            if not self.over_fail_limit(usr.strip()):
-                                                if self.plaintext_login(self.domain, usr.strip(), f_pass.strip()): return True
-                                        password.seek(0)
+                elif not isinstance(user, IOBase): #not a list of users
+                    with sem:
+                        for password in self.args.password:
+                            if not isinstance(password, IOBase):  # Not a list of passwds
+                                if not self.over_fail_limit(user):
+                                    if hasattr(self.args, 'domain'):
+                                        if self.plaintext_login(self.domain, user, password): return True
+                                    else:
+                                        if self.plaintext_login(user, password): return True
 
-                elif not isinstance(user, IOBase):
-                        if hasattr(self.args, 'hash') and self.args.hash:
-                            with sem:
-                                for ntlm_hash in self.args.hash:
-                                    if not isinstance(ntlm_hash, IOBase):
-                                        if not self.over_fail_limit(user):
-                                            if self.hash_login(self.domain, user, ntlm_hash): return True
-    
-                                    elif isinstance(ntlm_hash, IOBase):
-                                        for f_hash in ntlm_hash:
-                                            if not self.over_fail_limit(user):
-                                                if self.hash_login(self.domain, user, f_hash.strip()): return True
-                                        ntlm_hash.seek(0)
-
-                        elif self.args.password:
-                            with sem:
-                                for password in self.args.password:
-                                    if not isinstance(password, IOBase):
-                                        if not self.over_fail_limit(user):
-                                            if hasattr(self.args, 'domain'):
-                                                if self.plaintext_login(self.domain, user, password): return True
-                                            else:
-                                                if self.plaintext_login(user, password): return True
-
-                                    elif isinstance(password, IOBase):
-                                        for f_pass in password:
-                                            if not self.over_fail_limit(user):
-                                                if hasattr(self.args, 'domain'):
-                                                    if self.plaintext_login(self.domain, user, f_pass.strip()): return True
-                                                else:
-                                                    if self.plaintext_login(user, f_pass.strip()): return True
-                                        password.seek(0)
+                            elif isinstance(password, IOBase): # Not a list of passwds
+                                for f_pass in password:
+                                    if not self.over_fail_limit(user):
+                                        if hasattr(self.args, 'domain'):
+                                            if self.plaintext_login(self.domain, user, f_pass.strip()): return True
+                                        else:
+                                            if self.plaintext_login(user, f_pass.strip()): return True
+                                password.seek(0)
