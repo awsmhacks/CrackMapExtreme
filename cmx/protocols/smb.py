@@ -151,6 +151,7 @@ class smb(connection):
         self.smb_share_name = smb_share_name
         self.debug = args.verbose
         self.dc_ip = args.domaincontroller
+        self.domain_dns = None
 
         connection.__init__(self, args, db, host)
 
@@ -722,42 +723,31 @@ class smb(connection):
             if "STATUS_ACCESS_DENIED" in str(e):
                 pass
 
-        self.domain    = self.conn.getServerDomain()
-        self.hostname  = self.conn.getServerName()
-        self.logger.hostname = self.hostname
-        self.server_os = self.conn.getServerOS()
-        self.signing   = self.conn.isSigningRequired()
-        self.os_arch   = self.get_os_arch()
-        dialect        = self.conn.getDialect()
+        self.domain     = self.conn.getServerDomain()    # OCEAN
+        self.hostname   = self.conn.getServerName()      # WIN7-PC
+        self.server_os  = self.conn.getServerOS()        # WIndows 6.1 Build 7601
+        self.signing    = self.conn.isSigningRequired()  # True/false
+        self.os_arch    = self.get_os_arch()             # 64
+        self.domain_dns = self.conn.getServerDNSDomainName()
 
-        print ("domain")
-        print (self.domain)
-        print ("hostname")
-        print (self.hostname)
-        print ("dialect")
-        print (dialect)
-        print ("server_os")
-        print (self.server_os)
-        print ("signing")
-        print (self.signing)
-        print ("os_arch")
-        print (self.os_arch)
-        print ("getRemoteHos")        
-        print (self.conn.getRemoteHost())
-        print ("getRemoteNam")        
-        print (self.conn.getRemoteName())
-        print ("getServerDNS")        
-        print (self.conn.getServerDNSDomainName())
-        print ("getServerOSM")        
-        print (self.conn.getServerOSMajor())
-        print ("getServerOSM")        
-        print (self.conn.getServerOSMinor())
-        print ("getServerOSB")        
-        print (self.conn.getServerOSBuild())
-        print ("doesSupportN")        
-        print (self.conn.doesSupportNTLMv2())
-        print ("isLoginRequi")        
-        print (self.conn.isLoginRequired())
+        self.logger.hostname = self.hostname   
+        dialect = self.conn.getDialect()
+        
+        print (self.getNMBServer())
+        #print (self.conn.getServerDomain())            # OCEAN
+        #print (self.conn.getServerName())              # WIN7-PC
+        #print (self.conn.getServerOS())                # WIndows 6.1 Build 7601
+        #print (self.conn.isSigningRequired())          # True
+        #print (self.get_os_arch())                     # 64
+        #print (self.conn.getDialect())                 # 528
+        #print (self.conn.getRemoteHost())              # IPaddress
+        #print (self.conn.getRemoteName())              # win7-pc
+        #print (self.conn.getServerDNSDomainName())     # ocean.depth
+        #print (self.conn.getServerOSMajor())           # 6
+        #print (self.conn.getServerOSMinor())           # 1
+        #print (self.conn.getServerOSBuild())           # 7601 
+        #print (self.conn.doesSupportNTLMv2())          # True
+        #print (self.conn.isLoginRequired())            # True
 
 
     def getClientName(self):
