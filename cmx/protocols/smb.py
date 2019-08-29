@@ -217,9 +217,6 @@ class smb(connection):
         cegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         cegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
 
-        psgroup = smb_parser.add_argument_group('Powershell Obfuscation', "Options for PowerShell script obfuscation")
-        psgroup.add_argument('--obfs', action='store_true', help='Obfuscate PowerShell scripts')
-        psgroup.add_argument('--clear-obfscripts', action='store_true', help='Clear all cached obfuscated PowerShell scripts')
 
         return parser
 
