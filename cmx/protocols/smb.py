@@ -729,8 +729,7 @@ class smb(connection):
         self.signing   = self.conn.isSigningRequired()
         self.os_arch   = self.get_os_arch()
         dialect        = self.conn.getDialect()
-        print ("getClientNam")
-        print (self.conn.getClientName())
+
         print ("getRemoteHos")        
         print (self.conn.getRemoteHost())
         print ("getRemoteNam")        
