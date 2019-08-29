@@ -1781,7 +1781,7 @@ class smb(connection):
         if self.remote_ops and self.bootkey:
             #try:
             SAMFileName = self.remote_ops.saveSAM()
-            self.logger.success('SAM hashes dumped')
+            self.logger.success('SAM hashes dump:')
             SAM = SAMHashes(SAMFileName, self.bootkey, isRemote=True, perSecretCallback=lambda secret: add_sam_hash(secret, host_id))
 
             #self.logger.announce('Dumping SAM hashes')
@@ -1832,7 +1832,7 @@ class smb(connection):
         if self.remote_ops and self.bootkey:
 
             SECURITYFileName = self.remote_ops.saveSECURITY()
-            self.logger.success('LSA Secrets dumped')
+            self.logger.success('LSA Secrets dump:')
 
             LSA = LSASecrets(SECURITYFileName, self.bootkey, self.remote_ops, isRemote=True,
                              perSecretCallback=lambda secretType, secret: add_lsa_secret(secret))
