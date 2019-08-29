@@ -763,6 +763,10 @@ class smb(connection):
             self.smbv = '3.0'
             logging.debug("SMBv3.0 dialect used")
 
+        if not self.local_auth and self.dc_ip =='':
+            self.dc_ip = self.conn.getServerDNSDomainName()
+            print (self.dc_ip)
+
         if self.args.domain:
             self.domain = self.args.domain
 
