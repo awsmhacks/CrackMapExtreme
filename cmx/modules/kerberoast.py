@@ -59,6 +59,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         response.end_headers()
         length = int(response.headers.get('Content-Length'))
         data = response.rfile.read(length)
+        pdb.set_trace()
 
         # We've received the response, stop tracking this host
         response.stop_tracking_host()
@@ -66,7 +67,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         if len(data):
             #buf = StringIO(data).readlines()
             lines = data.decode().split("             ")
-            pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
+            #pdb.set_trace() #stuff = iter(data.decode().split())    for thing in stuff: print(thing) 
             for line in lines:
                 #line = line.replace('\r\n', '\n').strip()
                 context.log.highlight(line)
