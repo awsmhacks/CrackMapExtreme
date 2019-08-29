@@ -47,6 +47,7 @@ class winrm(connection):
         cgroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
 
         return parser
+       
 
     def proto_flow(self):
         self.proto_logger()
@@ -64,7 +65,7 @@ class winrm(connection):
         self.logger = CMXLogAdapter(extra={'protocol': 'WINRM',
                                         'host': self.host,
                                         'port': 'NONE',
-                                        'hostname': 'NONE'})
+                                        'hostname': self.hostname})
 
     def enum_host_info(self):
 
