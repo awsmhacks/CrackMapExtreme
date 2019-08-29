@@ -719,6 +719,8 @@ class smb(connection):
 
         try:
             self.conn.login('' , '')
+            logging.debug("Null login?")
+            self.logger.success('Null login allowed')
         except SessionError as e:
             if "STATUS_ACCESS_DENIED" in str(e):
                 pass
