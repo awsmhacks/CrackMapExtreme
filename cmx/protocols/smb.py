@@ -362,8 +362,7 @@ class smb(connection):
             if not self.args.no_output: get_output = True
         logging.debug("here and its {}".format(self.server_os))
 
-
-        return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=dont_obfs, server_os=self.server_os), get_output, methods)
+        return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=False, server_os=self.server_os), get_output, methods)
 
 
     @requires_admin
@@ -673,6 +672,71 @@ class smb(connection):
             if error == 'STATUS_LOGON_FAILURE': self.inc_failed_login(username)
 
             return False
+
+
+    def kerberosLogin(self, user, password, domain='', ntlm_hash, aesKey='', kdcHost=None, TGT=None,
+                      TGS=None):
+        """
+        logins into the target system explicitly using Kerberos. Hashes are used if RC4_HMAC is supported.
+
+        :param string user: username
+        :param string password: password for the user
+        :param string domain: domain where the account is valid for (required)
+        :param string lmhash: LMHASH used to authenticate using hashes (password is not used)
+        :param string nthash: NTHASH used to authenticate using hashes (password is not used)
+        :param string aesKey: aes256-cts-hmac-sha1-96 or aes128-cts-hmac-sha1-96 used for Kerberos authentication
+        :param string kdcHost: hostname or IP Address for the KDC. If None, the domain will be used (it needs to resolve tho)
+        :param struct TGT: If there's a TGT available, send the structure here and it will be used
+        :param struct TGS: same for TGS. See smb3.py for the format
+        :param bool useCache: whether or not we should use the ccache for credentials lookup. If TGT or TGS are specified this is False
+
+        :return: None, raises a Session Error if error.
+        """
+        import os
+        from impacket.krb5.ccache import CCache
+        from impacket.krb5.kerberosv5 import KerberosError
+        from impacket.krb5 import constants
+
+        if kdcHost is None:
+            self._kdcHost = self.dc_ip
+
+        lmhash = ''
+        nthash = ''
+
+        #This checks to see if we didn't provide the LM Hash
+        if ntlm_hash.find(':') != -1:
+            lmhash, nthash = ntlm_hash.split(':')
+        else:
+            nthash = ntlm_hash
+
+
+        if TGT is None and TGS is None:
+            self.logger.error("TGT or TGS required")
+            return False
+
+
+        while True:
+            try:
+                if self.smbv == '1':
+                    return self.conn.kerberos_login(user, password, domain, lmhash, nthash, aesKey, kdcHost,
+                                                              TGT, TGS)
+                return self.conn.kerberosLogin(user, password, domain, lmhash, nthash, aesKey, kdcHost, TGT,
+                                                         TGS)
+            except (smb.SessionError, smb3.SessionError) as e:
+                raise SessionError(e.get_error_code(), e.get_error_packet())
+            except KerberosError as e:
+                if e.getErrorCode() == constants.ErrorCodes.KDC_ERR_ETYPE_NOSUPP.value:
+                    # We might face this if the target does not support AES
+                    # So, if that's the case we'll force using RC4 by converting
+                    # the password to lm/nt hashes and hope for the best. If that's already
+                    # done, byebye.
+                    if lmhash is '' and nthash is '' and (aesKey is '' or aesKey is None) and TGT is None and TGS is None:
+                        lmhash = compute_lmhash(password)
+                        nthash = compute_nthash(password) 
+                    else:
+                        raise e
+                else:
+                    raise e
 
 
 ###############################################################################
