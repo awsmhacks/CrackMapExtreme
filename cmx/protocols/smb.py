@@ -729,6 +729,28 @@ class smb(connection):
         self.signing   = self.conn.isSigningRequired()
         self.os_arch   = self.get_os_arch()
         dialect        = self.conn.getDialect()
+        print ("getClientNam")
+        print (self.conn.getClientName())
+        print ("getRemoteHos")        
+        print (self.conn.getRemoteHost())
+        print ("getRemoteNam")        
+        print (self.conn.getRemoteName())
+        print ("getServerDNS")        
+        print (self.conn.getServerDNSDomainName())
+        print ("getServerOSM")        
+        print (self.conn.getServerOSMajor())
+        print ("getServerOSM")        
+        print (self.conn.getServerOSMinor())
+        print ("getServerOSB")        
+        print (self.conn.getServerOSBuild())
+        print ("doesSupportN")        
+        print (self.conn.doesSupportNTLMv2())
+        print ("isLoginRequi")        
+        print (self.conn.isLoginRequired())
+
+
+    def getClientName(self):
+
 
         if dialect == SMB_DIALECT:
             self.smbv = '1'
