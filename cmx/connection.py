@@ -197,13 +197,13 @@ class connection(object):
                         with sem:
                             for ntlm_hash in self.args.hash:
                                 if not isinstance(ntlm_hash, IOBase): # Not a list of hashes
-                                    if not self.over_fail_limit(usr.strip()):
-                                        if self.hash_login(self.domain, usr.strip(), ntlm_hash): return True
+                                    if not self.over_fail_limit(user):
+                                        if self.hash_login(self.domain, user, ntlm_hash): return True
 
                                 elif isinstance(ntlm_hash, IOBase):
                                     for f_hash in ntlm_hash:
-                                        if not self.over_fail_limit(usr.strip()):
-                                            if self.hash_login(self.domain, usr.strip(), f_hash.strip()): return True
+                                        if not self.over_fail_limit(user):
+                                            if self.hash_login(self.domain, user, f_hash.strip()): return True
                                     ntlm_hash.seek(0)
 
 
