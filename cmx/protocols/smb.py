@@ -93,7 +93,8 @@ def requires_smb_server(func):
                 smb_server = CMXSMBServer(self.logger, smb_share_name,
                                           verbose=self.args.verbose,
                                           username=self.args.username,
-                                          password=self.args.password)
+                                          password=self.args.password,
+                                          computer=self.hostname)
                 smb_server.start()
 
         output = func(self, *args, **kwargs)
