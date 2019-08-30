@@ -88,6 +88,7 @@ def requires_smb_server(func):
         if get_output or (methods and ('smbexec' in methods)):
             if not smb_server:
                 logging.debug('Starting SMB server using share {}'.format(smb_share_name))
+                logging.debug('Computeraccount {}'.format(self.hostname))
 
                 # Need to calculate user/pass/hash thing here.
                 smb_server = CMXSMBServer(self.logger, smb_share_name,
