@@ -1538,7 +1538,7 @@ class smb(connection):
                             for member in groupResp['Members']['Members']:
                                 m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
                                 guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                self.logger.highlight('{:<30}  '.format(guser['Buffer']['All']['UserName']))
+                                self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
                                 
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
