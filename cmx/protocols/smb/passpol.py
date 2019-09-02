@@ -81,7 +81,9 @@ class PassPolDump:
         self.doKerberos = False
         self.protocols = list(PassPolDump.KNOWN_PROTOCOLS.keys())
         self.pass_pol = {}
+        self.local_auth = connection.args.local_auth
         if connection.args.local_auth: self.addr = connection.host
+
 
         if self.hash is not None:
             if self.hash.find(':') != -1:
@@ -188,7 +190,7 @@ class PassPolDump:
         for domain in self.__domains:
             self.logger.debug('{}'.format(domain['Name']))
 
-        self.logger.success("Dumping password info for {}: {}".format('Host' if connection.args.local_auth else 'Domain', 
+        self.logger.success("Dumping password info for {}: {}".format('Host' if self.local_auth else 'Domain', 
                                                                       self.__domains[0]['Name']))
 
         self.logger.highlight("Minimum password length: {}".format(self.__min_pass_len))
