@@ -1852,6 +1852,8 @@ class smb(connection):
         users = []
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
+            return list()
+
         self.logger.announce('Starting Domain Group Enum')
 
         try:
@@ -1944,8 +1946,8 @@ class smb(connection):
                                     if self.debug:
                                         guser.dump()
 
-                            if groupFound == False:
-                                self.logger.error("Group not found")
+                        if groupFound == False:
+                            self.logger.error("Group not found")
 
 
 
