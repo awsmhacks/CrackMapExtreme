@@ -1836,7 +1836,7 @@ class smb(connection):
         return list()
 
 
-@requires_dc
+    @requires_dc
     def group(self):
         """
         
