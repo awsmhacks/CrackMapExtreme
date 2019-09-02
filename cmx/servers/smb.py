@@ -11,7 +11,7 @@ from cmx import config as cfg
 
 class CMXSMBServer(threading.Thread):
 
-    def __init__(self, logger, share_name, share_path=str(cfg.TMP_PATH), listen_address='0.0.0.0', listen_port=445, verbose=False, username='', password='', hashes=''):
+    def __init__(self, logger, share_name, share_path=str(cfg.TMP_PATH), listen_address='0.0.0.0', listen_port=445, verbose=False, username='', password='', hashes='', computer=''):
         try:
             threading.Thread.__init__(self)
 
@@ -30,6 +30,7 @@ class CMXSMBServer(threading.Thread):
             
             # username can be a list of users, we only gonna make this work if you pass 1 user for now...
             self.server.addCredential(username[0], 0, lmhash, nthash)
+            self.server.addCredential(computer, 1, '', '')
 
             # Here you can set a custom SMB challenge in hex format, If empty defaults to '4141414141414141'
             # e.g. server.setSMBChallenge('12345678abcdef00')
