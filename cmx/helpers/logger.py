@@ -8,7 +8,7 @@ init()  #Doing this so we dont have to switch out all the termcolor calls for co
 
 def write_log(data, log_name):
     logfile = cfg.LOGS_PATH / log_name
-    with open(logfile, mode='wb') as log_output:
+    with open(logfile, mode='wt') as log_output:
         log_output.write(data)
 
 def highlight(text, color='blue'):
