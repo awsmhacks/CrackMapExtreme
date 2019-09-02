@@ -15,6 +15,8 @@ from cmx import config as cfg
 from pprint import pformat
 from pathlib import Path
 import cmx.helpers.powershell as powershell
+import webbrowser
+import random
 import shutil
 import sqlite3
 import os
@@ -39,6 +41,14 @@ def main():
 
     if args.verbose:
         setup_debug_logger()
+
+    if args.darrell:
+        links = open((cfg.DATA_PATH / 'videos_for_darrell').with_suffix('.harambe')).read().splitlines()
+        try:
+            webbrowser.open(random.choice(links))
+            sys.exit(1)
+        except:
+            sys.exit(1)
 
     logging.debug('Passed args:\n' + pformat(vars(args)))
 

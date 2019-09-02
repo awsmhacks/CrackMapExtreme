@@ -56,6 +56,7 @@ def gen_cli_args():
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
     parser.add_argument("--timeout", default=18, type=int, help=argparse.SUPPRESS)
     parser.add_argument("--verbose", action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("--darrell", action='store_true', help=argparse.SUPPRESS)
 
     subparsers = parser.add_subparsers(title='protocols', dest='protocol', help=argparse.SUPPRESS) #suppressing cause it looks cleaner. gonna have to hit the wiki for helps.
 
