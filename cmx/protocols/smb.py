@@ -1849,7 +1849,7 @@ class smb(connection):
         """
         targetGroup = self.args.group
         groupFound = False
-        groupLog = []
+        groupLog = ''
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
             return list()
@@ -1940,7 +1940,7 @@ class smb(connection):
                                     m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
                                     guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                                     self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
-                                    groupLog.update({ group['Name'] : guser['Buffer']['All']['UserName']})
+                                    groupLog += '{}\\{:<30}  \r'.format(tmpdomain, guser['Buffer']['All']['UserName'])
                                 
                                     logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                     if self.debug:
