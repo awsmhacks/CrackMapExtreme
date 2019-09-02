@@ -194,7 +194,7 @@ class smb(connection):
         egroup.add_argument("--loggedon", action='store_true', help='enumerate logged on users')
         egroup.add_argument('--users', nargs='?', const='', metavar='USER', help='enumerate domain users, if a user is specified than only its information is queried. Requires -dc or -d set')
         egroup.add_argument("--groups", nargs='?', const='', metavar='GROUP', help='enumerate domain groups, if a group is specified than its members are enumerated. Requires -dc or -d set')
-        #egroup.add_argument("--group", metavar='targetGroup', help='enumerate a specified domain group, if a group is specified than its members are enumerated')
+        egroup.add_argument("--group", nargs='?', const='', metavar='targetGroup', help='enumerate a specified domain group, if a group is specified than its members are enumerated')
         egroup.add_argument("--computers", nargs='?', const='', metavar='COMPUTER', help='enumerate domain computers, if a computer is specified than only its information is queried. Requires -dc or -d set')
         egroup.add_argument("--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='enumerate local groups, if a group is specified than its members are enumerated')
         egroup.add_argument("--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='enumerate local users, if a user is specified than only its information is queried.')
