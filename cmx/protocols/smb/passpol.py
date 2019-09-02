@@ -188,7 +188,8 @@ class PassPolDump:
         for domain in self.__domains:
             self.logger.debug('{}'.format(domain['Name']))
 
-        self.logger.success("Dumping password info for domain: {}".format(self.__domains[0]['Name']))
+        self.logger.success("Dumping password info for {}: {}".format('Host' if connection.args.local_auth else 'Domain', 
+                                                                      self.__domains[0]['Name']))
 
         self.logger.highlight("Minimum password length: {}".format(self.__min_pass_len))
         self.logger.highlight("Password history length: {}".format(self.__pass_hist_len))
