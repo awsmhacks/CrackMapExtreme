@@ -1590,7 +1590,7 @@ class smb(connection):
 
         if self.args.logs:
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
-            log_name = 'Group_Names_in_{}_on_{}.log'.format(tmpdomain, ctime)
+            log_name = 'Domain_Groups_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(groupLog), log_name)
             self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
