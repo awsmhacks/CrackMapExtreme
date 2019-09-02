@@ -1850,6 +1850,8 @@ class smb(connection):
         targetGroup = self.args.group
         groupFound = False
         users = []
+        if targetGroup == '':
+            self.logger.error("Must specify a group name after --group ")
         self.logger.announce('Starting Domain Group Enum')
 
         try:
@@ -1892,8 +1894,7 @@ class smb(connection):
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
 
-                    self.logger.success('Domain Group enumerated')
-                    self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
+                    self.logger.success('Domain Groups enumerated')
 
                     while status == STATUS_MORE_ENTRIES:
                         try:
@@ -1942,6 +1943,10 @@ class smb(connection):
                                     logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                     if self.debug:
                                         guser.dump()
+
+                            if groupFound == False:
+                                self.logger.error("Group not found")
+
 
 
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
