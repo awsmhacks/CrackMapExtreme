@@ -1525,13 +1525,19 @@ class smb(connection):
                             if self.debug:
                                 info.dump()
 
-                            members = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
-                            logging.debug('Dump of hSamrGetMembersInGroup response:')
-                            if self.debug:
-                                members.dump()
-
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+
+
+                            groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
+                            logging.debug('Dump of hSamrGetMembersInGroup response:')
+                            if self.debug:
+                                groupResp.dump()
+                            for member in groupResp['Members']:
+                                pdb.set_trace()
+                                guser = samr.hSamrQueryInformationUser2(dce, member['RelativeId'],USER_INFORMATION_CLASS.UserGeneralInformation)
+
+
 
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
