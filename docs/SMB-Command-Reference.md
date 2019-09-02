@@ -359,7 +359,7 @@ Aug.20.19 14:34:31  Disk: D: found on 10.10.33.123
 
 | Multiple_Host | Requires DC | Requires LA | Requires DA | Opsec_safe |
 |---------------|-------------|-------------|-------------|------------|
-| true          | true        | false       | false       | true*      |
+| true          | false       | false       | false       | true*      |
 
 
 ```
@@ -386,7 +386,7 @@ Aug.20.19 14:38:16         [!] Finished Domain Users Enum [!]
 
 | Multiple_Host | Requires DC | Requires LA | Requires DA | Opsec_safe |
 |---------------|-------------|-------------|-------------|------------|
-| true          | true        | false       | false       | true*      |
+| true          | false       | false       | false       | true*      |
 
 ```
 #~ cmx smb 10.10.33.122 -u agrande -p User\!23 -dc 10.10.33.100 --groups
@@ -411,6 +411,38 @@ Aug.20.19 15:41:27  Groupname: Servers                         membercount: 4
 Aug.20.19 15:41:27  Groupname: Desktops                        membercount: 5
 Aug.20.19 15:41:27  Groupname: Server Admins                   membercount: 1
 Aug.20.19 15:41:27  Groupname: Desktop Admins                  membercount: 2
+
+```
+
+------------------------------------------------------------------------
+### Enumerate Specific domain group
+
+| Multiple_Host | Requires DC | Requires LA | Requires DA | Opsec_safe |
+|---------------|-------------|-------------|-------------|------------|
+| true          | false       | false       | false       | true*      |
+  
+Enum Domain Admins and Domain Controllers:  
+```
+#~ cmx smb 10.10.33.122 -u agrande -p User\!23 --group "Domain Admins"
+
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  [*] Windows 10.0 Build 17763 x64 (domain:OCEAN) (signing:False) (SMBv:3.0)
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!)
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  [+] Domain Groups enumerated
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  [+] "Domain Admins" Domain Group Found in OCEAN
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E      "Domain Admins" Group Info
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  Member Count: 2
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  OCEAN\Administrator                   
+Sep.02.19 13:18:42  SMB         10.10.33.125:445  WIN10E  OCEAN\mbellamy
+
+
+#~ cmx smb 10.10.33.104 -u Administrator -p AdminSuper\!23 --group "Domain Controllers"
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 [*] Windows 10.0 Build 18362 x64 (domain:OCEAN) (signing:False) (SMBv:3.0)
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!)
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 [+] Domain Groups enumerated
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 [+] "Domain Controllers" Domain Group Found in OCEAN
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2     "Domain Controllers" Group Info
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 Member Count: 1
+Sep.02.19 14:25:46  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 OCEAN\DC2012-A$     
 
 ```
 
@@ -480,25 +512,18 @@ Aug.20.19 15:44:07         [!] Finished Checking Local Groups [!]
 ```
 #~ cmx smb 10.10.33.122 -u agrande -p User\!23 --pass-pol
 
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 [*] Windows Server 2012 R2 Datacenter 9600 x64 (domain:OCEAN) (signing:False) (SMBv:1)
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 [+] OCEAN\agrande:User!23
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 [+] Dumping password info for domain: SERVER2012-2
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 Minimum password length: 7
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 Password history length: 24
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 Maximum password age: 
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122 Password Complexity Flags: 5e-3241e-3232e-3234e-3238e-3231.6e-3223.16e-3226.3e-3221.265e-3212.53e-
-3215.06e-3211.012e-3202.0237e-3204.0474e-3208.095e-3201.61895e-3193.2379e-3196.4758e-3191.295163e-3182.590327e-3185.180654e-3181.036131e-3172.0722615e-3174.14452
-3e-3178.289046e-3171.6578092e-3163.3156184e-3166.63123685e-3161.32624737e-3152.65249474e-3155.304989477e-3151.0609978955e-3142.121995791e-3144.243991582e-3148.48
-....
-snipped
-....
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122  Domain Refuse Password Change: 5                                                                 |
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122  Domain Password Store Cleartext: e                                                               |
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122  Domain Password Lockout Admins: -                                                                |
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122  Domain Password No Clear Change: 3                                                               |
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122  Domain Password No Anon Change: 2                                                                |
-Aug.20.19 15:46:22  SMB         10.10.33.122:445  10.10.33.122  Domain Password Complex: 4  
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 [*] Windows Server 2012 R2 Datacenter 9600 x64 (domain:OCEAN) (signing:False) (SMBv:1)
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 [+] OCEAN\agrande:User!23 
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 [+] Dumping password info for domain: OCEAN
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Minimum password length: 7
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Password history length: 24
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Maximum password age: 
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Minimum password age: 
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Reset Account Lockout Counter: 30 minutes 
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Locked Account Duration: 30 minutes 
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Account Lockout Threshold: 3
+Sep.02.19 14:04:40  SMB         10.10.33.122:445  SERVER2012-2 Forced Log off Time: Not Set
+
 ```
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------

