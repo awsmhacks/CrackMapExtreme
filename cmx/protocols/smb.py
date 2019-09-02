@@ -194,6 +194,7 @@ class smb(connection):
         egroup.add_argument("--loggedon", action='store_true', help='enumerate logged on users')
         egroup.add_argument('--users', nargs='?', const='', metavar='USER', help='enumerate domain users, if a user is specified than only its information is queried. Requires -dc or -d set')
         egroup.add_argument("--groups", nargs='?', const='', metavar='GROUP', help='enumerate domain groups, if a group is specified than its members are enumerated. Requires -dc or -d set')
+        #egroup.add_argument("--group", metavar='targetGroup', help='enumerate a specified domain group, if a group is specified than its members are enumerated')
         egroup.add_argument("--computers", nargs='?', const='', metavar='COMPUTER', help='enumerate domain computers, if a computer is specified than only its information is queried. Requires -dc or -d set')
         egroup.add_argument("--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='enumerate local groups, if a group is specified than its members are enumerated')
         egroup.add_argument("--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='enumerate local users, if a user is specified than only its information is queried.')
@@ -1469,6 +1470,9 @@ class smb(connection):
         Returns:
 
         """
+
+        if self.args.groups: targetGroup = self.args.groups
+        groupFound = False
         users = []
         self.logger.announce('Starting Domain Group Enum')
 
@@ -1830,6 +1834,143 @@ class smb(connection):
 
         self.logger.announce('Finished Domain Computer Enum')
         return list()
+
+
+@requires_dc
+    def group(self):
+        """
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+        targetGroup = self.args.group
+        groupFound = False
+        users = []
+        self.logger.announce('Starting Domain Group Enum')
+
+        try:
+            rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
+            dce = rpctransport.get_dce_rpc()
+            dce.connect()
+            try:
+                logging.debug('Get net groups Binding start')
+                dce.bind(samr.MSRPC_UUID_SAMR)
+                try:
+                    logging.debug('Connect w/ hSamrConnect...')
+                    resp = samr.hSamrConnect(dce)  
+                    logging.debug('Dump of hSamrConnect response:') 
+                    if self.debug:
+                        resp.dump()
+                    serverHandle = resp['ServerHandle'] 
+
+                    self.logger.debug('Looking up reachable domain(s)')
+                    resp2 = samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    if self.debug:
+                        resp2.dump()
+
+                    domains = resp2['Buffer']['Buffer']
+                    tmpdomain = domains[0]['Name']
+
+                    logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
+                    resp = samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    if self.debug:
+                        resp.dump()
+
+                    resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    logging.debug('Dump of hSamrOpenDomain response:')
+                    if self.debug:
+                        resp.dump()
+
+                    domainHandle = resp['DomainHandle']
+
+                    status = STATUS_MORE_ENTRIES
+                    enumerationContext = 0
+
+                    self.logger.success('Domain Group enumerated')
+                    self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
+
+                    while status == STATUS_MORE_ENTRIES:
+                        try:
+                            resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
+                            logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
+                            if self.debug:
+                                resp.dump()
+
+                        except DCERPCException as e:
+                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
+                                raise
+                            resp = e.get_packet()
+
+
+                        for group in resp['Buffer']['Buffer']:
+                            gid = group['RelativeId']
+                            r = samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
+                            logging.debug('Dump of hSamrOpenUser response:')
+                            if self.debug:
+                                r.dump()
+
+                            info = samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
+                            #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
+
+                            logging.debug('Dump of hSamrQueryInformationGroup response:')
+                            if self.debug:
+                                info.dump()
+
+                            if group['Name'] == targetGroup:
+                                self.logger.success('\"{}\" Domain Group Found in {}'.format(targetGroup, tmpdomain))
+                                self.logger.highlight("    \"{}\" Group Info".format(targetGroup))
+                                groupFound = True
+                                print('')
+                                self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+
+                                groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
+                                logging.debug('Dump of hSamrGetMembersInGroup response:')
+                                if self.debug:
+                                    groupResp.dump()
+
+                                for member in groupResp['Members']['Members']:
+                                    m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
+                                    guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
+                                    self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
+                                
+                                    logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                                    if self.debug:
+                                        guser.dump()
+
+
+                            samr.hSamrCloseHandle(dce, r['GroupHandle'])
+
+                        enumerationContext = resp['EnumerationContext'] 
+                        status = resp['ErrorCode']
+
+
+                except Exception as e:
+                    logging.debug('a {}'.format(str(e)))
+                    dce.disconnect()
+                    pass
+            except DCERPCException:
+                logging.debug('a {}'.format(str(e)))
+                dce.disconnect()
+                pass
+        except DCERPCException as e:
+            logging.debug('b {}'.format(str(e)))
+            dce.disconnect()
+            return list()
+
+        try:
+            dce.disconnect()
+        except:
+            pass
+
+        self.logger.announce('Finished Domain Group Enum')
+        return list()
+
 
 
 ##############################################################################
