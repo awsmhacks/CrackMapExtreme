@@ -1526,6 +1526,7 @@ class smb(connection):
                                 info.dump()
 
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                            print('')
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
 
 
