@@ -2487,9 +2487,15 @@ class smb(connection):
         self.computers()
         time.sleep(1)
 
+        self.args.group = 'Domain Admins'
+        self.group()
+        time.sleep(1)
+
+        self.args.group = 'Domain Controllers'
+        self.group()
+        time.sleep(1)
+        
         self.sam()
 
-        #time.sleep(3)        #tried sleeping between sam/lsa. still only rarely works. something about the connection gets killed between the two
-        #self.lsa()                    #might be something to do with remoteops start/kill
         print('')
         self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
