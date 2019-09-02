@@ -69,7 +69,7 @@ class PassPolDump:
 
     def __init__(self, connection):
         self.logger = connection.logger
-        self.addr = connection.host
+        self.addr = connection.dc_ip
         self.protocol = connection.args.port
         self.username = connection.username
         self.password = connection.password
@@ -81,7 +81,7 @@ class PassPolDump:
         self.doKerberos = False
         self.protocols = list(PassPolDump.KNOWN_PROTOCOLS.keys())
         self.pass_pol = {}
-        pdb.set_trace()
+        if connection.args.local_auth: self.addr = connection.host
 
         if self.hash is not None:
             if self.hash.find(':') != -1:
