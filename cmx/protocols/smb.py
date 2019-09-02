@@ -1197,7 +1197,6 @@ class smb(connection):
                                 info.dump()
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             self.logger.highlight('Group: {:<20}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            print('')
 
                             groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                             logging.debug('Dump of hSamrGetMembersInGroup response:')
@@ -1892,6 +1891,7 @@ class smb(connection):
                         resp.dump()
 
                     domainHandle = resp['DomainHandle']
+                    pdb.set_trace()
 
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
