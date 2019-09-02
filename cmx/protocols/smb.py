@@ -1711,7 +1711,7 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Users_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(users), log_name)
-            self.logger.info("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.info("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Domain Users Enum')
         return list()
