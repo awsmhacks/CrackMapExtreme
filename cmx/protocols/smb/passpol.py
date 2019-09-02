@@ -3,6 +3,7 @@
 from impacket.dcerpc.v5.rpcrt import DCERPC_v5
 from impacket.dcerpc.v5 import transport, samr
 from time import strftime, gmtime
+import pdb
 
 def d2b(a):
     tbin = []
@@ -89,6 +90,7 @@ class PassPolDump:
         
         if self.password is None:
             self.password = ''
+        pdb.set_trace()
 
     def dump(self):
 
