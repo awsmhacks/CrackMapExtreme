@@ -1545,7 +1545,6 @@ class smb(connection):
                                     guser.dump()
 
 
-
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
                         enumerationContext = resp['EnumerationContext'] 
