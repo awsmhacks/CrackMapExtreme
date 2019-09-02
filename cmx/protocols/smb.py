@@ -1533,8 +1533,10 @@ class smb(connection):
                             logging.debug('Dump of hSamrGetMembersInGroup response:')
                             if self.debug:
                                 groupResp.dump()
+
+                            pdb.set_trace()
+
                             for member in groupResp['Members']:
-                                pdb.set_trace()
                                 guser = samr.hSamrQueryInformationUser2(dce, member['RelativeId'],USER_INFORMATION_CLASS.UserGeneralInformation)
 
 
