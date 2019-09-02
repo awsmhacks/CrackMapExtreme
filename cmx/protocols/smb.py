@@ -188,18 +188,18 @@ class smb(connection):
         cgroup.add_argument("--ntds-status", action='store_true', help='Display the user status (enabled/disabled) - Can only be used with --ntds')
 
         egroup = smb_parser.add_argument_group("Mapping/Enumeration", "Options for Mapping/Enumerating")
-        egroup.add_argument("--shares", action="store_true", help="enumerate shares and access")
-        egroup.add_argument("--sessions", action='store_true', help='enumerate active sessions')
-        egroup.add_argument('--disks', action='store_true', help='enumerate disks')
-        egroup.add_argument("--loggedon", action='store_true', help='enumerate logged on users')
-        egroup.add_argument('--users', nargs='?', const='', metavar='USER', help='enumerate domain users, if a user is specified than only its information is queried. Requires -dc or -d set')
-        egroup.add_argument("--groups", nargs='?', const='', metavar='GROUP', help='enumerate domain groups, if a group is specified than its members are enumerated. Requires -dc or -d set')
-        egroup.add_argument("--group", nargs='?', const='', metavar='targetGroup', help='enumerate a specified domain group, if a group is specified than its members are enumerated')
-        egroup.add_argument("--computers", nargs='?', const='', metavar='COMPUTER', help='enumerate domain computers, if a computer is specified than only its information is queried. Requires -dc or -d set')
-        egroup.add_argument("--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='enumerate local groups, if a group is specified than its members are enumerated')
-        egroup.add_argument("--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='enumerate local users, if a user is specified than only its information is queried.')
+        egroup.add_argument("--shares", action="store_true", help="Enumerate shares and access")
+        egroup.add_argument("--sessions", action='store_true', help='Enumerate active sessions')
+        egroup.add_argument('--disks', action='store_true', help='Enumerate disks')
+        egroup.add_argument("--loggedon", action='store_true', help='Enumerate logged on users')
+        egroup.add_argument('--users', nargs='?', const='', metavar='USER', help='Enumerate and return all domain users')
+        egroup.add_argument("--groups", nargs='?', const='', metavar='GROUP', help='Enumerate all domain groups')
+        egroup.add_argument("--group", nargs='?', const='', metavar='targetGroup', help='Return users of a specified domain group')
+        egroup.add_argument("--computers", nargs='?', const='', metavar='COMPUTER', help='Enumerate all domain computers')
+        egroup.add_argument("--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='Enumerate all local groups')
+        egroup.add_argument("--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='Enumerate all local users')
         egroup.add_argument("--pass-pol", action='store_true', help='dump password policy')
-        egroup.add_argument("--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='enumerate users by bruteforcing RID\'s (default: 4000)')
+        egroup.add_argument("--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='Enumerate users by bruteforcing RID\'s (default: 4000)')
         egroup.add_argument("--wmi", metavar='QUERY', type=str, help='issues the specified WMI query')
         egroup.add_argument("--wmi-namespace", metavar='NAMESPACE', default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
 
@@ -1546,23 +1546,23 @@ class smb(connection):
                                 info.dump()
 
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            print('')
+                            #print('')
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
 
 
-                            groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
-                            logging.debug('Dump of hSamrGetMembersInGroup response:')
-                            if self.debug:
-                                groupResp.dump()
-
-                            for member in groupResp['Members']['Members']:
-                                m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
-                                guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
-                                
-                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                if self.debug:
-                                    guser.dump()
+                            #groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
+                            #logging.debug('Dump of hSamrGetMembersInGroup response:')
+                            #if self.debug:
+                            #    groupResp.dump()
+#
+                            #for member in groupResp['Members']['Members']:
+                            #    m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
+                            #    guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
+                            #    self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
+                            #    
+                            #    logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                            #    if self.debug:
+                            #        guser.dump()
 
 
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
@@ -1929,8 +1929,7 @@ class smb(connection):
                                 self.logger.success('\"{}\" Domain Group Found in {}'.format(targetGroup, tmpdomain))
                                 self.logger.highlight("    \"{}\" Group Info".format(targetGroup))
                                 groupFound = True
-                                print('')
-                                self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                                self.logger.highlight('Member Count: {}'.format(info['Buffer']['General']['MemberCount']))
 
                                 groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                                 logging.debug('Dump of hSamrGetMembersInGroup response:')
@@ -1947,8 +1946,7 @@ class smb(connection):
                                         guser.dump()
 
                         if groupFound == False:
-                            self.logger.error("Group not found")
-
+                            self.logger.error("Specified group was not found")
 
 
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
