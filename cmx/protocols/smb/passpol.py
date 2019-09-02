@@ -69,7 +69,7 @@ class PassPolDump:
 
     def __init__(self, connection):
         self.logger = connection.logger
-        self.addr = connection.host
+        self.addr = connection.dc_ip
         self.protocol = connection.args.port
         self.username = connection.username
         self.password = connection.password
@@ -90,7 +90,7 @@ class PassPolDump:
         
         if self.password is None:
             self.password = ''
-        pdb.set_trace()
+
 
     def dump(self):
 
