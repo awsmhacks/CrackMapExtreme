@@ -1550,21 +1550,6 @@ class smb(connection):
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             groupLog += '{:<30}  membercount: {}\n'.format(group['Name'], info['Buffer']['General']['MemberCount'])
 
-                            #groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
-                            #logging.debug('Dump of hSamrGetMembersInGroup response:')
-                            #if self.debug:
-                            #    groupResp.dump()
-#
-                            #for member in groupResp['Members']['Members']:
-                            #    m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
-                            #    guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
-                            #    self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
-                            #    
-                            #    logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                            #    if self.debug:
-                            #        guser.dump()
-
-
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
                         enumerationContext = resp['EnumerationContext'] 
