@@ -1973,7 +1973,7 @@ class smb(connection):
         except:
             pass
 
-        if self.args.log:
+        if self.args.logs:
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'GroupMembers_of_{}_on_{}.log'.format(targetGroup, ctime)
             print (groupLog)
