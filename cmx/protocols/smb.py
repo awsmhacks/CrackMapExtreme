@@ -1528,7 +1528,7 @@ class smb(connection):
                             members = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                             logging.debug('Dump of hSamrGetMembersInGroup response:')
                             if self.debug:
-                                info.dump()
+                                members.dump()
 
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
