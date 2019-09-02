@@ -1648,7 +1648,7 @@ class smb(connection):
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
 
-                            info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
+                            info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'], USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
                                 info.dump()
