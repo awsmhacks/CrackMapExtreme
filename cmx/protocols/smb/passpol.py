@@ -190,13 +190,13 @@ class PassPolDump:
         self.logger.highlight("Minimum password length: {}".format(self.__min_pass_len))
         self.logger.highlight("Password history length: {}".format(self.__pass_hist_len))
         self.logger.highlight("Maximum password age: {}".format(self.__max_pass_age))
-        self.logger.highlight('')
+        #self.logger.highlight('')
         
         #self.logger.highlight("Password Complexity Flags: ")
         #for i, a in enumerate(self.__pass_prop):
         #    self.logger.highlight("\t{} {}".format(PASSCOMPLEX[i], str(a)))
 
-        self.logger.highlight('')
+        #self.logger.highlight('')
         self.logger.highlight("Minimum password age: {}".format(self.__min_pass_age))
         self.logger.highlight("Reset Account Lockout Counter: {}".format(self.__rst_accnt_lock_counter))
         self.logger.highlight("Locked Account Duration: {}".format(self.__lock_accnt_dur))

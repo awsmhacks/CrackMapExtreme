@@ -1891,7 +1891,6 @@ class smb(connection):
                         resp.dump()
 
                     domainHandle = resp['DomainHandle']
-                    pdb.set_trace()
 
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
