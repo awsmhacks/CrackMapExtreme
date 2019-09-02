@@ -1535,7 +1535,8 @@ class smb(connection):
                                 groupResp.dump()
 
                             for member in groupResp['Members']['Members']:
-                                guser = samr.hSamrQueryInformationUser2(dce, member, samr.USER_INFORMATION_CLASS.UserAllInformation)
+                                r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
+                                guser = samr.hSamrQueryInformationUser2(dce, r['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 guser.dump()
 
