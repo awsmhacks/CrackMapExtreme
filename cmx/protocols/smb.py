@@ -1473,7 +1473,7 @@ class smb(connection):
 
         if self.args.groups: targetGroup = self.args.groups
         groupFound = False
-        groupLog = []
+        groupLog = ''
         self.logger.announce('Starting Domain Group Enum')
 
         try:
@@ -1548,7 +1548,7 @@ class smb(connection):
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             #print('')
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            groupLog.update({ group['Name'] : info['Buffer']['General']['MemberCount']})
+                            groupLog += '{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount'])
 
                             #groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                             #logging.debug('Dump of hSamrGetMembersInGroup response:')
@@ -1587,6 +1587,12 @@ class smb(connection):
             dce.disconnect()
         except:
             pass
+
+        if self.args.logs:
+            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+            log_name = 'Group_Names_in_{}_on_{}.log'.format(tmpdomain, ctime)
+            write_log(str(groupLog), log_name)
+            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Domain Group Enum')
         return list()
