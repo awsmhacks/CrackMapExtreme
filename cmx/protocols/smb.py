@@ -1977,7 +1977,7 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'GroupMembers_of_{}_on_{}.log'.format(targetGroup, ctime)
             print (groupLog)
-            write_log(groupLog, log_name)
+            write_log(str(groupLog), log_name)
             self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Group Enum')
