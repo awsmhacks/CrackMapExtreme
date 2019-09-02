@@ -1974,7 +1974,8 @@ class smb(connection):
             pass
 
         if self.args.log:
-            log_name = 'GroupMembers_of_{}_on_{}.log'.format(targetGroup, datetime.now().strftime("%b.%d.%y_at_%H%M"))
+            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+            log_name = 'GroupMembers_of_{}_on_{}.log'.format(targetGroup, ctime)
             write_log(''.join(groupLog), log_name)
             self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
