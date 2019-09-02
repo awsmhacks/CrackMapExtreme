@@ -24,7 +24,7 @@ from cmx.protocols.smb.smbexec import SMBEXEC
 from cmx.protocols.smb.mmcexec import MMCEXEC
 from cmx.protocols.smb.smbspider import SMBSpider
 from cmx.protocols.smb.passpol import PassPolDump
-from cmx.helpers.logger import highlight
+from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.powershell import create_ps_command
 from cmx.helpers.powerview import RPCRequester
@@ -165,6 +165,7 @@ class smb(connection):
         smb_parser.add_argument("-tgs", '--tgservice', metavar="TGS", dest='tgs', nargs='+', default=[], help='KerberosTGS')
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
         smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        smb_parser.add_argument('--log', action='store_true', help='Logs all results')
         igroup = smb_parser.add_mutually_exclusive_group()
         igroup.add_argument("-i", '--interactive', action='store_true', help='Start an interactive command prompt')
         
@@ -1472,7 +1473,7 @@ class smb(connection):
 
         if self.args.groups: targetGroup = self.args.groups
         groupFound = False
-        users = []
+        groupLog = []
         self.logger.announce('Starting Domain Group Enum')
 
         try:
@@ -1547,7 +1548,7 @@ class smb(connection):
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             #print('')
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-
+                            groupLog.update({ group['Name'] : info['Buffer']['General']['MemberCount']})
 
                             #groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                             #logging.debug('Dump of hSamrGetMembersInGroup response:')
@@ -1848,7 +1849,7 @@ class smb(connection):
         """
         targetGroup = self.args.group
         groupFound = False
-        users = []
+        groupLog = []
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
             return list()
@@ -1939,6 +1940,7 @@ class smb(connection):
                                     m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
                                     guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                                     self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
+                                    groupLog.update({ group['Name'] : guser['Buffer']['All']['UserName']})
                                 
                                     logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                     if self.debug:
@@ -1952,7 +1954,6 @@ class smb(connection):
 
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
-
 
                 except Exception as e:
                     logging.debug('a {}'.format(str(e)))
@@ -1972,7 +1973,12 @@ class smb(connection):
         except:
             pass
 
-        self.logger.announce('Finished Domain Group Enum')
+        if self.args.log:
+            log_name = 'GroupMembers_of_{}_on_{}.log'.format(targetGroup, datetime.now().strftime("%b.%d.%y_at_%H%M"))
+            write_log(str(groupLog, 'utf-8'), log_name)
+            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
+        self.logger.announce('Finished Group Enum')
         return list()
 
 
@@ -2494,7 +2500,7 @@ class smb(connection):
         self.args.group = 'Domain Controllers'
         self.group()
         time.sleep(1)
-        
+
         self.sam()
 
         print('')
