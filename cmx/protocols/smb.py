@@ -24,7 +24,7 @@ from cmx.protocols.smb.smbexec import SMBEXEC
 from cmx.protocols.smb.mmcexec import MMCEXEC
 from cmx.protocols.smb.smbspider import SMBSpider
 from cmx.protocols.smb.passpol import PassPolDump
-from cmx.helpers.logger import highlight
+from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.powershell import create_ps_command
 from cmx.helpers.powerview import RPCRequester
@@ -165,6 +165,7 @@ class smb(connection):
         smb_parser.add_argument("-tgs", '--tgservice', metavar="TGS", dest='tgs', nargs='+', default=[], help='KerberosTGS')
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
         smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        smb_parser.add_argument('--logs', action='store_true', help='Logs all results')
         igroup = smb_parser.add_mutually_exclusive_group()
         igroup.add_argument("-i", '--interactive', action='store_true', help='Start an interactive command prompt')
         
@@ -1472,7 +1473,7 @@ class smb(connection):
 
         if self.args.groups: targetGroup = self.args.groups
         groupFound = False
-        users = []
+        groupLog = ''
         self.logger.announce('Starting Domain Group Enum')
 
         try:
@@ -1547,7 +1548,7 @@ class smb(connection):
                             #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                             #print('')
                             self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-
+                            groupLog += '{:<30}  membercount: {}\n'.format(group['Name'], info['Buffer']['General']['MemberCount'])
 
                             #groupResp = samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                             #logging.debug('Dump of hSamrGetMembersInGroup response:')
@@ -1587,6 +1588,12 @@ class smb(connection):
         except:
             pass
 
+        if self.args.logs:
+            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+            log_name = 'Group_Names_in_{}_on_{}.log'.format(tmpdomain, ctime)
+            write_log(str(groupLog), log_name)
+            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
         self.logger.announce('Finished Domain Group Enum')
         return list()
 
@@ -1602,7 +1609,7 @@ class smb(connection):
         Returns:
 
         """
-        users = []
+        users = ''
         self.logger.announce('Starting Domain Users Enum')
 
         try:
@@ -1647,6 +1654,7 @@ class smb(connection):
 
                     self.logger.success('Domain Users enumerated')
                     self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
+
                     while status == STATUS_MORE_ENTRIES:
                         try:
                             resp = samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1661,7 +1669,6 @@ class smb(connection):
 
 
                         for user in resp['Buffer']['Buffer']:
-                            #users
                             r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
                             logging.debug('Dump of hSamrOpenUser response:')
                             if self.debug:
@@ -1671,6 +1678,7 @@ class smb(connection):
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
+                            users += '{}\\{:<20}  rid: {}\n'.format(tmpdomain, user['Name'], user['RelativeId'])
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
@@ -1698,6 +1706,13 @@ class smb(connection):
             dce.disconnect()
         except:
             pass
+
+        if self.args.logs:
+            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+            log_name = 'Domain_Users_of_{}_on_{}.log'.format(tmpdomain, ctime)
+            write_log(str(users), log_name)
+            self.logger.info("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
         self.logger.announce('Finished Domain Users Enum')
         return list()
 
@@ -1712,7 +1727,7 @@ class smb(connection):
         Returns:
 
         """
-        comps = []
+        comps = ''
         self.logger.announce('Starting Domain Computers Enum')
 
         try:
@@ -1776,6 +1791,8 @@ class smb(connection):
 
                         self.logger.success('Domain Controllers enumerated')
                         self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
+                        comps += 'Domain Controllers  \n'
+
                         for user in respServs['Buffer']['Buffer']:
                             #servers
                             r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
@@ -1787,6 +1804,8 @@ class smb(connection):
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                            comps += '{:<23} rid: {} \n'.format(user['Name'], user['RelativeId'])
+
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
@@ -1794,8 +1813,10 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
 
                         print('')
+
                         self.logger.success('Domain Computers enumerated')
                         self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
+                        comps += '\nDomain Computers \n'
                         for user in respComps['Buffer']['Buffer']:
                             #workstations
                             r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
@@ -1808,6 +1829,7 @@ class smb(connection):
 
                             #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                            comps += '{:<23} rid: {}\n'.format(user['Name'], user['RelativeId'])
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
@@ -1831,6 +1853,12 @@ class smb(connection):
             dce.disconnect()
             return list()
 
+        if self.args.logs:
+            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+            log_name = 'Domain_Computers_of_{}_on_{}.log'.format(tmpdomain, ctime)
+            write_log(str(comps), log_name)
+            self.logger.info("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
         self.logger.announce('Finished Domain Computer Enum')
         return list()
 
@@ -1848,7 +1876,7 @@ class smb(connection):
         """
         targetGroup = self.args.group
         groupFound = False
-        users = []
+        groupLog = ''
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
             return list()
@@ -1939,6 +1967,7 @@ class smb(connection):
                                     m = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, member)
                                     guser = samr.hSamrQueryInformationUser2(dce, m['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                                     self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
+                                    groupLog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
                                 
                                     logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                     if self.debug:
@@ -1952,7 +1981,6 @@ class smb(connection):
 
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
-
 
                 except Exception as e:
                     logging.debug('a {}'.format(str(e)))
@@ -1972,7 +2000,13 @@ class smb(connection):
         except:
             pass
 
-        self.logger.announce('Finished Domain Group Enum')
+        if self.args.logs and groupFound:
+            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+            log_name = 'Members_of_{}_on_{}.log'.format(targetGroup, ctime)
+            write_log(str(groupLog), log_name)
+            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
+        self.logger.announce('Finished Group Enum')
         return list()
 
 
@@ -2487,9 +2521,15 @@ class smb(connection):
         self.computers()
         time.sleep(1)
 
+        self.args.group = 'Domain Admins'
+        self.group()
+        time.sleep(1)
+
+        self.args.group = 'Domain Controllers'
+        self.group()
+        time.sleep(1)
+
         self.sam()
 
-        #time.sleep(3)        #tried sleeping between sam/lsa. still only rarely works. something about the connection gets killed between the two
-        #self.lsa()                    #might be something to do with remoteops start/kill
         print('')
         self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
