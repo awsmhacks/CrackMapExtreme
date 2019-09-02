@@ -652,7 +652,7 @@ class smb(connection):
 
             self.username = username
             self.domain = domain
-            self.check_if_admin()
+            self.admin_privs = self.check_if_admin()
             self.db.add_credential('hash', domain, username, ntlm_hash)
 
             if self.admin_privs:
