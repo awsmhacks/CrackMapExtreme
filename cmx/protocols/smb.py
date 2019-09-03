@@ -791,12 +791,12 @@ class smb(connection):
             if "STATUS_ACCESS_DENIED" in str(e):
                 pass
 
-        self.domain     = self.conn.getServerDNSDomainName()    # OCEAN
-        self.hostname   = self.conn.getServerName()      # WIN7-PC
-        self.server_os  = self.conn.getServerOS()        # WIndows 6.1 Build 7601
-        self.signing    = self.conn.isSigningRequired()  # True/false
-        self.os_arch    = self.get_os_arch()             # 64
-        self.domain_dns = self.conn.getServerDNSDomainName()
+        self.domain     = self.conn.getServerDomain()           # OCEAN
+        self.hostname   = self.conn.getServerName()             # WIN7-PC
+        self.server_os  = self.conn.getServerOS()               # WIndows 6.1 Build 7601
+        self.signing    = self.conn.isSigningRequired()         # True/false
+        self.os_arch    = self.get_os_arch()                    # 64
+        self.domain_dns = self.conn.getServerDNSDomainName()    # ocean.depth
 
         self.logger.hostname = self.hostname   
         dialect = self.conn.getDialect()
