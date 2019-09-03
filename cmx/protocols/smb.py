@@ -366,7 +366,6 @@ class smb(connection):
         if not payload and self.args.ps_execute:
             payload = self.args.ps_execute
             if not self.args.no_output: get_output = True
-        logging.debug("here and its {}".format(self.server_os))
 
         return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=False, server_os=self.server_os), get_output, methods)
 
