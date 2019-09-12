@@ -123,7 +123,7 @@ class CMXDB():
         else:
             print('Nowhere to back out of')
 
-    def show_users(self, filterTerm=None, credType=None):
+    def show_creds(self, filterTerm=None, credType=None):
 
         pd.set_option('display.max_colwidth', 68)
         if self.connection:
@@ -157,7 +157,7 @@ class CMXDB():
         else:
             print('Not connected to a database yet')
 
-    def show_creds(self, filterTerm=None, credType=None):
+    def show_users(self, filterTerm=None, credType=None):
 
         pd.set_option('display.max_colwidth', 68)
         if self.connection:
@@ -181,7 +181,7 @@ class CMXDB():
                     # otherwise return all credentials
                     else:
                         print(colored(pd.read_sql_query(
-                            "SELECT id, domain, username, password FROM users",
+                            "SELECT id, domain, username FROM users",
                             self.connection, index_col='id'), "green"))
                 except Exception as e:
                     print(repr(e))
