@@ -147,7 +147,7 @@ class CMXDB():
                     # otherwise return all credentials
                     else:
                         print(colored(pd.read_sql_query(
-                            "SELECT id, domain, username, password FROM users WHERE password IS NOT NULL",
+                            "SELECT id, domain, username, password FROM users WHERE password IS NOT NULL AND password !='' ",
                             self.connection, index_col='id'), "green"))
                 except Exception as e:
                     print(repr(e))
