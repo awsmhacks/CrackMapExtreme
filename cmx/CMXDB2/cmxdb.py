@@ -15,7 +15,7 @@ from cmx import config as cfg
 init()
 
 my_completer = WordCompleter(['back', 'help', 'smb', 'list', 'creds',
-                              'hosts', 'exit'], ignore_case=True)
+                              'hosts', 'users', 'exit'], ignore_case=True)
 
 
 genHelp = """Available Commands:
@@ -123,7 +123,7 @@ class CMXDB():
         else:
             print('Nowhere to back out of')
 
-    def show_creds(self, filterTerm=None, credType=None):
+    def show_users(self, filterTerm=None, credType=None):
 
         pd.set_option('display.max_colwidth', 68)
         if self.connection:
@@ -274,6 +274,10 @@ class CMXDB():
 
         if command == 'creds':
             self.show_creds()
+            return
+
+        if command == 'users':
+            self.show_users()
             return
 
         if command == 'hosts':
