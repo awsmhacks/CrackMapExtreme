@@ -421,6 +421,9 @@ class smb(connection):
     def interactive(self, payload=None, get_output=False, methods=None):
         self.logger.announce("Bout to get shellular")
 
+        if self.args.exec_method:
+            methods = [self.args.exec_method]
+
         if not methods:
             methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
 
@@ -1663,6 +1666,8 @@ class smb(connection):
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
                             users += '{}\\{:<20}  rid: {}\n'.format(tmpdomain, user['Name'], user['RelativeId'])
+
+                            self.db.add_user(self.domain, user['Name'])
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
