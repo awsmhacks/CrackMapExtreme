@@ -166,6 +166,7 @@ class smb(connection):
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
         smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
         smb_parser.add_argument('--logs', action='store_true', help='Logs all results')
+
         igroup = smb_parser.add_mutually_exclusive_group()
         igroup.add_argument("-i", '--interactive', action='store_true', help='Start an interactive command prompt')
         
@@ -750,6 +751,7 @@ class smb(connection):
                     raise e
 
 
+
 ###############################################################################
 
 #     # #######  #####  #######       ####### #     # #     # #     # 
@@ -846,6 +848,7 @@ class smb(connection):
             self.domain = self.hostname
 
         self.db.add_computer(self.host, self.hostname, self.domain, self.server_os)
+
 
         try:
             ''' DC's seem to want us to logoff first, windows workstations sometimes reset the connection
@@ -1097,6 +1100,8 @@ class smb(connection):
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight("{}\\{:<15} :{} ".format(self.hostname, user['Name'], user['RelativeId']))
+                            
+                            self.db.add_user(self.hostname, user['Name'])
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
