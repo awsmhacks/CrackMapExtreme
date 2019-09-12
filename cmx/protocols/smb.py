@@ -188,6 +188,10 @@ class smb(connection):
         cgroup.add_argument("--ntds-pwdLastSet", action='store_true', help='Shows the pwdLastSet attribute for each NTDS.dit account. Can only be used with --ntds')
         cgroup.add_argument("--ntds-status", action='store_true', help='Display the user status (enabled/disabled) - Can only be used with --ntds')
 
+        spraygroup = smb_parser.add_argument_group("Password Attacks", "Options for spraying credentials")
+        spraygroup.add_argument("--spray", nargs='?', const='', metavar='[PASSWORD]', help='Smart spray attack')
+        spraygroup.add_argument("--useraspass", action='store_true', help='Try usernames as passwords')
+
         egroup = smb_parser.add_argument_group("Mapping/Enumeration", "Options for Mapping/Enumerating")
         egroup.add_argument("--shares", action="store_true", help="Enumerate shares and access")
         egroup.add_argument("--sessions", action='store_true', help='Enumerate active sessions')
@@ -215,13 +219,13 @@ class smb(connection):
         sgroup.add_argument("--depth", type=int, default=None, help='max spider recursion depth (default: infinity & beyond)')
         sgroup.add_argument("--only-files", action='store_true', help='only spider files')
 
-        cgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
-        cgroup.add_argument('--exec-method', choices={"wmiexec", "mmcexec", "smbexec", "atexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
-        cgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
-        cgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
-        cegroup = cgroup.add_mutually_exclusive_group()
-        cegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
-        cegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
+        execgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
+        execgroup.add_argument('--exec-method', choices={"wmiexec", "mmcexec", "smbexec", "atexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
+        execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
+        execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
+        execegroup = execgroup.add_mutually_exclusive_group()
+        execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
+        execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
 
 
         return parser
