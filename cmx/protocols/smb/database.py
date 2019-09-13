@@ -98,7 +98,7 @@ class database:
             cur.execute("INSERT INTO computers (ip, hostname, domain, os, dc) VALUES (?,?,?,?,?)", [ip, hostname, domain, os, dc])
         else:
             for host in results:
-                if (hostname != host[2]) or (domain != host[3]) or (os != host[4]):
+                if (hostname != host[2]) or (domain != host[3]):
                     cur.execute("UPDATE computers SET hostname=?, domain=?, os=? WHERE id=?", [hostname, domain, os, host[0]])
                 if dc != None and (dc != host[5]):
                     cur.execute("UPDATE computers SET dc=? WHERE id=?", [dc, host[0]])
