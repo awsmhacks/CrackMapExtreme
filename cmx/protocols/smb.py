@@ -1100,7 +1100,7 @@ class smb(connection):
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight("{}\\{:<15} :{} ".format(self.hostname, user['Name'], user['RelativeId']))
-                            
+
                             self.db.add_user(self.hostname, user['Name'])
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
@@ -1803,6 +1803,9 @@ class smb(connection):
 
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                             comps += '{:<23} rid: {} \n'.format(user['Name'], user['RelativeId'])
+
+                            #def add_computer(self, ip, hostname, domain, os, dc=None):
+                            self.db.add_computer(hostname=user['Name'], domain=tmpdomain, dc='Yes')
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')

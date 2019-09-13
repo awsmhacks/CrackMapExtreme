@@ -84,11 +84,11 @@ class database:
 
     #    cur.close()
 
-    def add_computer(self, ip, hostname, domain, os, dc=None):
+    def add_computer(self, ip=None, hostname=None, domain=None, os=None, dc='No'):
         """
         Check if this host has already been added to the database, if not add it in.
         """
-        domain = domain.split('.')[0].upper()
+        if domain: domain = domain.split('.')[0].upper()
         cur = self.conn.cursor()
 
         cur.execute('SELECT * FROM computers WHERE ip LIKE ?', [ip])
