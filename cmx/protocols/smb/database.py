@@ -91,7 +91,7 @@ class database:
         if domain: domain = domain.split('.')[0].upper()
         cur = self.conn.cursor()
 
-        cur.execute('SELECT * FROM computers WHERE ip LIKE ?', [ip])
+        cur.execute('SELECT * FROM computers WHERE hostname LIKE ?', [hostname])
         results = cur.fetchall()
 
         if not len(results):
