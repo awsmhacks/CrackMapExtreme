@@ -1833,7 +1833,7 @@ class smb(connection):
                             comps += '{:<23} rid: {}\n'.format(user['Name'], user['RelativeId'])
 
                             #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
-                            self.db.add_computer(hostname=user['Name'], domain=tmpdomain)
+                            self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain)
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
