@@ -102,7 +102,7 @@ class database:
                     cur.execute("UPDATE computers SET hostname=?, domain=?, os=? WHERE id=?", [hostname, domain, os, host[0]])
                 if dc != None and (dc != host[5]):
                     cur.execute("UPDATE computers SET dc=? WHERE id=?", [dc, host[0]])
-                if os != '' and (os != host[4]):
+                if os != '':
                     cur.execute("UPDATE computers SET os=? WHERE id=?", [os, host[0]])
                 if ip != None and (ip != host[1]):
                     cur.execute("UPDATE computers SET ip=? WHERE id=?", [ip, host[0]])
