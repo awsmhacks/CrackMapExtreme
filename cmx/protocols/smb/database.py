@@ -108,7 +108,6 @@ class database:
                     cur.execute("UPDATE computers SET ip=? WHERE id=?", [ip, host[0]])
 
         cur.close()
-
         return cur.lastrowid
 
     def add_credential(self, credtype, domain, username, password, groupid=None, pillaged_from=None):
