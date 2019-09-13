@@ -1804,7 +1804,7 @@ class smb(connection):
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                             comps += '{:<23} rid: {} \n'.format(user['Name'], user['RelativeId'])
 
-                            #def add_computer(self, ip, hostname, domain, os, dc=None):
+                            #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
                             self.db.add_computer(hostname=user['Name'], domain=tmpdomain, dc='Yes')
 
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
@@ -1831,6 +1831,10 @@ class smb(connection):
                             #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                             comps += '{:<23} rid: {}\n'.format(user['Name'], user['RelativeId'])
+
+                            #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
+                            self.db.add_computer(hostname=user['Name'], domain=tmpdomain)
+
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:

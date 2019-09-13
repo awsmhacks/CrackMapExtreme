@@ -84,7 +84,7 @@ class database:
 
     #    cur.close()
 
-    def add_computer(self, ip=None, hostname=None, domain=None, os=None, dc='No'):
+    def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
         """
         Check if this host has already been added to the database, if not add it in.
         """
