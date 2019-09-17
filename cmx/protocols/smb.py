@@ -2642,7 +2642,7 @@ class smb(connection):
         time.sleep(1)
 
         print('')
-        self.logger.announce("Network Recon Complete")
+        self.logger.announce("Network Recon Complete, the DB is now populated")
 
 
     @requires_dc
@@ -2712,4 +2712,4 @@ class smb(connection):
         time.sleep(1)
 
         print('')
-        self.logger.announce("Total Recon Complete")
+        self.logger.announce("Host + Network Recon Complete, the DB is now populated")
