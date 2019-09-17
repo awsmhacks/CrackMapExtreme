@@ -872,8 +872,9 @@ class smb(connection):
 
     def disks(self):
         """Enumerate disks
-        
-        Args:
+
+        *** This does require local admin i think. Made to return nothing if not admin.
+
             
         Raises:
             
@@ -897,7 +898,7 @@ class smb(connection):
                     for disk in resp['DiskInfoStruct']['Buffer']:
                         if disk['Disk'] != '\x00':
                             #self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
-                            self.logger.highlight("Found Disk: {}:\\ ".format(disk['Disk']))
+                            self.logger.highlight("Found Disk: {}\\ ".format(disk['Disk']))
                     return list()
 
                 except Exception as e: #failed function
@@ -1134,7 +1135,6 @@ class smb(connection):
         dce.disconnect()
         return list()
         
-
 
     def local_groups(self):
         """
@@ -2545,7 +2545,6 @@ class smb(connection):
         self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
 
 
-    @requires_admin
     def hostrecon(self):
         """All Host Recon Commands
         
@@ -2611,11 +2610,11 @@ class smb(connection):
         self.computers()
         time.sleep(1)
 
-        self.args.group = 'Domain Admins'
+        self.args.group = 'Enterprise Admins'
         self.group()
         time.sleep(1)
 
-        self.args.group = 'Domain Controllers'
+        self.args.group = 'Domain Admins'
         self.group()
         time.sleep(1)
 
