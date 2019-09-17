@@ -151,7 +151,7 @@ class smb(connection):
         self.smbv = None
         self.signing = False
         self.smb_share_name = smb_share_name
-        self.debug = args.verbose
+        self.debug = args.debug
         self.dc_ip = args.domaincontroller
         self.domain_dns = None
 
