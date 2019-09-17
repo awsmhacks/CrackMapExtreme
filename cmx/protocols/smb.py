@@ -974,6 +974,7 @@ class smb(connection):
     def loggedon(self):
         """
         
+        I think it requires localadmin, but handles if it doesnt work.
         Args:
             
         Raises:
@@ -1006,6 +1007,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Loggedon Users, are you localadmin?')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
@@ -1114,6 +1116,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Local Users, are you localadmin?')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
@@ -1231,6 +1234,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Local Groups, are you localadmin?')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
@@ -1571,6 +1575,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Groups')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
@@ -1692,6 +1697,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Users')
                     dce.disconnect()
                     return list()
             except Exception as e: #failed bind
@@ -1850,6 +1856,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Computers')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
@@ -1932,8 +1939,6 @@ class smb(connection):
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
 
-                    self.logger.success('Domain Groups enumerated')
-
                     while status == STATUS_MORE_ENTRIES:
                         try:
                             resp = samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
@@ -1993,6 +1998,7 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Groups')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
