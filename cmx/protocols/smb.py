@@ -903,17 +903,14 @@ class smb(connection):
 
                 except Exception as e: #failed function
                     logging.debug('a {}'.format(str(e)))
-                    #logging.debug('a')
                     dce.disconnect()
                     return list()
             except Exception as e: #failed bind
                 logging.debug('b {}'.format(str(e)))
-                #logging.debug('b')
                 dce.disconnect()
                 return list()
         except Exception as e: #failed connect
             logging.debug('c {}'.format(str(e)))
-            #logging.debug('c')
             dce.disconnect()
             return list()
 
@@ -957,20 +954,18 @@ class smb(connection):
                     return list()
 
                 except Exception as e: #failed function
-                    logging.debug('a {}'.format(str(e)))
-                    #logging.debug('a')
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
                     return list()
             except Exception as e: #failed bind
-                logging.debug('b {}'.format(str(e)))
-                #logging.debug('b')
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
                 return list()
         except Exception as e: #failed connect
-            logging.debug('c {}'.format(str(e)))
-            #logging.debug('c')
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return list()
+
         #self.logger.announce('Finished Session Enum')
         dce.disconnect()
         return list()
@@ -1010,20 +1005,18 @@ class smb(connection):
                     return list()
 
                 except Exception as e: #failed function
-                    logging.debug('a {}'.format(str(e)))
-                    #logging.debug('a')
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
                     return list()
             except Exception as e: #failed bind
-                logging.debug('b {}'.format(str(e)))
-                #logging.debug('b')
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
                 return list()
         except Exception as e: #failed connect
-            logging.debug('c {}'.format(str(e)))
-            #logging.debug('c')
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return list()
+
         #self.logger.announce('Finished checking for logged on users')
         dce.disconnect()
         return list()
@@ -1118,16 +1111,17 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('b {}'.format(str(e)))
+                    return list()
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('c {}'.format(str(e)))
+                return list()
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return list()
 
@@ -1234,18 +1228,19 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('b {}'.format(str(e)))
-                dce.disconnect()
-                pass
-        except DCERPCException as e:
-                logging.debug('b {}'.format(str(e)))
+                    return list()
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
                 return list()
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
+            dce.disconnect()
+            return list()
 
         #self.logger.announce('Finished Checking Local Groups')
         dce.disconnect()
@@ -1573,16 +1568,16 @@ class smb(connection):
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return list()
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return list()
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return list()
 
@@ -1694,16 +1689,16 @@ class smb(connection):
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return list()
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return list()
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return list()
 
@@ -1852,18 +1847,18 @@ class smb(connection):
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         if self.args.logs:
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
@@ -1872,7 +1867,7 @@ class smb(connection):
             self.logger.announce("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         #self.logger.announce('Finished Domain Computer Enum')
-        return list()
+        return
 
 
     @requires_dc
@@ -1995,18 +1990,18 @@ class smb(connection):
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         try:
             dce.disconnect()
@@ -2020,7 +2015,7 @@ class smb(connection):
             self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         #self.logger.announce('Finished Group Enum')
-        return list()
+        return
 
 
 
@@ -2654,7 +2649,8 @@ class smb(connection):
         """
 
         print('')
-        self.logger.announce("Running sessions,loggedon,rid-brute,disks,shares,local+domain users/groups/computers")
+        self.logger.announce("Running Host and Network Recon Commands: ")
+        self.logger.announce("sessions,loggedon,ridbrute,disks,shares,local+dom users/groups/computers")
         print('')
 
         self.sessions()
@@ -2701,7 +2697,7 @@ class smb(connection):
         self.group()
         time.sleep(1)
         print('')
-        
+
         self.args.group = 'Domain Controllers'
         self.group()
         time.sleep(1)
