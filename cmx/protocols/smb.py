@@ -881,7 +881,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.info('Attempting to enum disks...')
+        #self.logger.info('Attempting to enum disks...')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -936,7 +936,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Starting Session Enum')
+        #self.logger.announce('Starting Session Enum')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -971,7 +971,7 @@ class smb(connection):
             #logging.debug('c')
             dce.disconnect()
             return list()
-        self.logger.announce('Finished Session Enum')
+        #self.logger.announce('Finished Session Enum')
         dce.disconnect()
         return list()
 
@@ -988,7 +988,7 @@ class smb(connection):
         """
 
         loggedon = []
-        self.logger.announce('Checking for logged on users')
+        #self.logger.announce('Checking for logged on users')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\wkssvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -1024,7 +1024,7 @@ class smb(connection):
             #logging.debug('c')
             dce.disconnect()
             return list()
-        self.logger.announce('Finished checking for logged on users')
+        #self.logger.announce('Finished checking for logged on users')
         dce.disconnect()
         return list()
 
@@ -1041,7 +1041,7 @@ class smb(connection):
 
         """
         users = []
-        self.logger.announce('Checking Local Users')
+        #self.logger.announce('Checking Local Users')
 
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
@@ -1131,7 +1131,7 @@ class smb(connection):
             dce.disconnect()
             return list()
 
-        self.logger.announce('Finished Checking Local Users')
+        #self.logger.announce('Finished Checking Local Users')
         dce.disconnect()
         return list()
         
@@ -1148,7 +1148,7 @@ class smb(connection):
 
         """
         groups = []
-        self.logger.announce('Checking Local Groups')
+        #self.logger.announce('Checking Local Groups')
 
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
@@ -1247,7 +1247,7 @@ class smb(connection):
                 dce.disconnect()
                 return list()
 
-        self.logger.announce('Finished Checking Local Groups')
+        #self.logger.announce('Finished Checking Local Groups')
         dce.disconnect()
         return list()
 
@@ -1263,7 +1263,8 @@ class smb(connection):
 
         """
         entries = []
-        self.logger.announce('Starting RID Brute')
+        #self.logger.announce('Starting RID Brute')
+        
         if not maxRid:
             maxRid = int(self.args.rid_brute)
 
@@ -1346,7 +1347,8 @@ class smb(connection):
             soFar += SIMULTANEOUS
 
         dce.disconnect()
-        self.logger.announce('Finished RID brute')
+
+        #self.logger.announce('Finished RID brute')
         return entries
 
 
@@ -1415,7 +1417,7 @@ class smb(connection):
         """
         temp_dir = ntpath.normpath("\\" + gen_random_string())
         permissions = []
-        self.logger.announce('Starting Share Enumeration')
+        #self.logger.announce('Starting Share Enumeration')
 
         try:
             for share in self.conn.listShares():
@@ -1458,7 +1460,7 @@ class smb(connection):
         except Exception as e:
             self.logger.error('Error enumerating shares: {}'.format(e))
 
-        self.logger.announce('Finished Share Enumeration')
+        #self.logger.announce('Finished Share Enumeration')
         return permissions
 
 
@@ -1490,7 +1492,7 @@ class smb(connection):
         if self.args.groups: targetGroup = self.args.groups
         groupFound = False
         groupLog = ''
-        self.logger.announce('Starting Domain Group Enum')
+        #self.logger.announce('Starting Domain Group Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
@@ -1595,7 +1597,7 @@ class smb(connection):
             write_log(str(groupLog), log_name)
             self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Domain Group Enum')
+        #self.logger.announce('Finished Domain Group Enum')
         return list()
 
 
@@ -1611,7 +1613,7 @@ class smb(connection):
 
         """
         users = ''
-        self.logger.announce('Starting Domain Users Enum')
+        #self.logger.announce('Starting Domain Users Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
@@ -1716,7 +1718,7 @@ class smb(connection):
             write_log(str(users), log_name)
             self.logger.announce("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Domain Users Enum')
+        #self.logger.announce('Finished Domain Users Enum')
         return list()
 
     @requires_dc
@@ -1731,7 +1733,7 @@ class smb(connection):
 
         """
         comps = ''
-        self.logger.announce('Starting Domain Computers Enum')
+        #self.logger.announce('Starting Domain Computers Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
@@ -1869,7 +1871,7 @@ class smb(connection):
             write_log(str(comps), log_name)
             self.logger.announce("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Domain Computer Enum')
+        #self.logger.announce('Finished Domain Computer Enum')
         return list()
 
 
@@ -1887,11 +1889,12 @@ class smb(connection):
         targetGroup = self.args.group
         groupFound = False
         groupLog = ''
+        
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
             return list()
 
-        self.logger.announce('Starting Domain Group Enum')
+        #self.logger.announce('Starting Domain Group Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
@@ -2016,7 +2019,7 @@ class smb(connection):
             write_log(str(groupLog), log_name)
             self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Group Enum')
+        #self.logger.announce('Finished Group Enum')
         return list()
 
 
@@ -2416,6 +2419,7 @@ class smb(connection):
         except Exception as e:
             self.logger.error('RemoteOperations failed: {}'.format(e))
 
+
     def get_dc_ips(self):
         """
         
@@ -2439,6 +2443,7 @@ class smb(connection):
                 dc_ips.append(self.args.domain.upper())
 
         return dc_ips
+
 
     def domainfromdsn(self, dsn):
         """
@@ -2508,6 +2513,8 @@ class smb(connection):
         print('')
 
         self.sessions()
+        time.sleep(1)
+
         self.loggedon()
         time.sleep(1)
 
@@ -2515,10 +2522,14 @@ class smb(connection):
         time.sleep(1)
 
         self.local_groups()
+        time.sleep(1)
+
         self.rid_brute(maxRid=4000)
         time.sleep(1)
 
         self.disks()
+        time.sleep(1)
+
         self.shares()
         time.sleep(1)
 
@@ -2535,14 +2546,10 @@ class smb(connection):
         self.group()
         time.sleep(1)
 
-        self.args.group = 'Domain Controllers'
-        self.group()
-        time.sleep(1)
-
         self.sam()
 
         print('')
-        self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
+        self.logger.announce("Did it work?")
 
 
     def hostrecon(self):
@@ -2563,21 +2570,27 @@ class smb(connection):
 
         self.sessions()
         time.sleep(1)
+        print('')
 
         self.loggedon()
         time.sleep(1)
+        print('')
 
         self.local_users()
         time.sleep(1)
+        print('')
 
         self.local_groups()
         time.sleep(1)
+        print('')
 
         self.rid_brute(maxRid=4000)
         time.sleep(1)
+        print('')
 
         self.disks()
         time.sleep(1)
+        print('')
 
         self.shares()
         time.sleep(1)
@@ -2605,16 +2618,20 @@ class smb(connection):
 
         self.users()
         time.sleep(1)
+        print('')
 
         self.groups()
         time.sleep(1)
+        print('')
 
         self.computers()
         time.sleep(1)
+        print('')
 
         self.args.group = 'Enterprise Admins'
         self.group()
         time.sleep(1)
+        print('')
 
         self.args.group = 'Domain Admins'
         self.group()
@@ -2642,38 +2659,49 @@ class smb(connection):
 
         self.sessions()
         time.sleep(1)
+        print('')
 
         self.loggedon()
         time.sleep(1)
+        print('')
 
         self.local_users()
         time.sleep(1)
+        print('')
 
         self.local_groups()
         time.sleep(1)
+        print('')
 
         self.rid_brute(maxRid=4000)
         time.sleep(1)
+        print('')
 
         self.disks()
         time.sleep(1)
+        print('')
 
         self.shares()
         time.sleep(1)
+        print('')
 
         self.users()
         time.sleep(1)
+        print('')
 
         self.groups()
         time.sleep(1)
+        print('')
 
         self.computers()
         time.sleep(1)
+        print('')
 
         self.args.group = 'Domain Admins'
         self.group()
         time.sleep(1)
-
+        print('')
+        
         self.args.group = 'Domain Controllers'
         self.group()
         time.sleep(1)
