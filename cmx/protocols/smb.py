@@ -1042,9 +1042,11 @@ class smb(connection):
             rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
+
             try:
                 logging.debug('net local users Binding start')
                 dce.bind(samr.MSRPC_UUID_SAMR)
+                
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
                     resp = samr.hSamrConnect(dce)  
@@ -1116,11 +1118,11 @@ class smb(connection):
                     dce.disconnect()
                     pass
             except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                logging.debug('b {}'.format(str(e)))
                 dce.disconnect()
                 pass
         except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+            logging.debug('c {}'.format(str(e)))
             dce.disconnect()
             return list()
 
@@ -1233,7 +1235,7 @@ class smb(connection):
                     dce.disconnect()
                     pass
             except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                logging.debug('b {}'.format(str(e)))
                 dce.disconnect()
                 pass
         except DCERPCException as e:
