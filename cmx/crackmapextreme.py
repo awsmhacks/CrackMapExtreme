@@ -39,7 +39,7 @@ def main():
     current_workspace = cfg.WORKSPACE
     hasPassList = False
 
-    if args.verbose:
+    if args.debug:
         setup_debug_logger()
 
     if args.darrell:
