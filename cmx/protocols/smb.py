@@ -166,6 +166,7 @@ class smb(connection):
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
         smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
         smb_parser.add_argument('--logs', action='store_true', help='Logs all results')
+        smb_parser.add_argument('-v', '--verbose', action='count', default=0, help=argparse.SUPPRESS)
 
         igroup = smb_parser.add_mutually_exclusive_group()
         igroup.add_argument("-i", '--interactive', action='store_true', help='Start an interactive command prompt')
