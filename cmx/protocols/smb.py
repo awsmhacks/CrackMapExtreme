@@ -881,7 +881,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.info('Attempting to enum disks...')
+        logging.info('Attempting to enum disks...')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
