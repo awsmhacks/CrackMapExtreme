@@ -130,7 +130,7 @@ def main():
             modules = loader.get_modules()
 
             for name, props in sorted(modules.items()):
-                logger.info('{:<25} {}'.format(name, props['description']))
+                logger.announce('{:<25} {}'.format(name, props['description']))
             sys.exit(0)
 
         elif args.module and args.show_module_options:
@@ -138,7 +138,7 @@ def main():
             modules = loader.get_modules()
             for name, props in modules.items():
                 if args.module.lower() == name.lower():
-                    logger.info('{} module options:\n{}'.format(name, props['options']))
+                    logger.announce('{} module options:\n{}'.format(name, props['options']))
             sys.exit(0)
 
         elif args.module:

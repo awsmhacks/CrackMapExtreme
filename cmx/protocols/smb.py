@@ -335,7 +335,7 @@ class smb(connection):
                     return 'fail'
 
         if hasattr(self, 'server'): self.server.track_host(self.host)
-        self.logger.info('Executing Command')
+        self.logger.announce('Executing Command')
 
         meth = 'wmiexec'
         if self.args.exec_method: 
@@ -886,7 +886,7 @@ class smb(connection):
                 dce.bind(srvs.MSRPC_UUID_SRVS)
                 try:
                     logging.debug('Get disks via hNetrServerDiskEnum...')
-                    #self.logger.info('Attempting to enum disks...')
+                    #self.logger.announce('Attempting to enum disks...')
                     resp = srvs.hNetrServerDiskEnum(dce, 0)  
                     self.logger.success('Disks enumerated on {} !'.format(self.host))
 
@@ -993,7 +993,7 @@ class smb(connection):
                 dce.bind(wkst.MSRPC_UUID_WKST)
                 try:
                     logging.debug('Get loggedonUsers via hNetrWkstaUserEnum...')
-                    #self.logger.info('Attempting to enum loggedon users...')
+                    #self.logger.announce('Attempting to enum loggedon users...')
                     resp = wkst.hNetrWkstaUserEnum(dce, 1)   # theres a version that takes 0, not sure the difference?
                     self.logger.success('Loggedon-Users enumerated on {} !'.format(self.host))
 
@@ -1357,7 +1357,7 @@ class smb(connection):
         self.logger.announce('Starting Spider')
         spider = SMBSpider(self.conn, self.logger)
 
-        self.logger.info('Started spidering')
+        self.logger.announce('Started spidering')
         start_time = time()
         if not share:
             spider.spider(self.args.spider, self.args.spider_folder, self.args.pattern,
@@ -1366,7 +1366,7 @@ class smb(connection):
         else:
             spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
 
-        self.logger.info("Done spidering (Completed in {})".format(time() - start_time))
+        self.logger.announce("Done spidering (Completed in {})".format(time() - start_time))
 
         self.logger.announce('Finished Spidering')
         return spider.results
@@ -1589,7 +1589,7 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Groups_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(groupLog), log_name)
-            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Domain Group Enum')
         return list()
@@ -1710,7 +1710,7 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Users_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(users), log_name)
-            self.logger.info("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Domain Users Enum')
         return list()
@@ -1863,7 +1863,7 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Computers_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(comps), log_name)
-            self.logger.info("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Domain Computer Enum')
         return list()
@@ -2010,7 +2010,7 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Members_of_{}_on_{}.log'.format(targetGroup, ctime)
             write_log(str(groupLog), log_name)
-            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         self.logger.announce('Finished Group Enum')
         return list()
@@ -2299,7 +2299,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.info("{}{} (domain:{}) (signing:{}) (SMBv:{})".format(self.server_os,
+        self.logger.announce("{}{} (domain:{}) (signing:{}) (SMBv:{})".format(self.server_os,
                                                                                       ' x{}'.format(self.os_arch) if self.os_arch else '',
                                                                                       self.domain,
                                                                                       self.signing,
