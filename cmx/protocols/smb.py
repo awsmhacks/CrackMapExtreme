@@ -92,7 +92,7 @@ def requires_smb_server(func):
 
                 # Need to calculate user/pass/hash thing here.
                 smb_server = CMXSMBServer(self.logger, smb_share_name,
-                                          verbose=self.args.verbose,
+                                          verbose=self.args.debug,
                                           username=self.args.username,
                                           password=self.args.password,
                                           computer=self.hostname)
