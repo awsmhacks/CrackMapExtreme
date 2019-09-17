@@ -301,7 +301,7 @@ class smb(connection):
             if method == 'wmiexec':
                 try:
                     exec_method = WMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
-                    logging.debug('Executed command via wmiexec')
+                    logging.announce('Executed command via wmiexec')
                     break
                 except:
                     logging.debug('Error executing command via wmiexec, traceback:')
@@ -311,7 +311,7 @@ class smb(connection):
             elif method == 'mmcexec':
                 try:
                     exec_method = MMCEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                    logging.debug('Executed command via mmcexec')
+                    logging.announce('Executed command via mmcexec')
                     break
                 except:
                     logging.debug('Error executing command via mmcexec, traceback:')
@@ -321,7 +321,7 @@ class smb(connection):
             elif method == 'atexec':
                 try:
                     exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
-                    logging.debug('Executed command via atexec')
+                    logging.announce('Executed command via atexec')
                     break
                 except:
                     logging.debug('Error executing command via atexec, traceback:')
@@ -331,7 +331,7 @@ class smb(connection):
             elif method == 'smbexec':
                 try:
                     exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-                    logging.debug('Executed command via smbexec')
+                    logging.announce('Executed command via smbexec')
                     break
                 except:
                     logging.debug('Error executing command via smbexec, traceback:')
@@ -339,7 +339,6 @@ class smb(connection):
                     return 'fail'
 
         if hasattr(self, 'server'): self.server.track_host(self.host)
-        self.logger.announce('Executing Command')
 
         meth = 'wmiexec'
         if self.args.exec_method: 
