@@ -301,7 +301,7 @@ class smb(connection):
             if method == 'wmiexec':
                 try:
                     exec_method = WMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
-                    logging.announce('Executed command via wmiexec')
+                    self.logger.announce('Executed command via wmiexec')
                     break
                 except:
                     logging.debug('Error executing command via wmiexec, traceback:')
@@ -311,7 +311,7 @@ class smb(connection):
             elif method == 'mmcexec':
                 try:
                     exec_method = MMCEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                    logging.announce('Executed command via mmcexec')
+                    self.logger.announce('Executed command via mmcexec')
                     break
                 except:
                     logging.debug('Error executing command via mmcexec, traceback:')
@@ -321,7 +321,7 @@ class smb(connection):
             elif method == 'atexec':
                 try:
                     exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
-                    logging.announce('Executed command via atexec')
+                    self.logger.announce('Executed command via atexec')
                     break
                 except:
                     logging.debug('Error executing command via atexec, traceback:')
@@ -331,7 +331,7 @@ class smb(connection):
             elif method == 'smbexec':
                 try:
                     exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-                    logging.announce('Executed command via smbexec')
+                    self.logger.announce('Executed command via smbexec')
                     break
                 except:
                     logging.debug('Error executing command via smbexec, traceback:')
