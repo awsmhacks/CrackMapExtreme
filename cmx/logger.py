@@ -209,7 +209,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
             pass
 
         msg, kwargs = self.process(u'{} {}'.format(colored("[+]", 'green', attrs=['bold']), msg), kwargs)
-        self.logger.announce(msg, *args, **kwargs)
+        self.logger.info(msg, *args, **kwargs)
 
 
     def announced(self, msg, *args, **kwargs):
