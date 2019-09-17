@@ -899,23 +899,23 @@ class smb(connection):
                         if disk['Disk'] != '\x00':
                             #self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
                             self.logger.highlight("Found Disk: {}\\ ".format(disk['Disk']))
-                    return list()
+                    return
 
                 except Exception as e: #failed function
                     logging.debug('a {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
                 logging.debug('b {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
             logging.debug('c {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         dce.disconnect()
-        return list()
+        return
 
 
     def sessions(self):
@@ -951,24 +951,24 @@ class smb(connection):
                         sourceIP = session['sesi10_cname'][:-1][2:]
                         #self.logger.results('User: {} has session originating from {}'.format(userName, sourceIP))
                         self.logger.highlight("{} has session originating from {} on {}".format(userName, sourceIP, self.host,))
-                    return list()
+                    return
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
                 logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
             logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         #self.logger.announce('Finished Session Enum')
         dce.disconnect()
-        return list()
+        return
 
 
     def loggedon(self):
@@ -1002,24 +1002,24 @@ class smb(connection):
                         #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
                         self.logger.highlight("{} is currently logged on {} ({})".format(wkst_username, self.host, self.hostname))
 
-                    return list()
+                    return
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
                 logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
             logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         #self.logger.announce('Finished checking for logged on users')
         dce.disconnect()
-        return list()
+        return
 
 
     def local_users(self):
@@ -1115,19 +1115,19 @@ class smb(connection):
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
                 logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
             logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         #self.logger.announce('Finished Checking Local Users')
         dce.disconnect()
-        return list()
+        return
         
 
     def local_groups(self):
@@ -1185,7 +1185,7 @@ class smb(connection):
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
                     self.logger.success('Local Groups enumerated on: {}'.format(self.host))
-                    self.logger.highlight("   Local Group Accounts")
+                    self.logger.highlight("        Local Group Accounts")
 
                     while status == STATUS_MORE_ENTRIES:
                         try:
@@ -1232,19 +1232,19 @@ class smb(connection):
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
                 logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
             logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         #self.logger.announce('Finished Checking Local Groups')
         dce.disconnect()
-        return list()
+        return
 
 
     def rid_brute(self, maxRid=None):
@@ -1306,7 +1306,8 @@ class smb(connection):
 
         soFar = 0
         SIMULTANEOUS = 1000
-        self.logger.highlight("   RID Information")
+        self.logger.success("RID's enumerated on: {}".format(self.host))
+        self.logger.highlight("         RID Information")
         for j in range(maxRid//SIMULTANEOUS+1):
             if (maxRid - soFar) // SIMULTANEOUS == 0:
                 sidsToCheck = (maxRid - soFar) % SIMULTANEOUS
@@ -1571,15 +1572,15 @@ class smb(connection):
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
                 logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
             logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         try:
             dce.disconnect()
@@ -1593,7 +1594,7 @@ class smb(connection):
             self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         #self.logger.announce('Finished Domain Group Enum')
-        return list()
+        return
 
 
     @requires_dc
