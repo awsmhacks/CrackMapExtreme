@@ -55,7 +55,7 @@ def gen_cli_args():
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
     parser.add_argument("--timeout", default=18, type=int, help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", action='store_true', help=argparse.SUPPRESS)
+    #parser.add_argument("--verbose", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--darrell", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--rekt", action='store_true', help=argparse.SUPPRESS)
 
@@ -91,7 +91,8 @@ def gen_cli_args():
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
-
+        
+    parser.add_argument('-v', '--verbose', action='count', default=0, help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     return args
