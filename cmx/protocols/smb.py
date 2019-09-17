@@ -902,21 +902,22 @@ class smb(connection):
                     return
 
                 except Exception as e: #failed function
-                    logging.debug('a {}'.format(str(e)))
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum disks, are you LocalAdmin?')
                     dce.disconnect()
                     return
             except Exception as e: #failed bind
-                logging.debug('b {}'.format(str(e)))
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
                 return
         except Exception as e: #failed connect
-            logging.debug('c {}'.format(str(e)))
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return
 
+        #self.logger.info('Finished disk enum')            
         dce.disconnect()
         return
-
 
     def sessions(self):
         """Enumerate sessions
@@ -1822,11 +1823,13 @@ class smb(connection):
                                 info.dump()
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
 
-                        print('')
 
+                        print('')
                         self.logger.success('Domain Computers enumerated')
                         self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
                         comps += '\nDomain Computers \n'
+
+
                         for user in respComps['Buffer']['Buffer']:
                             #workstations
                             r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
@@ -1851,8 +1854,8 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
 
 
-                        enumerationContext = resp['EnumerationContext'] 
-                        status = resp['ErrorCode']
+                        enumerationContext = respComps['EnumerationContext'] 
+                        status = respComps['ErrorCode']
 
                 except Exception as e: #failed function
                     logging.debug('failed function {}'.format(str(e)))
@@ -1989,9 +1992,8 @@ class smb(connection):
 
                         if groupFound == False:
                             self.logger.error("Specified group was not found")
-
-
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
+
 
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
