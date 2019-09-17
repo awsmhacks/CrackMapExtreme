@@ -164,7 +164,6 @@ class smb(connection):
         smb_parser.add_argument("-tgt", '--tgticket', metavar="TGT", dest='tgt', nargs='+', default=[], help='KerberosTGT')
         smb_parser.add_argument("-tgs", '--tgservice', metavar="TGS", dest='tgs', nargs='+', default=[], help='KerberosTGS')
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
-        smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
         smb_parser.add_argument('--logs', action='store_true', help='Logs all results')
         smb_parser.add_argument('-v', '--verbose', action='count', default=0, help='Set verbosity level up to 5, -v -vv -vvvvv')
 
@@ -229,6 +228,11 @@ class smb(connection):
         execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
 
+        supergroup = smb_parser.add_argument_group("Multi-execution Commands")
+        supergroup.add_argument("-netrecon", '--netrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        supergroup.add_argument("-hostrecon", '--hostrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        supergroup.add_argument("-recon", '--recon', action='store_true', help='Runs all recon commands')
+        supergroup.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
 
         return parser
 
@@ -1046,7 +1050,7 @@ class smb(connection):
             try:
                 logging.debug('net local users Binding start')
                 dce.bind(samr.MSRPC_UUID_SAMR)
-                
+
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
                     resp = samr.hSamrConnect(dce)  
@@ -1458,7 +1462,6 @@ class smb(connection):
         return permissions
 
 
-
     def pass_pol(self):
         """
         
@@ -1470,7 +1473,6 @@ class smb(connection):
 
         """
         return PassPolDump(self).dump()
-
 
 
     @requires_dc
@@ -2541,3 +2543,139 @@ class smb(connection):
 
         print('')
         self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
+
+
+    @requires_admin
+    def hostrecon(self):
+        """All Host Recon Commands
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+
+        print('')
+        self.logger.announce("Running All Host Recon Commands - sessions,loggedon,rid-brute,disks,local users, local groups")
+        print('')
+
+        self.sessions()
+        time.sleep(1)
+
+        self.loggedon()
+        time.sleep(1)
+
+        self.local_users()
+        time.sleep(1)
+
+        self.local_groups()
+        time.sleep(1)
+
+        self.rid_brute(maxRid=4000)
+        time.sleep(1)
+
+        self.disks()
+        time.sleep(1)
+
+        self.shares()
+        time.sleep(1)
+
+        print('')
+        self.logger.announce("Host Recon Complete")
+
+
+    @requires_dc
+    def netrecon(self):
+        """Running All Network Recon Commands
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+
+        print('')
+        self.logger.announce("Running All Network Recon Commands - domain users/groups/computers, DA's, DC's")
+        print('')
+
+        self.users()
+        time.sleep(1)
+
+        self.groups()
+        time.sleep(1)
+
+        self.computers()
+        time.sleep(1)
+
+        self.args.group = 'Domain Admins'
+        self.group()
+        time.sleep(1)
+
+        self.args.group = 'Domain Controllers'
+        self.group()
+        time.sleep(1)
+
+        print('')
+        self.logger.announce("Network Recon Complete")
+
+
+    @requires_dc
+    def recon(self):
+        """Running All Recon Commands
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+
+        print('')
+        self.logger.announce("Running sessions,loggedon,rid-brute,disks,shares,local+domain users/groups/computers")
+        print('')
+
+        self.sessions()
+        time.sleep(1)
+
+        self.loggedon()
+        time.sleep(1)
+
+        self.local_users()
+        time.sleep(1)
+
+        self.local_groups()
+        time.sleep(1)
+
+        self.rid_brute(maxRid=4000)
+        time.sleep(1)
+
+        self.disks()
+        time.sleep(1)
+
+        self.shares()
+        time.sleep(1)
+
+        self.users()
+        time.sleep(1)
+
+        self.groups()
+        time.sleep(1)
+
+        self.computers()
+        time.sleep(1)
+
+        self.args.group = 'Domain Admins'
+        self.group()
+        time.sleep(1)
+
+        self.args.group = 'Domain Controllers'
+        self.group()
+        time.sleep(1)
+
+        print('')
+        self.logger.announce("Total Recon Complete")
