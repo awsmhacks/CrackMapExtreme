@@ -236,7 +236,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         msg, kwargs = u'{:<19} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"), 
                                         colored(msg, 'yellow', attrs=['bold'])), kwargs
 
-        self.logger.announce(msg, *args, **kwargs)
+        self.logger.info(msg, *args, **kwargs)
 
 
     def highlight(self, msg, *args, **kwargs):
@@ -249,7 +249,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
             pass
 
         msg, kwargs = self.process(u'{}'.format(colored(msg, 'yellow', attrs=['bold'])), kwargs)
-        self.logger.announce(msg, *args, **kwargs)
+        self.logger.info(msg, *args, **kwargs)
 
     # For Impacket's TDS library
     def logMessage(self,message):
