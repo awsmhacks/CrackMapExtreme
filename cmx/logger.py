@@ -97,7 +97,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         DEBUG debug Msg
 
 
-    self.logger.announce("Info thing") 
+    self.logger.announce("Info thing")
     self.logger.error("Error thing")
     self.logger.debug("Debug thing")
     self.logger.success("Success thing")
@@ -120,8 +120,8 @@ class CMXLogAdapter(logging.LoggerAdapter):
             return u'{}'.format(msg), kwargs
 
         if 'module' in self.extra.keys():
-            if len(self.extra['module']) > 8:
-                self.extra['module'] = self.extra['module'][:8] + '...'
+            if len(self.extra['module']) > 5:
+                self.extra['module'] = self.extra['module'][:5] + '...'
 
         #If the logger is being called when hooking the 'options' module function
         if len(self.extra) == 1 and ('module' in self.extra.keys()):
@@ -145,7 +145,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         host_port = colored(self.extra['port'], 'white')
         host_name = colored(self.hostname, 'magenta')
 
-        return u'{:<19} {:<24} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
+        return u'{:<19} {:<21} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                                     module_name,
                                                     host_ip,
                                                     host_port,
