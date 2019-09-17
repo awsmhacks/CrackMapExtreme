@@ -881,7 +881,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Attempting to enum disks...')
+        self.logger.info('Attempting to enum disks...')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -2557,7 +2557,8 @@ class smb(connection):
         """
 
         print('')
-        self.logger.announce("Running All Host Recon Commands - sessions,loggedon,rid-brute,disks,local users, local groups")
+        self.logger.announce("Running All Host Recon Commands - ")
+        self.logger.announce("sessions,loggedon,rid-brute,disks,local users, local groups")
         print('')
 
         self.sessions()
@@ -2598,7 +2599,8 @@ class smb(connection):
         """
 
         print('')
-        self.logger.announce("Running All Network Recon Commands - domain users/groups/computers, DA's, DC's")
+        self.logger.announce("Running All Network Recon Commands -")
+        self.logger.announce("domain users/groups/computers, DA's, EA's")
         print('')
 
         self.users()
