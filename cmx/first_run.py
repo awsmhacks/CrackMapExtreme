@@ -16,8 +16,8 @@ def first_run_setup(logger):
         cfg.TMP_PATH.mkdir(parents=True, exist_ok=True)
 
     if not cfg.CMX_HOME.is_dir():
-        logger.info('First time use detected')
-        logger.info('Creating home directory structure. Files will be located in {}'.format(cfg.CMX_HOME))
+        logger.announce('First time use detected')
+        logger.announce('Creating home directory structure. Files will be located in {}'.format(cfg.CMX_HOME))
         cfg.CMX_HOME.mkdir(parents=True, exist_ok=True)
 
     folders = ['logs', 'modules', 'protocols', 'workspaces', 'obfuscated_scripts']
@@ -26,7 +26,7 @@ def first_run_setup(logger):
             (cfg.CMX_HOME / folder).mkdir(parents=True, exist_ok=True)
 
     if not (cfg.WS_PATH / 'default').is_dir():
-        logger.info('Creating default workspace')
+        logger.announce('Creating default workspace')
         (cfg.WS_PATH / 'default').mkdir(parents=True, exist_ok=True)
 
     p_loader = protocol_loader()
@@ -41,7 +41,7 @@ def first_run_setup(logger):
         proto_db_path = proto_db_path.with_suffix('.db')
 
         if not proto_db_path.is_file():
-            logger.info('Initializing {} protocol database'.format(protocol.upper()))
+            logger.announce('Initializing {} protocol database'.format(protocol.upper()))
             conn = sqlite3.connect(proto_db_path)
             c = conn.cursor()
 
@@ -56,7 +56,7 @@ def first_run_setup(logger):
             conn.close()
 
     if not cfg.CERT_PATH.is_file():
-        logger.info('Generating SSL certificate')
+        logger.announce('Generating SSL certificate')
         try:
             check_output(['openssl', 'help'], stderr=PIPE)
         except OSError as e:

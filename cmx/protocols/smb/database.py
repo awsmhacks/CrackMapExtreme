@@ -84,27 +84,30 @@ class database:
 
     #    cur.close()
 
-    def add_computer(self, ip, hostname, domain, os, dc=None):
+    def add_computer(self, ip=None, hostname='', domain=None, os='', dc='No'):
         """
         Check if this host has already been added to the database, if not add it in.
         """
-        domain = domain.split('.')[0].upper()
+        if domain: domain = domain.split('.')[0].upper()
         cur = self.conn.cursor()
 
-        cur.execute('SELECT * FROM computers WHERE ip LIKE ?', [ip])
+        cur.execute('SELECT * FROM computers WHERE hostname LIKE ?', [hostname])
         results = cur.fetchall()
 
         if not len(results):
             cur.execute("INSERT INTO computers (ip, hostname, domain, os, dc) VALUES (?,?,?,?,?)", [ip, hostname, domain, os, dc])
         else:
             for host in results:
-                if (hostname != host[2]) or (domain != host[3]) or (os != host[4]):
+                if (hostname != host[2]) or (domain != host[3]):
                     cur.execute("UPDATE computers SET hostname=?, domain=?, os=? WHERE id=?", [hostname, domain, os, host[0]])
                 if dc != None and (dc != host[5]):
                     cur.execute("UPDATE computers SET dc=? WHERE id=?", [dc, host[0]])
+                if os != '':
+                    cur.execute("UPDATE computers SET os=? WHERE id=?", [os, host[0]])
+                if ip != None and (ip != host[1]):
+                    cur.execute("UPDATE computers SET ip=? WHERE id=?", [ip, host[0]])
 
         cur.close()
-
         return cur.lastrowid
 
     def add_credential(self, credtype, domain, username, password, groupid=None, pillaged_from=None):

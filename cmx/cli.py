@@ -43,10 +43,10 @@ def gen_cli_args():
            epilog="""Usage: 
        cmx [--verbose] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
 
-       cmx winrm -h                     (Show <winrm> attacks and options)
        cmx smb -L                       (List of <smb> modules)
        cmx smb -M mimikatz --options    (List a particular module's options)
-       cmx --verbose smb 192.168.1.1 -u username -p password -M mimikatz
+       cmx smb 10.10.10.10 -u Administrator -p Password --recon
+       cmx -D smb 192.168.1.1 -u username -p password -M mimikatz
 
  *Check the /docs/ for detailed usage* 
 
@@ -55,8 +55,9 @@ def gen_cli_args():
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
     parser.add_argument("--timeout", default=18, type=int, help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("-D","--debug", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--darrell", action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("--rekt", action='store_true', help=argparse.SUPPRESS)
 
     subparsers = parser.add_subparsers(title='protocols', dest='protocol', help=argparse.SUPPRESS) #suppressing cause it looks cleaner. gonna have to hit the wiki for helps.
 

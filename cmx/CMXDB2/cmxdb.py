@@ -15,7 +15,7 @@ from cmx import config as cfg
 init()
 
 my_completer = WordCompleter(['back', 'help', 'smb', 'list', 'creds',
-                              'hosts', 'exit'], ignore_case=True)
+                              'hosts', 'users', 'exit'], ignore_case=True)
 
 
 genHelp = """Available Commands:
@@ -147,7 +147,7 @@ class CMXDB():
                     # otherwise return all credentials
                     else:
                         print(colored(pd.read_sql_query(
-                            "SELECT id, domain, username, password FROM users",
+                            "SELECT id, domain, username, password FROM users WHERE password IS NOT NULL AND password !='' ",
                             self.connection, index_col='id'), "green"))
                 except Exception as e:
                     print(repr(e))
@@ -157,6 +157,39 @@ class CMXDB():
         else:
             print('Not connected to a database yet')
 
+    def show_users(self, filterTerm=None, credType=None):
+
+        pd.set_option('display.max_colwidth', 68)
+        if self.connection:
+            with self.connection:
+                try:
+                        # if we're returning a single credential by ID
+                    if self.is_credential_valid(filterTerm):
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM users WHERE id=?", [filterTerm])))
+
+                    elif credType:
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM users WHERE credtype=?", [credType])))
+
+                    # if we're filtering by username
+                    elif filterTerm and filterTerm != '':
+                        print(colored(pd.read_sql_query(
+                            "SELECT * FROM users WHERE LOWER(username) "
+                            "LIKE LOWER(?)", ['%{}%'.format(filterTerm)])))
+
+                    # otherwise return all credentials
+                    else:
+                        print(colored(pd.read_sql_query(
+                            "SELECT id, domain, username FROM users",
+                            self.connection, index_col='id'), "green"))
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    # for result in results:
+                    print('')
+        else:
+            print('Not connected to a database yet')
 
     def show_hosts(self, filterTerm=None, credType=None):
 
@@ -241,6 +274,10 @@ class CMXDB():
 
         if command == 'creds':
             self.show_creds()
+            return
+
+        if command == 'users':
+            self.show_users()
             return
 
         if command == 'hosts':

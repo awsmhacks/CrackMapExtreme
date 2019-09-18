@@ -35,21 +35,32 @@ class CMXLogAdapter(logging.LoggerAdapter):
     This class is used as the logger for CMX. Extending the logging abilities with 
     colors and attributes(bold).
 
-    The following display regardless of --verbose:
-        info, error, success, results, announce, highlight.
-    Depending on the context a log function was called from, results may vary. Check the function definition for more info
+    The following display regardless of verbosity/debug:
+        info, error, success, results, highlight.
+    Depending on the context a log function was called from, results may vary. 
+    Check the function definition for more info
  
     info -      Used to display general output 
     error -     Used to display an error occured during execution over a connection
     success -   Used to display a successful authentication or connection
     highlight - Used to display results in yellow
-    announce -  Used to inform the user of an execution or action being launched 
     results -   Used for result outputs that have long lines
-    debug -     Used for debugging in --verbose mode
+
+
+    The following display depending on verbosity level -v, -vv, -v --verbose -vvvv:
+    v1 -  Used to inform the user of an execution or action being launched 
+    v2 -  entry and exit of functions
+    v3 -  variable values
+    v4 -  info overload / stack traces at exceptions
+
+
+    Debug only shows with -D or --debug enabled
+    debug -     Used for debugging in -D --debug mode
+
 
     Examples:
 
-    info - self.logger.info("Info Msg") 
+    announce - self.logger.announce("Info Msg") 
         Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  [*] Info Msg
 
     error - self.logger.error("Error Msg")
@@ -61,23 +72,35 @@ class CMXLogAdapter(logging.LoggerAdapter):
     highlight - self.logger.highlight("Highlight Msg")
         Aug.26.19 10:40:39  SMB   10.10.33.125:445   WIN10E  Highlight Msg
 
-    announce - self.logger.announce("Announce Msg")
-        Aug.26.19 10:33:02     [!] Announce Msg [!]
-
     results - self.logger.results("Results Msg")
         Aug.26.19 10:33:02  Results Msg
 
 
-    Debug only shows with --verbose enabled
+    v1 - self.logger.v1("Starting Function Execution Msg")
+        Aug.26.19 10:33:02     [!] Starting Function Execution Msg [!]
+
+    v2 - self.logger.v2("Entering Function Execution Msg")
+        Aug.26.19 10:33:02     [!!] Level 2 Function Execution Msg [!!]
+
+    v3 - self.logger.v3("Variable values Msg")
+        Aug.26.19 10:33:02     [!!!] Entering Function Execution Msg
+
+    v4 - self.logger.v4("Info dump")
+        Aug.26.19 10:33:02     [!!!!] Info dump
+
+
+
+    Debug only shows with -D or --debug enabled
+    Debug comes only after cmx ~~ i.e. "cmx -D smb 10.10.10.10 
+
     debug - self.logger.debug("debug Msg")
         DEBUG debug Msg
 
 
-    self.logger.info("Info thing") 
+    self.logger.announce("Info thing")
     self.logger.error("Error thing")
     self.logger.debug("Debug thing")
     self.logger.success("Success thing")
-    self.logger.announce("Announce thing")
     self.logger.results("Results thing")
     self.logger.highlight("Highlight thing")
 
@@ -91,13 +114,14 @@ class CMXLogAdapter(logging.LoggerAdapter):
         self.extra = extra
         self.hostname = ''
 
+
     def process(self, msg, kwargs):
         if self.extra is None:
             return u'{}'.format(msg), kwargs
 
         if 'module' in self.extra.keys():
-            if len(self.extra['module']) > 8:
-                self.extra['module'] = self.extra['module'][:8] + '...'
+            if len(self.extra['module']) > 5:
+                self.extra['module'] = self.extra['module'][:5] + '...'
 
         #If the logger is being called when hooking the 'options' module function
         if len(self.extra) == 1 and ('module' in self.extra.keys()):
@@ -109,25 +133,26 @@ class CMXLogAdapter(logging.LoggerAdapter):
                                                 colored(self.extra['module'], 'cyan', attrs=['bold']),
                                                 self.extra['host'], msg), kwargs
 
-        #If the logger is being called from a protocol
+        #If the logger is being called from a protocol, with or without a module
         if 'module' in self.extra.keys():
             module_name = colored(self.extra['module'], 'cyan', attrs=['bold'])
         else:
             module_name = colored(self.extra['protocol'], 'blue', attrs=['bold'])
      
         #Make it purdy
-        host_ip = colored(self.extra['host'], 'white') #colored adds 8chars before, 6chars after items - because hex
+        #reminder: colored adds 8chars before, 6chars after items - because hex
+        host_ip = colored(self.extra['host'], 'white') 
         host_port = colored(self.extra['port'], 'white')
         host_name = colored(self.hostname, 'magenta')
 
-        return u'{:<19} {:<24} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
+        return u'{:<19} {:<21} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                                     module_name,
                                                     host_ip,
                                                     host_port,
                                                     host_name,
                                                     msg), kwargs
 
-    def info(self, msg, *args, **kwargs):
+    def announce(self, msg, *args, **kwargs):
         """[*] Displays information to user
         
         If called from an operation inside a protocol ouputs 
@@ -146,6 +171,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         msg, kwargs = self.process(u'{} {}'.format(colored('[*]', 'blue', attrs=['bold']), msg), kwargs)
         self.logger.info(msg, *args, **kwargs)
 
+
     def error(self, msg, *args, **kwargs):
         """[-] Error messages that need to be relayed to a user due to failures
 
@@ -157,13 +183,15 @@ class CMXLogAdapter(logging.LoggerAdapter):
         msg, kwargs = self.process(u'{} {}'.format(colored('[-]', 'red', attrs=['bold']), msg), kwargs)
         self.logger.error(msg, *args, **kwargs)
 
+
     def debug(self, msg, *args, **kwargs):
-        """DEBUG debug messages only output during --verbose and prepend no special formatting
+        """DEBUG debug messages only output during -D or --debug and prepend no special formatting
         
         Called from anywhere
             DEBUG <msg>
         """
         pass
+
 
     def success(self, msg, *args, **kwargs):
         """[+] Success messages inform the user of a successful authentication 
@@ -183,7 +211,8 @@ class CMXLogAdapter(logging.LoggerAdapter):
         msg, kwargs = self.process(u'{} {}'.format(colored("[+]", 'green', attrs=['bold']), msg), kwargs)
         self.logger.info(msg, *args, **kwargs)
 
-    def announce(self, msg, *args, **kwargs):
+
+    def announced(self, msg, *args, **kwargs):
         """ [!] Announcements are broadcast statements informing the user of an operation start/complete
 
         Called from anywhere
@@ -195,7 +224,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
                                         colored(msg, 'green','on_grey'),
                                         colored("[!]", 'green', 'on_grey', attrs=['bold'])), kwargs
 
-        self.logger.info(msg, *args, **kwargs)
+        self.logger.announce(msg, *args, **kwargs)
 
     def results(self, msg, *args, **kwargs):
         """[!] Results are used for information returned from an operation that is to long for success
@@ -231,6 +260,8 @@ class CMXLogAdapter(logging.LoggerAdapter):
         CMXLogAdapter.message = ''
         return out
 
+
+
 def setup_debug_logger():
     debug_output_string = "{} %(message)s".format(colored('DEBUG', 'magenta', attrs=['bold']))
     formatter = logging.Formatter(debug_output_string)
@@ -243,6 +274,22 @@ def setup_debug_logger():
     #root_logger.addHandler(fileHandler)
     root_logger.setLevel(logging.DEBUG)
     return root_logger
+
+
+def setup_verbose_logger(loglevel=0):
+    debug_output_string = "{} %(message)s".format(colored('DEBUG', 'magenta', attrs=['bold']))
+    formatter = logging.Formatter(debug_output_string)
+    streamHandler = logging.StreamHandler(sys.stdout)
+    streamHandler.setFormatter(formatter)
+
+    root_logger = logging.getLogger()
+    root_logger.propagate = False
+    root_logger.addHandler(streamHandler)
+    #root_logger.addHandler(fileHandler)
+    root_logger.setLevel(logging.DEBUG)
+    return root_logger
+
+
 
 def setup_logger(level=logging.INFO, log_to_file=False, log_prefix=None, logger_name='CMX'):
 

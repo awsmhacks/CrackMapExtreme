@@ -92,7 +92,7 @@ def requires_smb_server(func):
 
                 # Need to calculate user/pass/hash thing here.
                 smb_server = CMXSMBServer(self.logger, smb_share_name,
-                                          verbose=self.args.verbose,
+                                          verbose=self.args.debug,
                                           username=self.args.username,
                                           password=self.args.password,
                                           computer=self.hostname)
@@ -151,7 +151,7 @@ class smb(connection):
         self.smbv = None
         self.signing = False
         self.smb_share_name = smb_share_name
-        self.debug = args.verbose
+        self.debug = args.debug
         self.dc_ip = args.domaincontroller
         self.domain_dns = None
 
@@ -164,8 +164,9 @@ class smb(connection):
         smb_parser.add_argument("-tgt", '--tgticket', metavar="TGT", dest='tgt', nargs='+', default=[], help='KerberosTGT')
         smb_parser.add_argument("-tgs", '--tgservice', metavar="TGS", dest='tgs', nargs='+', default=[], help='KerberosTGS')
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
-        smb_parser.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
         smb_parser.add_argument('--logs', action='store_true', help='Logs all results')
+        smb_parser.add_argument('-v', '--verbose', action='count', default=0, help='Set verbosity level up to 5, -v -vv -vvvvv')
+
         igroup = smb_parser.add_mutually_exclusive_group()
         igroup.add_argument("-i", '--interactive', action='store_true', help='Start an interactive command prompt')
         
@@ -187,6 +188,10 @@ class smb(connection):
         cgroup.add_argument("--ntds-history", action='store_true', help='Dump NTDS.dit password history - Can only be used with --ntds')
         cgroup.add_argument("--ntds-pwdLastSet", action='store_true', help='Shows the pwdLastSet attribute for each NTDS.dit account. Can only be used with --ntds')
         cgroup.add_argument("--ntds-status", action='store_true', help='Display the user status (enabled/disabled) - Can only be used with --ntds')
+
+        spraygroup = smb_parser.add_argument_group("Password Attacks", "Options for spraying credentials")
+        spraygroup.add_argument("--spray", nargs='?', const='', metavar='[PASSWORD]', help='Smart spray attack')
+        spraygroup.add_argument("--useraspass", action='store_true', help='Try usernames as passwords')
 
         egroup = smb_parser.add_argument_group("Mapping/Enumeration", "Options for Mapping/Enumerating")
         egroup.add_argument("--shares", action="store_true", help="Enumerate shares and access")
@@ -215,14 +220,19 @@ class smb(connection):
         sgroup.add_argument("--depth", type=int, default=None, help='max spider recursion depth (default: infinity & beyond)')
         sgroup.add_argument("--only-files", action='store_true', help='only spider files')
 
-        cgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
-        cgroup.add_argument('--exec-method', choices={"wmiexec", "mmcexec", "smbexec", "atexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
-        cgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
-        cgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
-        cegroup = cgroup.add_mutually_exclusive_group()
-        cegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
-        cegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
+        execgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
+        execgroup.add_argument('--exec-method', choices={"wmiexec", "mmcexec", "smbexec", "atexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
+        execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
+        execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
+        execegroup = execgroup.add_mutually_exclusive_group()
+        execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
+        execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
 
+        supergroup = smb_parser.add_argument_group("Multi-execution Commands")
+        supergroup.add_argument("-netrecon", '--netrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        supergroup.add_argument("-hostrecon", '--hostrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        supergroup.add_argument("-recon", '--recon', action='store_true', help='Runs all recon commands')
+        supergroup.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
 
         return parser
 
@@ -291,7 +301,7 @@ class smb(connection):
             if method == 'wmiexec':
                 try:
                     exec_method = WMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
-                    logging.debug('Executed command via wmiexec')
+                    self.logger.announce('Executed command via wmiexec')
                     break
                 except:
                     logging.debug('Error executing command via wmiexec, traceback:')
@@ -301,7 +311,7 @@ class smb(connection):
             elif method == 'mmcexec':
                 try:
                     exec_method = MMCEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                    logging.debug('Executed command via mmcexec')
+                    self.logger.announce('Executed command via mmcexec')
                     break
                 except:
                     logging.debug('Error executing command via mmcexec, traceback:')
@@ -311,7 +321,7 @@ class smb(connection):
             elif method == 'atexec':
                 try:
                     exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
-                    logging.debug('Executed command via atexec')
+                    self.logger.announce('Executed command via atexec')
                     break
                 except:
                     logging.debug('Error executing command via atexec, traceback:')
@@ -321,7 +331,7 @@ class smb(connection):
             elif method == 'smbexec':
                 try:
                     exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-                    logging.debug('Executed command via smbexec')
+                    self.logger.announce('Executed command via smbexec')
                     break
                 except:
                     logging.debug('Error executing command via smbexec, traceback:')
@@ -329,7 +339,6 @@ class smb(connection):
                     return 'fail'
 
         if hasattr(self, 'server'): self.server.track_host(self.host)
-        self.logger.info('Executing Command')
 
         meth = 'wmiexec'
         if self.args.exec_method: 
@@ -366,7 +375,6 @@ class smb(connection):
         if not payload and self.args.ps_execute:
             payload = self.args.ps_execute
             if not self.args.no_output: get_output = True
-        logging.debug("here and its {}".format(self.server_os))
 
         return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=False, server_os=self.server_os), get_output, methods)
 
@@ -421,6 +429,9 @@ class smb(connection):
     @requires_smb_server
     def interactive(self, payload=None, get_output=False, methods=None):
         self.logger.announce("Bout to get shellular")
+
+        if self.args.exec_method:
+            methods = [self.args.exec_method]
 
         if not methods:
             methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
@@ -744,6 +755,7 @@ class smb(connection):
                     raise e
 
 
+
 ###############################################################################
 
 #     # #######  #####  #######       ####### #     # #     # #     # 
@@ -791,12 +803,12 @@ class smb(connection):
             if "STATUS_ACCESS_DENIED" in str(e):
                 pass
 
-        self.domain     = self.conn.getServerDomain()    # OCEAN
-        self.hostname   = self.conn.getServerName()      # WIN7-PC
-        self.server_os  = self.conn.getServerOS()        # WIndows 6.1 Build 7601
-        self.signing    = self.conn.isSigningRequired()  # True/false
-        self.os_arch    = self.get_os_arch()             # 64
-        self.domain_dns = self.conn.getServerDNSDomainName()
+        self.domain     = self.conn.getServerDomain()           # OCEAN
+        self.hostname   = self.conn.getServerName()             # WIN7-PC
+        self.server_os  = self.conn.getServerOS()               # WIndows 6.1 Build 7601
+        self.signing    = self.conn.isSigningRequired()         # True/false
+        self.os_arch    = self.get_os_arch()                    # 64
+        self.domain_dns = self.conn.getServerDNSDomainName()    # ocean.depth
 
         self.logger.hostname = self.hostname   
         dialect = self.conn.getDialect()
@@ -841,6 +853,7 @@ class smb(connection):
 
         self.db.add_computer(self.host, self.hostname, self.domain, self.server_os)
 
+
         try:
             ''' DC's seem to want us to logoff first, windows workstations sometimes reset the connection
             '''
@@ -858,15 +871,16 @@ class smb(connection):
 
     def disks(self):
         """Enumerate disks
-        
-        Args:
+
+        *** This does require local admin i think. Made to return nothing if not admin.
+
             
         Raises:
             
         Returns:
 
         """
-        self.logger.announce('Attempting to enum disks...')
+        #self.logger.info('Attempting to enum disks...')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -876,35 +890,33 @@ class smb(connection):
                 dce.bind(srvs.MSRPC_UUID_SRVS)
                 try:
                     logging.debug('Get disks via hNetrServerDiskEnum...')
-                    #self.logger.info('Attempting to enum disks...')
+                    #self.logger.announce('Attempting to enum disks...')
                     resp = srvs.hNetrServerDiskEnum(dce, 0)  
                     self.logger.success('Disks enumerated on {} !'.format(self.host))
 
                     for disk in resp['DiskInfoStruct']['Buffer']:
                         if disk['Disk'] != '\x00':
                             #self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
-                            self.logger.highlight("Found Disk: {}:\\ ".format(disk['Disk']))
-                    return list()
+                            self.logger.highlight("Found Disk: {}\\ ".format(disk['Disk']))
+                    return
 
                 except Exception as e: #failed function
-                    logging.debug('a {}'.format(str(e)))
-                    #logging.debug('a')
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum disks, are you LocalAdmin?')
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
-                logging.debug('b {}'.format(str(e)))
-                #logging.debug('b')
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
-            logging.debug('c {}'.format(str(e)))
-            #logging.debug('c')
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
+        #self.logger.info('Finished disk enum')            
         dce.disconnect()
-        return list()
-
+        return
 
     def sessions(self):
         """Enumerate sessions
@@ -921,7 +933,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Starting Session Enum')
+        #self.logger.announce('Starting Session Enum')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -939,31 +951,30 @@ class smb(connection):
                         sourceIP = session['sesi10_cname'][:-1][2:]
                         #self.logger.results('User: {} has session originating from {}'.format(userName, sourceIP))
                         self.logger.highlight("{} has session originating from {} on {}".format(userName, sourceIP, self.host,))
-                    return list()
+                    return
 
                 except Exception as e: #failed function
-                    logging.debug('a {}'.format(str(e)))
-                    #logging.debug('a')
+                    logging.debug('failed function {}'.format(str(e)))
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
-                logging.debug('b {}'.format(str(e)))
-                #logging.debug('b')
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
-            logging.debug('c {}'.format(str(e)))
-            #logging.debug('c')
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
-        self.logger.announce('Finished Session Enum')
+            return
+
+        #self.logger.announce('Finished Session Enum')
         dce.disconnect()
-        return list()
+        return
 
 
     def loggedon(self):
         """
         
+        I think it requires localadmin, but handles if it doesnt work.
         Args:
             
         Raises:
@@ -973,7 +984,7 @@ class smb(connection):
         """
 
         loggedon = []
-        self.logger.announce('Checking for logged on users')
+        #self.logger.announce('Checking for logged on users')
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\wkssvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -983,7 +994,7 @@ class smb(connection):
                 dce.bind(wkst.MSRPC_UUID_WKST)
                 try:
                     logging.debug('Get loggedonUsers via hNetrWkstaUserEnum...')
-                    #self.logger.info('Attempting to enum loggedon users...')
+                    #self.logger.announce('Attempting to enum loggedon users...')
                     resp = wkst.hNetrWkstaUserEnum(dce, 1)   # theres a version that takes 0, not sure the difference?
                     self.logger.success('Loggedon-Users enumerated on {} !'.format(self.host))
 
@@ -992,26 +1003,25 @@ class smb(connection):
                         #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
                         self.logger.highlight("{} is currently logged on {} ({})".format(wkst_username, self.host, self.hostname))
 
-                    return list()
+                    return
 
                 except Exception as e: #failed function
-                    logging.debug('a {}'.format(str(e)))
-                    #logging.debug('a')
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Loggedon Users, are you localadmin?')
                     dce.disconnect()
-                    return list()
+                    return
             except Exception as e: #failed bind
-                logging.debug('b {}'.format(str(e)))
-                #logging.debug('b')
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                return list()
+                return
         except Exception as e: #failed connect
-            logging.debug('c {}'.format(str(e)))
-            #logging.debug('c')
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
-        self.logger.announce('Finished checking for logged on users')
+            return
+
+        #self.logger.announce('Finished checking for logged on users')
         dce.disconnect()
-        return list()
+        return
 
 
     def local_users(self):
@@ -1026,15 +1036,17 @@ class smb(connection):
 
         """
         users = []
-        self.logger.announce('Checking Local Users')
+        #self.logger.announce('Checking Local Users')
 
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
+
             try:
                 logging.debug('net local users Binding start')
                 dce.bind(samr.MSRPC_UUID_SAMR)
+
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
                     resp = samr.hSamrConnect(dce)  
@@ -1092,6 +1104,8 @@ class smb(connection):
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight("{}\\{:<15} :{} ".format(self.hostname, user['Name'], user['RelativeId']))
 
+                            self.db.add_user(self.hostname, user['Name'])
+
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
@@ -1099,24 +1113,25 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Local Users, are you localadmin?')
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
-        self.logger.announce('Finished Checking Local Users')
+        #self.logger.announce('Finished Checking Local Users')
         dce.disconnect()
-        return list()
+        return
         
-
 
     def local_groups(self):
         """
@@ -1130,7 +1145,7 @@ class smb(connection):
 
         """
         groups = []
-        self.logger.announce('Checking Local Groups')
+        #self.logger.announce('Checking Local Groups')
 
         try:
             rpctransport = transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
@@ -1173,7 +1188,7 @@ class smb(connection):
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
                     self.logger.success('Local Groups enumerated on: {}'.format(self.host))
-                    self.logger.highlight("   Local Group Accounts")
+                    self.logger.highlight("        Local Group Accounts")
 
                     while status == STATUS_MORE_ENTRIES:
                         try:
@@ -1216,22 +1231,24 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
-                    dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
-                dce.disconnect()
-                pass
-        except DCERPCException as e:
-                logging.debug('b {}'.format(str(e)))
-                dce.disconnect()
-                return list()
 
-        self.logger.announce('Finished Checking Local Groups')
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Local Groups, are you localadmin?')
+                    dce.disconnect()
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
+                dce.disconnect()
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
+            dce.disconnect()
+            return
+
+        #self.logger.announce('Finished Checking Local Groups')
         dce.disconnect()
-        return list()
+        return
 
 
     def rid_brute(self, maxRid=None):
@@ -1245,7 +1262,8 @@ class smb(connection):
 
         """
         entries = []
-        self.logger.announce('Starting RID Brute')
+        #self.logger.announce('Starting RID Brute')
+        
         if not maxRid:
             maxRid = int(self.args.rid_brute)
 
@@ -1292,7 +1310,8 @@ class smb(connection):
 
         soFar = 0
         SIMULTANEOUS = 1000
-        self.logger.highlight("   RID Information")
+        self.logger.success("RID's enumerated on: {}".format(self.host))
+        self.logger.highlight("         RID Information")
         for j in range(maxRid//SIMULTANEOUS+1):
             if (maxRid - soFar) // SIMULTANEOUS == 0:
                 sidsToCheck = (maxRid - soFar) % SIMULTANEOUS
@@ -1328,7 +1347,8 @@ class smb(connection):
             soFar += SIMULTANEOUS
 
         dce.disconnect()
-        self.logger.announce('Finished RID brute')
+
+        #self.logger.announce('Finished RID brute')
         return entries
 
 
@@ -1345,7 +1365,7 @@ class smb(connection):
         self.logger.announce('Starting Spider')
         spider = SMBSpider(self.conn, self.logger)
 
-        self.logger.info('Started spidering')
+        self.logger.announce('Started spidering')
         start_time = time()
         if not share:
             spider.spider(self.args.spider, self.args.spider_folder, self.args.pattern,
@@ -1354,7 +1374,7 @@ class smb(connection):
         else:
             spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
 
-        self.logger.info("Done spidering (Completed in {})".format(time() - start_time))
+        self.logger.announce("Done spidering (Completed in {})".format(time() - start_time))
 
         self.logger.announce('Finished Spidering')
         return spider.results
@@ -1397,7 +1417,7 @@ class smb(connection):
         """
         temp_dir = ntpath.normpath("\\" + gen_random_string())
         permissions = []
-        self.logger.announce('Starting Share Enumeration')
+        #self.logger.announce('Starting Share Enumeration')
 
         try:
             for share in self.conn.listShares():
@@ -1440,9 +1460,8 @@ class smb(connection):
         except Exception as e:
             self.logger.error('Error enumerating shares: {}'.format(e))
 
-        self.logger.announce('Finished Share Enumeration')
+        #self.logger.announce('Finished Share Enumeration')
         return permissions
-
 
 
     def pass_pol(self):
@@ -1456,7 +1475,6 @@ class smb(connection):
 
         """
         return PassPolDump(self).dump()
-
 
 
     @requires_dc
@@ -1474,7 +1492,7 @@ class smb(connection):
         if self.args.groups: targetGroup = self.args.groups
         groupFound = False
         groupLog = ''
-        self.logger.announce('Starting Domain Group Enum')
+        #self.logger.announce('Starting Domain Group Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
@@ -1555,18 +1573,19 @@ class smb(connection):
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Groups')
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         try:
             dce.disconnect()
@@ -1577,10 +1596,10 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Groups_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(groupLog), log_name)
-            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Domain Group Enum')
-        return list()
+        #self.logger.announce('Finished Domain Group Enum')
+        return
 
 
     @requires_dc
@@ -1595,7 +1614,7 @@ class smb(connection):
 
         """
         users = ''
-        self.logger.announce('Starting Domain Users Enum')
+        #self.logger.announce('Starting Domain Users Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
@@ -1665,6 +1684,8 @@ class smb(connection):
                             self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
                             users += '{}\\{:<20}  rid: {}\n'.format(tmpdomain, user['Name'], user['RelativeId'])
 
+                            self.db.add_user(self.domain, user['Name'])
+
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'], samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
@@ -1674,16 +1695,17 @@ class smb(connection):
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Users')
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return list()
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return list()
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
             return list()
 
@@ -1696,9 +1718,9 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Users_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(users), log_name)
-            self.logger.info("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Domain Users Enum')
+        #self.logger.announce('Finished Domain Users Enum')
         return list()
 
     @requires_dc
@@ -1713,7 +1735,7 @@ class smb(connection):
 
         """
         comps = ''
-        self.logger.announce('Starting Domain Computers Enum')
+        #self.logger.announce('Starting Domain Computers Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
@@ -1791,17 +1813,22 @@ class smb(connection):
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                             comps += '{:<23} rid: {} \n'.format(user['Name'], user['RelativeId'])
 
+                            #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
+                            self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain, dc='Yes')
+
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
                                 info.dump()
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
 
-                        print('')
 
+                        print('')
                         self.logger.success('Domain Computers enumerated')
                         self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
                         comps += '\nDomain Computers \n'
+
+
                         for user in respComps['Buffer']['Buffer']:
                             #workstations
                             r = samr.hSamrOpenUser(dce, domainHandle, samr.MAXIMUM_ALLOWED, user['RelativeId'])
@@ -1815,6 +1842,10 @@ class smb(connection):
                             #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
                             comps += '{:<23} rid: {}\n'.format(user['Name'], user['RelativeId'])
+
+                            #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
+                            self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain)
+
                             info = samr.hSamrQueryInformationUser2(dce, r['UserHandle'],samr.USER_INFORMATION_CLASS.UserAllInformation)
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
@@ -1822,30 +1853,31 @@ class smb(connection):
                             samr.hSamrCloseHandle(dce, r['UserHandle'])
 
 
-                        enumerationContext = resp['EnumerationContext'] 
-                        status = resp['ErrorCode']
+                        enumerationContext = respComps['EnumerationContext'] 
+                        status = respComps['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Computers')
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         if self.args.logs:
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Domain_Computers_of_{}_on_{}.log'.format(tmpdomain, ctime)
             write_log(str(comps), log_name)
-            self.logger.info("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Domain Computer Enum')
-        return list()
+        #self.logger.announce('Finished Domain Computer Enum')
+        return
 
 
     @requires_dc
@@ -1862,11 +1894,12 @@ class smb(connection):
         targetGroup = self.args.group
         groupFound = False
         groupLog = ''
+        
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
             return list()
 
-        self.logger.announce('Starting Domain Group Enum')
+        #self.logger.announce('Starting Domain Group Enum')
 
         try:
             rpctransport = transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
@@ -1907,8 +1940,6 @@ class smb(connection):
 
                     status = STATUS_MORE_ENTRIES
                     enumerationContext = 0
-
-                    self.logger.success('Domain Groups enumerated')
 
                     while status == STATUS_MORE_ENTRIES:
                         try:
@@ -1960,25 +1991,25 @@ class smb(connection):
 
                         if groupFound == False:
                             self.logger.error("Specified group was not found")
-
-
                             samr.hSamrCloseHandle(dce, r['GroupHandle'])
+
 
                         enumerationContext = resp['EnumerationContext'] 
                         status = resp['ErrorCode']
 
-                except Exception as e:
-                    logging.debug('a {}'.format(str(e)))
+                except Exception as e: #failed function
+                    logging.debug('failed function {}'.format(str(e)))
+                    self.logger.error('Failed to enum Domain Groups')
                     dce.disconnect()
-                    pass
-            except DCERPCException:
-                logging.debug('a {}'.format(str(e)))
+                    return
+            except Exception as e: #failed bind
+                logging.debug('failed bind {}'.format(str(e)))
                 dce.disconnect()
-                pass
-        except DCERPCException as e:
-            logging.debug('b {}'.format(str(e)))
+                return
+        except Exception as e: #failed connect
+            logging.debug('failed connect {}'.format(str(e)))
             dce.disconnect()
-            return list()
+            return
 
         try:
             dce.disconnect()
@@ -1989,10 +2020,10 @@ class smb(connection):
             ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
             log_name = 'Members_of_{}_on_{}.log'.format(targetGroup, ctime)
             write_log(str(groupLog), log_name)
-            self.logger.info("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+            self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
-        self.logger.announce('Finished Group Enum')
-        return list()
+        #self.logger.announce('Finished Group Enum')
+        return
 
 
 
@@ -2278,7 +2309,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.info("{}{} (domain:{}) (signing:{}) (SMBv:{})".format(self.server_os,
+        self.logger.announce("{}{} (domain:{}) (signing:{}) (SMBv:{})".format(self.server_os,
                                                                                       ' x{}'.format(self.os_arch) if self.os_arch else '',
                                                                                       self.domain,
                                                                                       self.signing,
@@ -2391,6 +2422,7 @@ class smb(connection):
         except Exception as e:
             self.logger.error('RemoteOperations failed: {}'.format(e))
 
+
     def get_dc_ips(self):
         """
         
@@ -2414,6 +2446,7 @@ class smb(connection):
                 dc_ips.append(self.args.domain.upper())
 
         return dc_ips
+
 
     def domainfromdsn(self, dsn):
         """
@@ -2483,6 +2516,8 @@ class smb(connection):
         print('')
 
         self.sessions()
+        time.sleep(1)
+
         self.loggedon()
         time.sleep(1)
 
@@ -2490,10 +2525,14 @@ class smb(connection):
         time.sleep(1)
 
         self.local_groups()
+        time.sleep(1)
+
         self.rid_brute(maxRid=4000)
         time.sleep(1)
 
         self.disks()
+        time.sleep(1)
+
         self.shares()
         time.sleep(1)
 
@@ -2510,11 +2549,166 @@ class smb(connection):
         self.group()
         time.sleep(1)
 
+        self.sam()
+
+        print('')
+        self.logger.announce("Did it work?")
+
+
+    def hostrecon(self):
+        """All Host Recon Commands
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+
+        print('')
+        self.logger.announce("Running All Host Recon Commands - ")
+        self.logger.announce("sessions,loggedon,rid-brute,disks,local users, local groups")
+        print('')
+
+        self.sessions()
+        time.sleep(1)
+        print('')
+
+        self.loggedon()
+        time.sleep(1)
+        print('')
+
+        self.local_users()
+        time.sleep(1)
+        print('')
+
+        self.local_groups()
+        time.sleep(1)
+        print('')
+
+        self.rid_brute(maxRid=4000)
+        time.sleep(1)
+        print('')
+
+        self.disks()
+        time.sleep(1)
+        print('')
+
+        self.shares()
+        time.sleep(1)
+
+        print('')
+        self.logger.announce("Host Recon Complete")
+
+
+    @requires_dc
+    def netrecon(self):
+        """Running All Network Recon Commands
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+
+        print('')
+        self.logger.announce("Running All Network Recon Commands -")
+        self.logger.announce("domain users/groups/computers, DA's, EA's")
+        print('')
+
+        self.users()
+        time.sleep(1)
+        print('')
+
+        self.groups()
+        time.sleep(1)
+        print('')
+
+        self.computers()
+        time.sleep(1)
+        print('')
+
+        self.args.group = 'Enterprise Admins'
+        self.group()
+        time.sleep(1)
+        print('')
+
+        self.args.group = 'Domain Admins'
+        self.group()
+        time.sleep(1)
+
+        print('')
+        self.logger.announce("Network Recon Complete, the DB is now populated")
+
+
+    @requires_dc
+    def recon(self):
+        """Running All Recon Commands
+        
+        Args:
+            
+        Raises:
+            
+        Returns:
+
+        """
+
+        print('')
+        self.logger.announce("Running Host and Network Recon Commands: ")
+        self.logger.announce("sessions,loggedon,ridbrute,disks,shares,local+dom users/groups/computers")
+        print('')
+
+        self.sessions()
+        time.sleep(1)
+        print('')
+
+        self.loggedon()
+        time.sleep(1)
+        print('')
+
+        self.local_users()
+        time.sleep(1)
+        print('')
+
+        self.local_groups()
+        time.sleep(1)
+        print('')
+
+        self.rid_brute(maxRid=4000)
+        time.sleep(1)
+        print('')
+
+        self.disks()
+        time.sleep(1)
+        print('')
+
+        self.shares()
+        time.sleep(1)
+        print('')
+
+        self.users()
+        time.sleep(1)
+        print('')
+
+        self.groups()
+        time.sleep(1)
+        print('')
+
+        self.computers()
+        time.sleep(1)
+        print('')
+
+        self.args.group = 'Domain Admins'
+        self.group()
+        time.sleep(1)
+        print('')
+
         self.args.group = 'Domain Controllers'
         self.group()
         time.sleep(1)
 
-        self.sam()
-
         print('')
-        self.logger.announce("HACKED HACKED HACKED HACKED HACKED HACKED HACKED HACKED")
+        self.logger.announce("Host + Network Recon Complete, the DB is now populated")

