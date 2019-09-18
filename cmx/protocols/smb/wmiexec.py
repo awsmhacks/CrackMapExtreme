@@ -131,7 +131,7 @@ class WMIEXEC:
     def execute_handler(self, data):
         if self.__retOutput:
             #self.disable_notifications()
-            self.disable_defender()
+            #self.disable_defender()
             try:
                 self.execute_fileless(data)
             except:
