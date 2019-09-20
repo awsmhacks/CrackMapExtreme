@@ -205,7 +205,7 @@ def gen_ps_iex_cradle(context, scripts, command=str(), post_back=True, server_os
     #else:
     #    launcher += "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Ssl3,Tls'\n"
 
-    launcher += "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Ssl3,Tls'\n"
+    launcher += "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls'\n"
 
 
     if type(scripts) is str:
