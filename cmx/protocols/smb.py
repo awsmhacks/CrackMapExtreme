@@ -466,6 +466,8 @@ class smb(connection):
                 records.append(record)
                 
                 for k,v in record.items():
+                    print (k['value'])
+                    print (v['value'])
                     returnedIndex.append(k,v['value'])
 
             except Exception as e:
