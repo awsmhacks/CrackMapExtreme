@@ -466,10 +466,9 @@ class smb(connection):
                 records.append(record)
                 
                 for k,v in record.items():
-                    print (k['value'])
-                    print (v['value'])
+                    print ((k,v['value']))
                     pdb.set_trace()
-                    returnedIndex.append(k,v['value'])
+                    returnedIndex.append((k,v['value']))
 
             except Exception as e:
                 if str(e).find('S_FALSE') < 0:
