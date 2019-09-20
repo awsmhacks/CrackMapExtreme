@@ -468,6 +468,7 @@ class smb(connection):
                 for k,v in record.items():
                     print (k['value'])
                     print (v['value'])
+                    pdb.set_trace()
                     returnedIndex.append(k,v['value'])
 
             except Exception as e:
