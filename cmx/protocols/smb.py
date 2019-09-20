@@ -207,6 +207,7 @@ class smb(connection):
         egroup.add_argument("--pass-pol", action='store_true', help='dump password policy')
         egroup.add_argument("--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='Enumerate users by bruteforcing RID\'s (default: 4000)')
         egroup.add_argument("--wmi", metavar='QUERY', type=str, help='issues the specified WMI query')
+        egroup.add_argument("--dualhome", action="store_true", help='check for dual home')
         egroup.add_argument("--wmi-namespace", metavar='NAMESPACE', default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
 
         sgroup = smb_parser.add_argument_group("Spidering", "Options for spidering shares")
@@ -390,7 +391,7 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Executing query:"{}" over wmi...'.format(str(wmi_query)))
+        self.logger.announce('Executing query:"{}" over wmi...'.format(str(self.args.wmi)))
         records = []
         if not namespace:
             namespace = self.args.wmi_namespace
@@ -420,6 +421,85 @@ class smb(connection):
                     raise e
                 else:
                     break
+
+        return records
+
+    @requires_admin
+    def dualhome(self, wmi_query=None, namespace=None):
+        """Execute via WMI
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        #self.logger.announce('Checking for dual homed networks')
+        records = []
+        records2 = []
+        returnedIndex = []
+        results = []
+
+        if not namespace:
+            namespace = self.args.wmi_namespace
+
+        getCons = 'select index from win32_networkAdapter where netconnectionstatus = 2'
+        #getIPs = 'select DNSDomainSuffixSearchOrder, IPAddress from win32_networkadapterconfiguration where index = {}'.format()
+
+        try:
+            rpc = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
+            rpc._create_wmi_connection(namespace=namespace)
+
+
+            query = rpc._wmi_connection.ExecQuery(getCons, lFlags=WBEM_FLAG_FORWARD_ONLY)
+
+        except Exception as e:
+            self.logger.error('Error creating WMI connection: {}'.format(e))
+            return records
+
+
+        while True:
+            try:
+                wmi_results = query.Next(0xffffffff, 1)[0]
+                record = wmi_results.getProperties()
+                records.append(record)
+                
+                for k,v in record.items():
+                    returnedIndex.append(k,v['value'])
+
+            except Exception as e:
+                if str(e).find('S_FALSE') < 0:
+                    raise e
+                else:
+                    break
+        
+        try:
+            for index in returnedIndex:
+                indy = index.split('> ')
+                results.append(rpc._wmi_connection.ExecQuery(indy, lFlags=WBEM_FLAG_FORWARD_ONLY))
+            
+            except Exception as e:
+                self.logger.error('Error creating WMI connection: {}'.format(e))
+                return records
+
+
+        for result in results:
+            while True:
+                try:
+                    wmi_results = result.Next(0xffffffff, 1)[0]
+                    record2 = wmi_results.getProperties()
+                    records2.append(record2)
+                    
+                    for k,v in record2.items():
+                        self.logger.highlight('{} => {}'.format(k,v['value']))
+                    self.logger.highlight('')
+
+                except Exception as e:
+                    if str(e).find('S_FALSE') < 0:
+                        raise e
+                    else:
+                        break
 
         return records
 
@@ -2197,6 +2277,7 @@ class smb(connection):
         add_ntds_hash.ntds_hashes = 0
         add_ntds_hash.added_to_db = 0
 
+
         if self.remote_ops and self.bootkey:
             try:
                 if self.args.ntds is 'vss':
@@ -2209,7 +2290,8 @@ class smb(connection):
                                  justUser=None, printUserStatus=self.args.ntds_status,
                                  perSecretCallback = lambda secretType, secret : add_ntds_hash(secret, host_id))
 
-                self.logger.success('Dumping the NTDS, this could take a while so go grab a redbull...')
+                self.logger.success('Starting NTDS Dump, prepare yourself')
+
                 NTDS.dump()
 
                 self.logger.success('Dumped {} NTDS hashes to {} of which {} were added to the database'.format(highlight(add_ntds_hash.ntds_hashes), self.output_filename + '.ntds',
