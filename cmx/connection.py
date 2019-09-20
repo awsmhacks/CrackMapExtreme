@@ -207,7 +207,7 @@ class connection(object):
                                     ntlm_hash.seek(0)
 
 
-        elif isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
+        elif self.args.password and isinstance(self.args.password[0], IOBase) and isinstance(self.args.username[0], IOBase):
         # If we get a list of usernames AND passwords
         # we want to loop through each user and try the password
             for password in self.args.password:
