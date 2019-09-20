@@ -61,7 +61,7 @@ class CMXServer(threading.Thread):
             logging.debug('CMX server type: ' + server_type)
             if server_type == 'https':
                 context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-                self.server.socket = ssl.wrap_socket(self.server.socket, certfile=cfg.CERT_PATH, keyfile=cfg.KEY_PATH, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1)
+                self.server.socket = ssl.wrap_socket(self.server.socket, certfile=cfg.CERT_PATH, keyfile=cfg.KEY_PATH, server_side=True, ssl_version=ssl.PROTOCOL_TLS)
 
 
         except Exception as e:
