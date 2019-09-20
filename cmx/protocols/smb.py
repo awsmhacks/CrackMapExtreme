@@ -424,6 +424,7 @@ class smb(connection):
 
         return records
 
+
     @requires_admin
     def dualhome(self, wmi_query=None, namespace=None):
         """Execute via WMI
