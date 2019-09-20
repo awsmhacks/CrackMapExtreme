@@ -479,9 +479,9 @@ class smb(connection):
                 indy = index.split('> ')
                 results.append(rpc._wmi_connection.ExecQuery(indy, lFlags=WBEM_FLAG_FORWARD_ONLY))
             
-            except Exception as e:
-                self.logger.error('Error creating WMI connection: {}'.format(e))
-                return records
+        except Exception as e:
+            self.logger.error('Error creating WMI connection: {}'.format(e))
+            return records
 
 
         for result in results:
