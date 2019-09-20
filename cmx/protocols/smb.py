@@ -466,9 +466,7 @@ class smb(connection):
                 records.append(record)
                 
                 for k,v in record.items():
-                    print ((k,v['value']))
-                    pdb.set_trace()
-                    returnedIndex.append((k,v['value']))
+                    returnedIndex.append(v['value'])
 
             except Exception as e:
                 if str(e).find('S_FALSE') < 0:
@@ -478,8 +476,8 @@ class smb(connection):
         
         try:
             for index in returnedIndex:
-                indy = index.split('> ')
-                results.append(rpc._wmi_connection.ExecQuery(indy, lFlags=WBEM_FLAG_FORWARD_ONLY))
+                queryStr = 'select DNSDomainSuffixSearchOrder, IPAddress from win32_networkadapterconfiguration where index = {}'.format(index) 
+                results.append(rpc._wmi_connection.ExecQuery(queryStr, lFlags=WBEM_FLAG_FORWARD_ONLY))
             
         except Exception as e:
             self.logger.error('Error creating WMI connection: {}'.format(e))
