@@ -54,7 +54,7 @@ def gen_cli_args():
            add_help=False, usage=argparse.SUPPRESS)
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
-    parser.add_argument("--timeout", default=18, help=argparse.SUPPRESS)
+    parser.add_argument("--timeout", default=18, type=int, help=argparse.SUPPRESS)
     parser.add_argument("-D","--debug", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--darrell", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--rekt", action='store_true', help=argparse.SUPPRESS)
