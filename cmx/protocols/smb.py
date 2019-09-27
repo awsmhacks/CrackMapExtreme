@@ -864,7 +864,7 @@ class smb(connection):
         class Ops:
             def __init__(self, action='LIST'):
                 self.action = action
-                self.name = 'Server'
+                self.name = 'LanmanServer'
                 self.aesKey = None
                 self.k = False
                 self.dc_ip = dcip 
