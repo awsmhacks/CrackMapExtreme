@@ -359,18 +359,34 @@ class RegHandler:
             return
 
         try:
-            dataType, uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
+            dataType, lua_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
             return
 
-        if uac_value == 1:
+        try:
+            dataType, latfp_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
+            return
+
+        self.logger.highlight('UAC Status:')
+        if lua_uac_value == 1:
             #print('enableLua = 1')
-            self.logger.highlight('enableLua = 1')
-            return 
-        elif uac_value == 0:
+            self.logger.highlight('enableLua = 1') 
+        elif lua_uac_value == 0:
             #print('enableLua = 0')
             self.logger.highlight('enableLua = 0')
-            return
+        else:
+            self.logger.highlight('No value for enableLua')
+
+        if latfp_uac_value == 1:
+            #print('enableLua = 1')
+            self.logger.highlight('LocalAccountTokenFilterPolicy = 1') 
+        elif latfp_uac_value == 0:
+            #print('enableLua = 0')
+            self.logger.highlight('LocalAccountTokenFilterPolicy = 0')
+        else:
+            self.logger.highlight('No value for LocalAccountTokenFilterPolicy')
 
 
