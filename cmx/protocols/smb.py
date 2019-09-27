@@ -881,7 +881,8 @@ class smb(connection):
             services.run(self.host, self.host)
 
         except Exception as e:
-            self.logger.error('Error on stop connection: {}'.format(e))
+            self.logger.debug('Error on stop connection: {}'.format(e))
+            self.logger.success('LanmanServer restarted! Wait a few seconds for the restart to occur')
             pass 
 
         return
