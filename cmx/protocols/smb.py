@@ -25,6 +25,7 @@ from cmx.protocols.smb.mmcexec import MMCEXEC
 from cmx.protocols.smb.smbspider import SMBSpider
 from cmx.protocols.smb.passpol import PassPolDump
 from cmx.protocols.smb.reg import RegHandler
+from cmx.protocols.smb.services import SVCCTL
 from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.powershell import create_ps_command
@@ -239,7 +240,11 @@ class smb(connection):
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
-        #reggroup.add_argument("-reg-query", '--reg-query', action='store_true', help='Pulls a registry key value')
+
+        servicegroup = smb_parser.add_argument_group("Interact with Services")
+        servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='Check Remote UAC Status')
+        servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Check Remote UAC Status')
+        
 
 
         return parser
@@ -733,8 +738,8 @@ class smb(connection):
 #   Registry functions
 #
 # This section:
-#   
-#   
+#   uac
+#   uac_status
 #   
 #
 ###############################################################################
@@ -777,6 +782,12 @@ class smb(connection):
         except Exception as e:
             self.logger.error('Error creating/running regHandler connection: {}'.format(e))
             return 
+        
+        #try:
+        #    restart_uac()
+        #except Exception as e:
+        #    self.logger.error('Error restarting Server Service: {}'.format(e))
+        #    return 
 
         return
 
@@ -816,6 +827,103 @@ class smb(connection):
             return 
 
         return
+
+
+###############################################################################
+
+         #####  ####### ######  #     # ###  #####  #######  #####  
+        #     # #       #     # #     #  #  #     # #       #     # 
+        #       #       #     # #     #  #  #       #       #       
+         #####  #####   ######  #     #  #  #       #####    #####  
+              # #       #   #    #   #   #  #       #             # 
+        #     # #       #    #    # #    #  #     # #       #     # 
+         #####  ####### #     #    #    ###  #####  #######  #####  
+
+###############################################################################                                                       
+###############################################################################
+#   Do stuff with services 
+#
+# This section:
+#   wmi
+#   dualhome
+#   
+#
+###############################################################################
+
+    def stop_service(self):
+        """Restarts server service
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        
+        #self.logger.announce('')
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self, action='LIST'):
+                self.action = action
+                self.name = 'LanmanServer'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
+
+
+        stopOptions = Ops(action='STOP')
+        try:
+            services = SVCCTL(self.username, self.password, self.domain, self.logger, stopOptions)
+            services.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.debug('Error on stop connection: {}'.format(e))
+            self.logger.success('LanmanServer restarted! Wait a few seconds for the restart to occur')
+            pass 
+
+        return
+
+
+    def start_service(self):
+        """Restarts server service
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        
+        #self.logger.announce('')
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self, action='LIST'):
+                self.action = action
+                self.name = 'LanmanServer'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
+
+        startOptions = Ops(action='START')
+        try:
+            services = SVCCTL(self.username, self.password, self.domain, self.logger, startOptions)
+            services.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error on start connection: {}'.format(e))
+            return 
+
+        return
+
+
 
 
 ###############################################################################
