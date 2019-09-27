@@ -174,6 +174,8 @@ class RegHandler:
                 self.query(dce, self.__options.keyName)
             elif self.__action == 'ENABLEUAC':
                 self.enableUAC(dce)
+            elif self.__action == 'CHECKUAC':
+                self.checkUAC(dce)
             else:
                 logging.error('Method %s not implemented yet!' % self.__action)
 
@@ -315,15 +317,56 @@ class RegHandler:
             logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
             return
 
+
         try:
             resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
-            phKey = resp['phkResult']
+            keyHandle = resp['phkResult']
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
             return
 
+        # EnableLUA
         try:
-            resp = rrp.hBaseRegSetValue(dce, phKey, 'EnableLUA\x00',  rrp.REG_DWORD, 1)
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'EnableLUA\x00',  rrp.REG_DWORD, 1)
         except Exception as e:
-            logging.debug('Exception thrown when hBaseRegSetValue: %s', str(e))
+            logging.debug('Exception thrown when hBaseRegSetValue EnableLUA: %s', str(e))
             return
+
+        # LocalAccountTokenFilterPolicy
+        try:
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy\x00',  rrp.REG_DWORD, 1)
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegSetValue LocalAccountTokenFilterPolicy: %s', str(e))
+            return
+
+
+    def checkUAC(self, dce):
+        # 
+        try:
+            ans = rrp.hOpenLocalMachine(dce)
+            regHandle  = ans['phKey']
+        except Exception as e:
+            logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
+            return
+
+        try:
+            resp = rrp.hBaseRegOpenKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
+            keyHandle = resp['phkResult']
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegOpenKey: %s', str(e))
+            return
+
+        try:
+            dataType, uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
+            return
+
+        if uac_value == 1:
+            print('enableLua = 1')
+            return 
+        elif uac_value == 0:
+            print('enableLua = 0')
+            return
+
+

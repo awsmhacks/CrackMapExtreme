@@ -741,9 +741,10 @@ class smb(connection):
 
     @requires_admin
     def uac(self):
-        """Adds the HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System
-                    called LocalAccountTokenFilterPolicy.
-            Set its value to 1
+        """Adds the keys LocalAccountTokenFilterPolicy and EnableLUA 
+        to HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System
+
+            Set values to 1
 
         Args:
 
@@ -780,8 +781,8 @@ class smb(connection):
 
 
     @requires_admin
-    def uac_status(self, wmi_query=None, namespace=None):
-        """Execute via WMI
+    def uac_status(self):
+        """Checks the status of Remote UAC
 
         Args:
 
@@ -790,38 +791,31 @@ class smb(connection):
         Returns:
 
         """
-        self.logger.announce('Executing query:"{}" over wmi...'.format(str(self.args.wmi)))
-        records = []
-        if not namespace:
-            namespace = self.args.wmi_namespace
+
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self):
+                self.action = 'CHECKUAC'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
+
+
+        options = Ops()
 
         try:
-            rpc = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
-            rpc._create_wmi_connection(namespace=namespace)
+            regHandler = RegHandler(self.username, self.password, self.domain, options)
+            regHandler.run(self.host, self.host)
 
-            if wmi_query:
-                query = rpc._wmi_connection.ExecQuery(wmi_query, lFlags=WBEM_FLAG_FORWARD_ONLY)
-            else:
-                query = rpc._wmi_connection.ExecQuery(self.args.wmi, lFlags=WBEM_FLAG_FORWARD_ONLY)
         except Exception as e:
-            self.logger.error('Error creating WMI connection: {}'.format(e))
-            return records
+            self.logger.error('Error creating/running regHandler connection: {}'.format(e))
+            return 
 
-        while True:
-            try:
-                wmi_results = query.Next(0xffffffff, 1)[0]
-                record = wmi_results.getProperties()
-                records.append(record)
-                for k,v in record.items():
-                    self.logger.highlight('{} => {}'.format(k,v['value']))
-                self.logger.highlight('')
-            except Exception as e:
-                if str(e).find('S_FALSE') < 0:
-                    raise e
-                else:
-                    break
+        return
 
-        return records
 
 ###############################################################################
 
