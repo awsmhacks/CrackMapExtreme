@@ -762,6 +762,8 @@ class smb(connection):
                 self.aesKey = None
                 self.k = False
                 self.dc_ip = dcip 
+                self.hashes = None 
+
 
         options = Ops()
 
