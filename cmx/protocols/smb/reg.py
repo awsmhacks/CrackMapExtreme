@@ -316,7 +316,7 @@ class RegHandler:
             return
 
         try:
-            resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA')
+            resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
             return
