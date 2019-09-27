@@ -351,6 +351,8 @@ class RegHandler:
             logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
             return
 
+        self.logger.highlight('UAC Status:')
+
         try:
             resp = rrp.hBaseRegOpenKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
             keyHandle = resp['phkResult']
@@ -362,23 +364,22 @@ class RegHandler:
             dataType, lua_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-            return
+            self.logger.highlight('     No value for enableLua')
+            pass
 
         try:
             dataType, latfp_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-            return
+            self.logger.highlight('     No value for LocalAccountTokenFilterPolicy')
+            pass
 
-        self.logger.highlight('UAC Status:')
         if lua_uac_value == 1:
             #print('enableLua = 1')
             self.logger.highlight('     enableLua = 1') 
         elif lua_uac_value == 0:
             #print('enableLua = 0')
             self.logger.highlight('     enableLua = 0')
-        else:
-            self.logger.highlight('     No value for enableLua')
 
         if latfp_uac_value == 1:
             #print('enableLua = 1')
@@ -386,7 +387,6 @@ class RegHandler:
         elif latfp_uac_value == 0:
             #print('enableLua = 0')
             self.logger.highlight('     LocalAccountTokenFilterPolicy = 0')
-        else:
-            self.logger.highlight('     No value for LocalAccountTokenFilterPolicy')
+
 
 
