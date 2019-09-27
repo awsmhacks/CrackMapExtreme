@@ -373,20 +373,20 @@ class RegHandler:
         self.logger.highlight('UAC Status:')
         if lua_uac_value == 1:
             #print('enableLua = 1')
-            self.logger.highlight('enableLua = 1') 
+            self.logger.highlight('     enableLua = 1') 
         elif lua_uac_value == 0:
             #print('enableLua = 0')
-            self.logger.highlight('enableLua = 0')
+            self.logger.highlight('     enableLua = 0')
         else:
-            self.logger.highlight('No value for enableLua')
+            self.logger.highlight('     No value for enableLua')
 
         if latfp_uac_value == 1:
             #print('enableLua = 1')
-            self.logger.highlight('LocalAccountTokenFilterPolicy = 1') 
+            self.logger.highlight('     LocalAccountTokenFilterPolicy = 1') 
         elif latfp_uac_value == 0:
             #print('enableLua = 0')
-            self.logger.highlight('LocalAccountTokenFilterPolicy = 0')
+            self.logger.highlight('     LocalAccountTokenFilterPolicy = 0')
         else:
-            self.logger.highlight('No value for LocalAccountTokenFilterPolicy')
+            self.logger.highlight('     No value for LocalAccountTokenFilterPolicy')
 
 
