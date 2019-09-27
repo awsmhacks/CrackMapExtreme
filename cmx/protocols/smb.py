@@ -241,6 +241,7 @@ class smb(connection):
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
         #reggroup.add_argument("-reg-query", '--reg-query', action='store_true', help='Pulls a registry key value')
 
+
         return parser
 
     def proto_logger(self):
@@ -964,6 +965,7 @@ class smb(connection):
         return records
 
 #########################
+
 
 ###############################################################################
 
