@@ -330,15 +330,19 @@ class RegHandler:
         # EnableLUA
         try:
             resp = rrp.hBaseRegSetValue(dce, keyHandle, 'EnableLUA\x00',  rrp.REG_DWORD, 1)
+            self.logger.highlight('EnableLUA Key Set!')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegSetValue EnableLUA: %s', str(e))
-            return
+            self.logger.error('Could not set EnableLUA Key')
+            pass
 
         # LocalAccountTokenFilterPolicy
         try:
             resp = rrp.hBaseRegSetValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy\x00',  rrp.REG_DWORD, 1)
+            self.logger.highlight('LocalAccountTokenFilterPolicy Key Set!')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegSetValue LocalAccountTokenFilterPolicy: %s', str(e))
+            self.logger.error('Could not set LocalAccountTokenFilterPolicy Key')
             return
 
 
