@@ -239,6 +239,7 @@ class smb(connection):
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
+        reggroup.add_argument("-restart-uac", '--restart-uac', action='store_true', help='Check Remote UAC Status')
         #reggroup.add_argument("-reg-query", '--reg-query', action='store_true', help='Pulls a registry key value')
 
 
@@ -733,8 +734,8 @@ class smb(connection):
 #   Registry functions
 #
 # This section:
-#   
-#   
+#   uac
+#   uac_status
 #   
 #
 ###############################################################################
@@ -777,6 +778,12 @@ class smb(connection):
         except Exception as e:
             self.logger.error('Error creating/running regHandler connection: {}'.format(e))
             return 
+        
+        #try:
+        #    restart_uac()
+        #except Exception as e:
+        #    self.logger.error('Error restarting Server Service: {}'.format(e))
+        #    return 
 
         return
 
@@ -816,6 +823,76 @@ class smb(connection):
             return 
 
         return
+
+
+###############################################################################
+
+         #####  ####### ######  #     # ###  #####  #######  #####  
+        #     # #       #     # #     #  #  #     # #       #     # 
+        #       #       #     # #     #  #  #       #       #       
+         #####  #####   ######  #     #  #  #       #####    #####  
+              # #       #   #    #   #   #  #       #             # 
+        #     # #       #    #    # #    #  #     # #       #     # 
+         #####  ####### #     #    #    ###  #####  #######  #####  
+
+###############################################################################                                                       
+###############################################################################
+#   Do stuff with services 
+#
+# This section:
+#   wmi
+#   dualhome
+#   
+#
+###############################################################################
+
+    def restart_uac(self):
+        """Restarts server service
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        
+        #self.logger.announce('')
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self, action='LIST'):
+                self.action = action
+                self.name = 'Server'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
+
+
+        stopOptions = Ops(action='STOP')
+        try:
+            services = SVCCTL(self.username, self.password, self.domain, self.logger, stopOptions)
+            services.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error on stop connection: {}'.format(e))
+            return 
+
+
+        startOptions = Ops(action='START')
+        try:
+            services = SVCCTL(self.username, self.password, self.domain, self.logger, startOptions)
+            services.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error on start connection: {}'.format(e))
+            return 
+
+        return
+
+
 
 
 ###############################################################################

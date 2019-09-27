@@ -8,8 +8,6 @@
 # Description: Remote registry manipulation tool.
 #              The idea is to provide similar functionality as the REG.EXE Windows utility.
 #
-# e.g:
-#    ./reg.py Administrator:password@targetMachine query -keyName HKLM\\Software\\Microsoft\\WBEM -s
 #
 # Author:
 #  Manuel Porto (@manuporto)
@@ -17,6 +15,7 @@
 #
 # Reference for: [MS-RRP]
 #
+
 from __future__ import division
 from __future__ import print_function
 import argparse
