@@ -240,8 +240,11 @@ class smb(connection):
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
-        reggroup.add_argument("-restart-uac", '--restart-uac', action='store_true', help='Check Remote UAC Status')
-        #reggroup.add_argument("-reg-query", '--reg-query', action='store_true', help='Pulls a registry key value')
+
+        servicegroup = smb_parser.add_argument_group("Interact with Services")
+        servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='Check Remote UAC Status')
+        servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Check Remote UAC Status')
+        
 
 
         return parser
@@ -847,7 +850,7 @@ class smb(connection):
 #
 ###############################################################################
 
-    def restart_uac(self):
+    def stop_service(self):
         """Restarts server service
 
         Args:
@@ -881,6 +884,32 @@ class smb(connection):
             self.logger.error('Error on stop connection: {}'.format(e))
             pass 
 
+        return
+
+
+    def start_service(self):
+        """Restarts server service
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        
+        #self.logger.announce('')
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self, action='LIST'):
+                self.action = action
+                self.name = 'LanmanServer'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
 
         startOptions = Ops(action='START')
         try:
