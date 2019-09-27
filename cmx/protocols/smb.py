@@ -25,6 +25,7 @@ from cmx.protocols.smb.mmcexec import MMCEXEC
 from cmx.protocols.smb.smbspider import SMBSpider
 from cmx.protocols.smb.passpol import PassPolDump
 from cmx.protocols.smb.reg import RegHandler
+from cmx.protocols.smb.services import SVCCTL
 from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.powershell import create_ps_command
