@@ -364,7 +364,7 @@ class RegHandler:
             dataType, lua_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-            self.logger.highlight('     No value for enableLua')
+            self.logger.highlight('     No key for enableLua')
             lua_uac_value = 3
             pass
 
@@ -372,7 +372,7 @@ class RegHandler:
             dataType, latfp_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-            self.logger.highlight('     No value for LocalAccountTokenFilterPolicy')
+            self.logger.highlight('     No key for LocalAccountTokenFilterPolicy')
             latfp_uac_value = 3
             pass
 
