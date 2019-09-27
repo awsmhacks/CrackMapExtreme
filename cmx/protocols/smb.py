@@ -763,6 +763,7 @@ class smb(connection):
                 self.k = False
                 self.dc_ip = dcip 
                 self.hashes = None 
+                self.port = 445
 
 
         options = Ops()
