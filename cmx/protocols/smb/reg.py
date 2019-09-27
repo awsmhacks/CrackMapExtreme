@@ -328,7 +328,7 @@ class RegHandler:
 
         # EnableLUA
         try:
-            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'EnableLUA\x00',  rrp.REG_DWORD, 1)
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'EnableLUA\x00',  rrp.REG_DWORD, 0)
             self.logger.highlight('EnableLUA Key Set!')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegSetValue EnableLUA: %s', str(e))
