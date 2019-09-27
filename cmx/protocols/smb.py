@@ -879,7 +879,7 @@ class smb(connection):
 
         except Exception as e:
             self.logger.error('Error on stop connection: {}'.format(e))
-            return 
+            pass 
 
 
         startOptions = Ops(action='START')
