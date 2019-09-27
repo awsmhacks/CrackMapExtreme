@@ -172,7 +172,7 @@ class RegHandler:
 
             if self.__action == 'QUERY':
                 self.query(dce, self.__options.keyName)
-            elif self.__action == 'enableUAC':
+            elif self.__action == 'ENABLEUAC':
                 self.enableUAC(dce)
             else:
                 logging.error('Method %s not implemented yet!' % self.__action)

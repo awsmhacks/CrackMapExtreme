@@ -758,7 +758,7 @@ class smb(connection):
 
         class Ops:
             def __init__(self):
-                self.action = 'enableUAC'
+                self.action = 'ENABLEUAC'
                 self.aesKey = None
                 self.k = False
                 self.dc_ip = dcip 
