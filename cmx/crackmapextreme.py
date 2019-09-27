@@ -187,6 +187,8 @@ def main():
         for target in targets:
             jobs.append(pool.spawn(protocol_object, args, db, str(target)))
 
+        if args.timeout == 0 : args.timeout=None
+        
         for job in jobs:
             job.join(timeout=args.timeout)
 

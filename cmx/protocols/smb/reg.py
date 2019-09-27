@@ -32,6 +32,7 @@ from impacket.examples import logger
 from impacket.system_errors import ERROR_NO_MORE_ITEMS
 from impacket.structure import hexdump
 from impacket.smbconnection import SMBConnection
+from cmx.logger import CMXLogAdapter
 
 
 class RemoteOperations:
@@ -124,7 +125,7 @@ class RemoteOperations:
 
 
 class RegHandler:
-    def __init__(self, username, password, domain, options):
+    def __init__(self, username, password, domain, logger, options):
         self.__username = username
         self.__password = password
         self.__domain = domain
@@ -137,6 +138,7 @@ class RegHandler:
         self.__kdcHost = options.dc_ip
         self.__smbConnection = None
         self.__remoteOps = None
+        self.logger = logger
 
         # It's possible that this is defined somewhere, but I couldn't find where
         self.__regValues = {0: 'REG_NONE', 1: 'REG_SZ', 2: 'REG_EXPAND_SZ', 3: 'REG_BINARY', 4: 'REG_DWORD',
@@ -144,6 +146,7 @@ class RegHandler:
 
         if options.hashes is not None:
             self.__lmhash, self.__nthash = options.hashes.split(':')
+
 
     def connect(self, remoteName, remoteHost):
         self.__smbConnection = SMBConnection(remoteName, remoteHost, sess_port=int(self.__options.port))
@@ -153,6 +156,7 @@ class RegHandler:
                                                self.__nthash, self.__aesKey, self.__kdcHost)
         else:
             self.__smbConnection.login(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
+
 
     def run(self, remoteName, remoteHost):
         self.connect(remoteName, remoteHost)
@@ -170,15 +174,19 @@ class RegHandler:
 
             if self.__action == 'QUERY':
                 self.query(dce, self.__options.keyName)
+            elif self.__action == 'ENABLEUAC':
+                self.enableUAC(dce)
+            elif self.__action == 'CHECKUAC':
+                self.checkUAC(dce)
             else:
                 logging.error('Method %s not implemented yet!' % self.__action)
+
         except (Exception, KeyboardInterrupt) as e:
-            #import traceback
-            #traceback.print_exc()
             logging.critical(str(e))
         finally:
             if self.__remoteOps:
                 self.__remoteOps.finish()
+
 
     def query(self, dce, keyName):
         # Let's strip the root key
@@ -302,131 +310,89 @@ class RegHandler:
             pass
 
 
-if __name__ == '__main__':
-
-    # Init the example's logger theme
-    logger.init()
-    # Explicitly changing the stdout encoding format
-    if sys.stdout.encoding is None:
-        # Output is redirected to a file
-        sys.stdout = codecs.getwriter('utf8')(sys.stdout)
-    print(version.BANNER)
-
-    parser = argparse.ArgumentParser(add_help=True, description="Windows Register manipulation script.")
-
-    parser.add_argument('target', action='store', help='[[domain/]username[:password]@]<targetName or address>')
-    parser.add_argument('-debug', action='store_true', help='Turn DEBUG output ON')
-    subparsers = parser.add_subparsers(help='actions', dest='action')
-
-    # A query command
-    query_parser = subparsers.add_parser('query', help='Returns a list of the next tier of subkeys and entries that '
-                                                       'are located under a specified subkey in the registry.')
-    query_parser.add_argument('-keyName', action='store', required=True,
-                              help='Specifies the full path of the subkey. The '
-                                   'keyName must include a valid root key. Valid root keys for the local computer are: HKLM,'
-                                   ' HKU.')
-    query_parser.add_argument('-v', action='store', metavar="VALUENAME", required=False, help='Specifies the registry '
-                           'value name that is to be queried. If omitted, all value names for keyName are returned. ')
-    query_parser.add_argument('-ve', action='store_true', default=False, required=False, help='Queries for the default '
-                                                                         'value or empty value name')
-    query_parser.add_argument('-s', action='store_true', default=False, help='Specifies to query all subkeys and value '
-                                                                             'names recursively.')
-
-    # An add command
-    # add_parser = subparsers.add_parser('add', help='Adds a new subkey or entry to the registry')
-
-    # An delete command
-    # delete_parser = subparsers.add_parser('delete', help='Deletes a subkey or entries from the registry')
-
-    # A copy command
-    # copy_parser = subparsers.add_parser('copy', help='Copies a registry entry to a specified location in the remote '
-    #                                                   'computer')
-
-    # A save command
-    # save_parser = subparsers.add_parser('save', help='Saves a copy of specified subkeys, entries, and values of the '
-    #                                                 'registry in a specified file.')
-
-    # A load command
-    # load_parser = subparsers.add_parser('load', help='Writes saved subkeys and entries back to a different subkey in '
-    #                                                 'the registry.')
-
-    # An unload command
-    # unload_parser = subparsers.add_parser('unload', help='Removes a section of the registry that was loaded using the '
-    #                                                     'reg load operation.')
-
-    # A compare command
-    # compare_parser = subparsers.add_parser('compare', help='Compares specified registry subkeys or entries')
-
-    # A export command
-    # status_parser = subparsers.add_parser('export', help='Creates a copy of specified subkeys, entries, and values into'
-    #                                                     'a file')
-
-    # A import command
-    # import_parser = subparsers.add_parser('import', help='Copies a file containing exported registry subkeys, entries, '
-    #                                                     'and values into the remote computer\'s registry')
+    def enableUAC(self, dce):
+        # 
+        try:
+            ans = rrp.hOpenLocalMachine(dce)
+            regHandle  = ans['phKey']
+        except Exception as e:
+            logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
+            return
 
 
-    group = parser.add_argument_group('authentication')
+        try:
+            resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
+            keyHandle = resp['phkResult']
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
+            return
 
-    group.add_argument('-hashes', action="store", metavar="LMHASH:NTHASH", help='NTLM hashes, format is LMHASH:NTHASH')
-    group.add_argument('-no-pass', action="store_true", help='don\'t ask for password (useful for -k)')
-    group.add_argument('-k', action="store_true",
-                       help='Use Kerberos authentication. Grabs credentials from ccache file (KRB5CCNAME) based on '
-                            'target parameters. If valid credentials cannot be found, it will use the ones specified '
-                            'in the command line')
-    group.add_argument('-aesKey', action="store", metavar="hex key",
-                       help='AES key to use for Kerberos Authentication (128 or 256 bits)')
+        # EnableLUA
+        try:
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'EnableLUA\x00',  rrp.REG_DWORD, 1)
+            self.logger.highlight('EnableLUA Key Set!')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegSetValue EnableLUA: %s', str(e))
+            self.logger.error('Could not set EnableLUA Key')
+            pass
 
-    group = parser.add_argument_group('connection')
+        # LocalAccountTokenFilterPolicy
+        try:
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy\x00',  rrp.REG_DWORD, 1)
+            self.logger.highlight('LocalAccountTokenFilterPolicy Key Set!')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegSetValue LocalAccountTokenFilterPolicy: %s', str(e))
+            self.logger.error('Could not set LocalAccountTokenFilterPolicy Key')
+            return
 
-    group.add_argument('-dc-ip', action='store', metavar="ip address",
-                       help='IP Address of the domain controller. If omitted it will use the domain part (FQDN) specified in '
-                            'the target parameter')
-    group.add_argument('-target-ip', action='store', metavar="ip address",
-                       help='IP Address of the target machine. If omitted it will use whatever was specified as target. '
-                            'This is useful when target is the NetBIOS name and you cannot resolve it')
-    group.add_argument('-port', choices=['139', '445'], nargs='?', default='445', metavar="destination port",
-                       help='Destination port to connect to SMB Server')
 
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
+    def checkUAC(self, dce):
+        # 
+        try:
+            ans = rrp.hOpenLocalMachine(dce)
+            regHandle  = ans['phKey']
+        except Exception as e:
+            logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
+            return
 
-    options = parser.parse_args()
+        self.logger.highlight('UAC Status:')
 
-    if options.debug is True:
-        logging.getLogger().setLevel(logging.DEBUG)
-    else:
-        logging.getLogger().setLevel(logging.INFO)
+        try:
+            resp = rrp.hBaseRegOpenKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
+            keyHandle = resp['phkResult']
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegOpenKey: %s', str(e))
+            return
 
-    import re
+        try:
+            dataType, lua_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
+            self.logger.highlight('     enableLua key does not exist!')
+            lua_uac_value = 3
+            pass
 
-    domain, username, password, remoteName = re.compile('(?:(?:([^/@:]*)/)?([^@:]*)(?::([^@]*))?@)?(.*)').match(
-        options.target).groups('')
+        try:
+            dataType, latfp_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
+            self.logger.highlight('     LocalAccountTokenFilterPolicy key does not exist!')
+            latfp_uac_value = 3
+            pass
 
-    # In case the password contains '@'
-    if '@' in remoteName:
-        password = password + '@' + remoteName.rpartition('@')[0]
-        remoteName = remoteName.rpartition('@')[2]
+        if lua_uac_value == 1:
+            #print('enableLua = 1')
+            self.logger.highlight('    enableLua = 1') 
+        elif lua_uac_value == 0:
+            #print('enableLua = 0')
+            self.logger.highlight('    enableLua = 0')
 
-    if options.target_ip is None:
-        options.target_ip = remoteName
+        if latfp_uac_value == 1:
+            #print('enableLua = 1')
+            self.logger.highlight('    LocalAccountTokenFilterPolicy = 1') 
+        elif latfp_uac_value == 0:
+            #print('enableLua = 0')
+            self.logger.highlight('    LocalAccountTokenFilterPolicy = 0')
 
-    if domain is None:
-        domain = ''
 
-    if options.aesKey is not None:
-        options.k = True
 
-    if password == '' and username != '' and options.hashes is None and options.no_pass is False and options.aesKey is None:
-        from getpass import getpass
-
-        password = getpass("Password:")
-
-    regHandler = RegHandler(username, password, domain, options)
-    try:
-        regHandler.run(remoteName, options.target_ip)
-    except Exception as e:
-        #import traceback
-        #traceback.print_exc()
-        logging.error(str(e))

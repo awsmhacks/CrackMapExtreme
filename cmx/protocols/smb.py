@@ -24,6 +24,7 @@ from cmx.protocols.smb.smbexec import SMBEXEC
 from cmx.protocols.smb.mmcexec import MMCEXEC
 from cmx.protocols.smb.smbspider import SMBSpider
 from cmx.protocols.smb.passpol import PassPolDump
+from cmx.protocols.smb.reg import RegHandler
 from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.powershell import create_ps_command
@@ -207,6 +208,7 @@ class smb(connection):
         egroup.add_argument("--pass-pol", action='store_true', help='dump password policy')
         egroup.add_argument("--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='Enumerate users by bruteforcing RID\'s (default: 4000)')
         egroup.add_argument("--wmi", metavar='QUERY', type=str, help='issues the specified WMI query')
+        egroup.add_argument("--dualhome", action="store_true", help='check for dual home')
         egroup.add_argument("--wmi-namespace", metavar='NAMESPACE', default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
 
         sgroup = smb_parser.add_argument_group("Spidering", "Options for spidering shares")
@@ -233,6 +235,12 @@ class smb(connection):
         supergroup.add_argument("-hostrecon", '--hostrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
         supergroup.add_argument("-recon", '--recon', action='store_true', help='Runs all recon commands')
         supergroup.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+
+        reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
+        reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
+        reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
+        #reggroup.add_argument("-reg-query", '--reg-query', action='store_true', help='Pulls a registry key value')
+
 
         return parser
 
@@ -378,52 +386,6 @@ class smb(connection):
 
         return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=False, server_os=self.server_os), get_output, methods)
 
-
-    @requires_admin
-    def wmi(self, wmi_query=None, namespace=None):
-        """Execute via WMI
-
-        Args:
-
-        Raises:
-
-        Returns:
-
-        """
-        self.logger.announce('Executing query:"{}" over wmi...'.format(str(wmi_query)))
-        records = []
-        if not namespace:
-            namespace = self.args.wmi_namespace
-
-        try:
-            rpc = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
-            rpc._create_wmi_connection(namespace=namespace)
-
-            if wmi_query:
-                query = rpc._wmi_connection.ExecQuery(wmi_query, lFlags=WBEM_FLAG_FORWARD_ONLY)
-            else:
-                query = rpc._wmi_connection.ExecQuery(self.args.wmi, lFlags=WBEM_FLAG_FORWARD_ONLY)
-        except Exception as e:
-            self.logger.error('Error creating WMI connection: {}'.format(e))
-            return records
-
-        while True:
-            try:
-                wmi_results = query.Next(0xffffffff, 1)[0]
-                record = wmi_results.getProperties()
-                records.append(record)
-                for k,v in record.items():
-                    self.logger.highlight('{} => {}'.format(k,v['value']))
-                self.logger.highlight('')
-            except Exception as e:
-                if str(e).find('S_FALSE') < 0:
-                    raise e
-                else:
-                    break
-
-        return records
-
-#########################
 
     @requires_admin
     @requires_smb_server
@@ -754,6 +716,255 @@ class smb(connection):
                 else:
                     raise e
 
+###############################################################################
+
+
+                ######     #######     #####  
+                #     #    #          #     # 
+                #     #    #          #       
+                ######     #####      #  #### 
+                #   #      #          #     # 
+                #    #     #          #     # 
+                #     #    #######     #####  
+                              
+                                                      
+###############################################################################
+###############################################################################
+#   Registry functions
+#
+# This section:
+#   
+#   
+#   
+#
+###############################################################################
+
+
+    @requires_admin
+    def uac(self):
+        """Adds the keys LocalAccountTokenFilterPolicy and EnableLUA 
+        to HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System
+
+            Set values to 1
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        
+        #self.logger.announce('')
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self):
+                self.action = 'ENABLEUAC'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
+
+
+        options = Ops()
+
+        try:
+            regHandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
+            regHandler.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error creating/running regHandler connection: {}'.format(e))
+            return 
+
+        return
+
+
+    @requires_admin
+    def uac_status(self):
+        """Checks the status of Remote UAC (EnableLUA + LocalAccountTokenFilterPolicy)
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+
+        dcip = self.dc_ip
+
+        class Ops:
+            def __init__(self):
+                self.action = 'CHECKUAC'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip 
+                self.hashes = None 
+                self.port = 445
+
+
+        options = Ops()
+
+        try:
+            regHandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
+            regHandler.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error creating/running regHandler connection: {}'.format(e))
+            return 
+
+        return
+
+
+###############################################################################
+
+                    #     #    #     #    ### 
+                    #  #  #    ##   ##     #  
+                    #  #  #    # # # #     #  
+                    #  #  #    #  #  #     #  
+                    #  #  #    #     #     #  
+                    #  #  #    #     #     #  
+                     ## ##     #     #    ### 
+                                                      
+###############################################################################
+###############################################################################
+#   WMI functions
+#
+# This section:
+#   wmi
+#   dualhome
+#   
+#
+###############################################################################
+
+
+    @requires_admin
+    def wmi(self, wmi_query=None, namespace=None):
+        """Execute via WMI
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        self.logger.announce('Executing query:"{}" over wmi...'.format(str(self.args.wmi)))
+        records = []
+        if not namespace:
+            namespace = self.args.wmi_namespace
+
+        try:
+            rpc = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
+            rpc._create_wmi_connection(namespace=namespace)
+
+            if wmi_query:
+                query = rpc._wmi_connection.ExecQuery(wmi_query, lFlags=WBEM_FLAG_FORWARD_ONLY)
+            else:
+                query = rpc._wmi_connection.ExecQuery(self.args.wmi, lFlags=WBEM_FLAG_FORWARD_ONLY)
+        except Exception as e:
+            self.logger.error('Error creating WMI connection: {}'.format(e))
+            return records
+
+        while True:
+            try:
+                wmi_results = query.Next(0xffffffff, 1)[0]
+                record = wmi_results.getProperties()
+                records.append(record)
+                for k,v in record.items():
+                    self.logger.highlight('{} => {}'.format(k,v['value']))
+                self.logger.highlight('')
+            except Exception as e:
+                if str(e).find('S_FALSE') < 0:
+                    raise e
+                else:
+                    break
+
+        return records
+
+
+    @requires_admin
+    def dualhome(self, wmi_query=None, namespace=None):
+        """Execute via WMI
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        #self.logger.announce('Checking for dual homed networks')
+        records = []
+        records2 = []
+        returnedIndex = []
+        results = []
+
+        if not namespace:
+            namespace = self.args.wmi_namespace
+
+        getCons = 'select index from win32_networkAdapter where netconnectionstatus = 2'
+        #getIPs = 'select DNSDomainSuffixSearchOrder, IPAddress from win32_networkadapterconfiguration where index = {}'.format()
+
+        try:
+            rpc = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
+            rpc._create_wmi_connection(namespace=namespace)
+
+
+            query = rpc._wmi_connection.ExecQuery(getCons, lFlags=WBEM_FLAG_FORWARD_ONLY)
+
+        except Exception as e:
+            self.logger.error('Error creating WMI connection: {}'.format(e))
+            return records
+
+
+        while True:
+            try:
+                wmi_results = query.Next(0xffffffff, 1)[0]
+                record = wmi_results.getProperties()
+                records.append(record)
+                
+                for k,v in record.items():
+                    returnedIndex.append(v['value'])
+
+            except Exception as e:
+                if str(e).find('S_FALSE') < 0:
+                    raise e
+                else:
+                    break
+        
+        try:
+            for index in returnedIndex:
+                queryStr = 'select DNSDomainSuffixSearchOrder, IPAddress from win32_networkadapterconfiguration where index = {}'.format(index) 
+                results.append(rpc._wmi_connection.ExecQuery(queryStr, lFlags=WBEM_FLAG_FORWARD_ONLY))
+            
+        except Exception as e:
+            self.logger.error('Error creating WMI connection: {}'.format(e))
+            return records
+
+
+        for result in results:
+            while True:
+                try:
+                    wmi_results = result.Next(0xffffffff, 1)[0]
+                    record2 = wmi_results.getProperties()
+                    records2.append(record2)
+                    
+                    for k,v in record2.items():
+                        self.logger.highlight('{} => {}'.format(k,v['value']))
+                    self.logger.highlight('')
+
+                except Exception as e:
+                    if str(e).find('S_FALSE') < 0:
+                        raise e
+                    else:
+                        break
+
+        return records
+
+#########################
 
 
 ###############################################################################
@@ -2197,6 +2408,7 @@ class smb(connection):
         add_ntds_hash.ntds_hashes = 0
         add_ntds_hash.added_to_db = 0
 
+
         if self.remote_ops and self.bootkey:
             try:
                 if self.args.ntds is 'vss':
@@ -2209,7 +2421,8 @@ class smb(connection):
                                  justUser=None, printUserStatus=self.args.ntds_status,
                                  perSecretCallback = lambda secretType, secret : add_ntds_hash(secret, host_id))
 
-                self.logger.success('Dumping the NTDS, this could take a while so go grab a redbull...')
+                self.logger.success('Starting NTDS Dump, prepare yourself')
+
                 NTDS.dump()
 
                 self.logger.success('Dumped {} NTDS hashes to {} of which {} were added to the database'.format(highlight(add_ntds_hash.ntds_hashes), self.output_filename + '.ntds',

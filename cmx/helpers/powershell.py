@@ -239,7 +239,6 @@ $request.GetResponse()'''.format(server=context.server,
                                   port=context.server_port,
                                   addr=context.localip,
                                   command=command)
-                                  #second_cmd= second_cmd if second_cmd else '')
 
     logging.debug('Generated PS IEX Launcher:\n {}\n'.format(launcher))
 
