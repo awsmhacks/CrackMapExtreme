@@ -317,12 +317,13 @@ class RegHandler:
 
         try:
             resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
+            phKey = resp['phkResult']
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
             return
 
         try:
-            resp = rrp.hBaseRegSetValue(dce, regHandle, 'EnableLUA\x00',  rrp.REG_DWORD, '1')
+            resp = rrp.hBaseRegSetValue(dce, phKey, 'EnableLUA\x00',  rrp.REG_DWORD, '1')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegSetValue: %s', str(e))
             return
