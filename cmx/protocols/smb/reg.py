@@ -365,6 +365,7 @@ class RegHandler:
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
             self.logger.highlight('     No value for enableLua')
+            lua_uac_value = 3
             pass
 
         try:
@@ -372,6 +373,7 @@ class RegHandler:
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
             self.logger.highlight('     No value for LocalAccountTokenFilterPolicy')
+            latfp_uac_value = 3
             pass
 
         if lua_uac_value == 1:
