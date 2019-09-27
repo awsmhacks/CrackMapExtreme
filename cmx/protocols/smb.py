@@ -238,7 +238,7 @@ class smb(connection):
 
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
-        reggroup.add_argument("-uac-status", '-uac-status', action='store_true', help='Check Remote UAC Status')
+        reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
         #reggroup.add_argument("-reg-query", '--reg-query', action='store_true', help='Pulls a registry key value')
 
         return parser
@@ -782,7 +782,7 @@ class smb(connection):
 
     @requires_admin
     def uac_status(self):
-        """Checks the status of Remote UAC
+        """Checks the status of Remote UAC (EnableLUA + LocalAccountTokenFilterPolicy)
 
         Args:
 
