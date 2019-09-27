@@ -323,7 +323,7 @@ class RegHandler:
             return
 
         try:
-            resp = rrp.hBaseRegSetValue(dce, phKey, 'EnableLUA\x00',  rrp.REG_DWORD, '1')
+            resp = rrp.hBaseRegSetValue(dce, phKey, 'EnableLUA\x00',  rrp.REG_DWORD, 1)
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegSetValue: %s', str(e))
             return
