@@ -32,6 +32,7 @@ from impacket.examples import logger
 from impacket.system_errors import ERROR_NO_MORE_ITEMS
 from impacket.structure import hexdump
 from impacket.smbconnection import SMBConnection
+from cmx.logger import CMXLogAdapter
 
 
 class RemoteOperations:
@@ -124,7 +125,7 @@ class RemoteOperations:
 
 
 class RegHandler:
-    def __init__(self, username, password, domain, options):
+    def __init__(self, username, password, domain, logger, options):
         self.__username = username
         self.__password = password
         self.__domain = domain
@@ -137,6 +138,7 @@ class RegHandler:
         self.__kdcHost = options.dc_ip
         self.__smbConnection = None
         self.__remoteOps = None
+        self.logger = logger
 
         # It's possible that this is defined somewhere, but I couldn't find where
         self.__regValues = {0: 'REG_NONE', 1: 'REG_SZ', 2: 'REG_EXPAND_SZ', 3: 'REG_BINARY', 4: 'REG_DWORD',
@@ -363,10 +365,12 @@ class RegHandler:
             return
 
         if uac_value == 1:
-            print('enableLua = 1')
+            #print('enableLua = 1')
+            self.logger.highlight('enableLua = 1')
             return 
         elif uac_value == 0:
-            print('enableLua = 0')
+            #print('enableLua = 0')
+            self.logger.highlight('enableLua = 0')
             return
 
 

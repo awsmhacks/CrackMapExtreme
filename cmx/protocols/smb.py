@@ -770,7 +770,7 @@ class smb(connection):
         options = Ops()
 
         try:
-            regHandler = RegHandler(self.username, self.password, self.domain, options)
+            regHandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
             regHandler.run(self.host, self.host)
 
         except Exception as e:
@@ -807,7 +807,7 @@ class smb(connection):
         options = Ops()
 
         try:
-            regHandler = RegHandler(self.username, self.password, self.domain, options)
+            regHandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
             regHandler.run(self.host, self.host)
 
         except Exception as e:
