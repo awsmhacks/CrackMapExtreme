@@ -1,5 +1,34 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   connection.py   -   Connects to target and executes actions based on passed in arguments
+#   
+# This class defines and executes the cmx connection flow:
+#     1  setup up protocol logger
+#     2  creates the connection object
+#     3  performs initial connection enum
+#     4  displays connection info
+#     5  attempts login
+#     6  if module, runs module
+#     7  if action, performs action
+#
+#
+# Class:
+#   connection
+#
+# Class Functions:
+#   proto_args(std_parser, module_parser)
+#   proto_logger()
+#   enum_host_info()
+#   print_host_info(info)
+#   create_conn_obj()
+#   check_if_admin()
+#   plaintext_login(domain, username, password)
+#   hash_login(domain, username, ntlm_hash)
+#   proto_flow()
+#
+####################################################################
+
 import logging
 from io import IOBase
 from gevent.lock import BoundedSemaphore

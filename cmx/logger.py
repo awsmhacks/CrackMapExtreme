@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   logger.py
+#   Extends built-in logging functions
+#   
+#
+#
+# Classes:
+#   CMXLogAdapter
+#
+# Non-Class Functions:
+#   setup_logger
+#   setup_verbose_logger
+#   setup_default_logger
+#
+####################################################################
+
 from cmx.helpers.misc import called_from_cmd_args
 from cmx import config as cfg
 from termcolor import colored
@@ -8,27 +24,10 @@ import datetime
 import logging
 import sys
 import re
-
 import pdb
 
 
 init()  #Doing this so we dont have to switch out all the termcolor calls for colorama
-
-#The following hooks the FileHandler.emit function to remove ansi chars before logging to a file
-#There must be a better way of doing this, but this way we might save some penguins!
-ansi_escape = re.compile(r'\x1b[^m]*m')
-
-def antiansi_emit(self, record):
-
-    if self.stream is None:
-        self.stream = self._open()
-
-    record.msg = ansi_escape.sub('', record.message)
-    logging.StreamHandler.emit(self, record)
-
-logging.FileHandler.emit = antiansi_emit
-
-####################################################################
 
 class CMXLogAdapter(logging.LoggerAdapter):
     '''
@@ -316,3 +315,19 @@ def setup_logger(level=logging.INFO, log_to_file=False, log_prefix=None, logger_
     cmx_logger.setLevel(level)
 
     return cmx_logger
+
+
+
+
+#The following hooks the FileHandler.emit function to remove ansi chars before logging to a file
+ansi_escape = re.compile(r'\x1b[^m]*m')
+
+def antiansi_emit(self, record):
+
+    if self.stream is None:
+        self.stream = self._open()
+
+    record.msg = ansi_escape.sub('', record.message)
+    logging.StreamHandler.emit(self, record)
+
+logging.FileHandler.emit = antiansi_emit

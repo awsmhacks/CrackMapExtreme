@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   context.py   -   Provides modules with a hook back into original thread
+#   
+#   Allows modules to utilze logger and access arguments
+#   
+# Class:
+#   Context
+#
+# Class Functions:
+#   -
+#
+####################################################################
+
 import logging
 from cmx import config as cfg
 

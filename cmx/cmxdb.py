@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   cmxdb.py   -   CMXDB entry point
+#   
+#   Executes the REPL for the CMX DB
+#   
+#    
+#   
+#
+#
+# Classes:
+#   DatabaseNavigator
+#   CMXDBMenu
+#
+# Non-Class Functions:
+#   main
+#
+####################################################################
+
 import cmd
 import sqlite3
 import sys

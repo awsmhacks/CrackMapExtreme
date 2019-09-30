@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   first_run.py
+#   Runs the first time cmx is launched.
+#   Reads configurations defined in config.py
+#
+#   Creates folder structure, sets up database, creates keys for https coms 
+#   
+#
+#
+# Classes:
+#   -
+#
+# Non-Class Functions:
+#   first_run_setup
+#
+####################################################################
+
 import os
 import sqlite3
 import shutil
