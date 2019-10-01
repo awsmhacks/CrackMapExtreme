@@ -192,22 +192,7 @@ class PSEXEC:
                 # We copied a file for execution, let's remove it
                 s.deleteFile(installService.getShare(), os.path.basename(self.__copyFile))
             unInstalled = True
-            sys.exit(retCode['ErrorCode'])
-
-        except SystemExit:
-            raise
-        except Exception as e:
-            if logging.getLogger().level == logging.DEBUG:
-                import traceback
-                traceback.print_exc()
-            logging.debug(str(e))
-            if unInstalled is False:
-                installService.uninstall()
-                if self.__copyFile is not None:
-                    s.deleteFile(installService.getShare(), os.path.basename(self.__copyFile))
-            sys.stdout.flush()
-            sys.exit(1)
-
+            return ans
 
     def openPipe(self, s, tid, pipe, accessMask):
         pipeReady = False
