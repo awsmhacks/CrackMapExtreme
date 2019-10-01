@@ -43,7 +43,7 @@ class options:
         self.output_filename = None
         self.smbv = None
         self.smb_share_name = None
-        self.dc_ip = None
+        self.dc_ip = args.domaincontroller
         self.domain_dns = None
         self.exec_method = None
         self.local_ip = None

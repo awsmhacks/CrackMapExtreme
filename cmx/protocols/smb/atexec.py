@@ -1,9 +1,40 @@
-import os
+#!/usr/bin/env python3
+
+# SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
+#
+# This software is provided under under a slightly modified version
+# of the Apache Software License. See the accompanying LICENSE file
+# for more information.
+#
+# ATSVC example for some functions implemented, creates, enums, runs, delete jobs
+# This example executes a command on the target machine through the Task Scheduler 
+# service. Returns the output of such command
+#
+# Author:
+#  Alberto Solino (@agsolino)
+#
+# Reference for:
+#  DCE/RPC for TSCH
+
+
+from __future__ import division
+from __future__ import print_function
+import string
+import sys
+import argparse
+import time
+import random
 import logging
+
+from impacket.examples import logger
+from impacket import version
 from impacket.dcerpc.v5 import tsch, transport
 from impacket.dcerpc.v5.dtypes import NULL
+from impacket.dcerpc.v5.rpcrt import RPC_C_AUTHN_GSS_NEGOTIATE
+
 from cmx.helpers.misc import gen_random_string
 from gevent import sleep
+
 
 class TSCH_EXEC:
     def __init__(self, target, share_name, username, password, domain, hashes=None):
