@@ -106,7 +106,7 @@ class connection(object):
 
     def proto_flow(self):
         self.proto_logger()
-        if self.create_conn_obj():
+        if self.create_conn_obj():    # calls the create_conn_object method of the protocol class we are in     
             self.enum_host_info()
             self.print_host_info()
             self.login()

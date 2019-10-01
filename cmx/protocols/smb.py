@@ -128,6 +128,8 @@ class smb(connection):
 
     def __init__(self, args, db, host):
         """Inits SMB class."""
+        self.options = options(args)
+
         self.domain = None
         self.server_os = None
         self.os_arch = 0
