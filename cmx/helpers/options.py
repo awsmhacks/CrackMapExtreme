@@ -21,7 +21,7 @@
 
 class options:
 
-    def init(args):
+    def init(self, args):
     #strings
         self.username = None
         self.password = None
