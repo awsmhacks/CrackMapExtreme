@@ -18,14 +18,19 @@ from impacket.dcerpc.v5.dtypes import MAXIMUM_ALLOWED
 from cmx.connection import *
 from cmx.logger import CMXLogAdapter
 from cmx.servers.smb import CMXSMBServer
+
 from cmx.protocols.smb.wmiexec import WMIEXEC
 from cmx.protocols.smb.atexec import TSCH_EXEC
 from cmx.protocols.smb.smbexec import SMBEXEC
-from cmx.protocols.smb.mmcexec import MMCEXEC
+from cmx.protocols.smb.psexec import PSEXEC
+from cmx.protocols.smb.dcomexec import DCOMEXEC
+
 from cmx.protocols.smb.smbspider import SMBSpider
 from cmx.protocols.smb.passpol import PassPolDump
+
 from cmx.protocols.smb.reg import RegHandler
 from cmx.protocols.smb.services import SVCCTL
+
 from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.options import options
