@@ -192,7 +192,7 @@ class PSEXEC:
                 # We copied a file for execution, let's remove it
                 s.deleteFile(installService.getShare(), os.path.basename(self.__copyFile))
             unInstalled = True
-            return ans
+        return ans
 
     def openPipe(self, s, tid, pipe, accessMask):
         pipeReady = False
