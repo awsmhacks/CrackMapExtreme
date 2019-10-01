@@ -213,7 +213,7 @@ class smb(connection):
         sgroup.add_argument("--only-files", action='store_true', help='only spider files')
 
         execgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
-        execgroup.add_argument('--exec-method', choices={"wmiexec", "mmcexec", "smbexec", "atexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
+        execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
         execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
         execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
         execegroup = execgroup.add_mutually_exclusive_group()
@@ -292,7 +292,7 @@ class smb(connection):
             methods = [self.args.exec_method]
 
         if not methods:
-            methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
+            methods = ['wmiexec', 'dcomexec', 'atexec', 'smbexec', 'psexec']
 
         if not payload and self.args.execute:
             payload = self.args.execute
@@ -311,9 +311,9 @@ class smb(connection):
                     logging.debug(format_exc())
                     continue
 
-            elif method == 'mmcexec':
+            elif method == 'dcomexec':
                 try:
-                    exec_method = MMCEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
+                    exec_method = DCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
                     self.logger.announce('Executed command via mmcexec')
                     break
                 except:
@@ -340,6 +340,17 @@ class smb(connection):
                     logging.debug('Error executing command via smbexec, traceback:')
                     logging.debug(format_exc())
                     return 'fail'
+
+            elif method == 'psexec':
+                try:
+                    exec_method = PSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
+                    self.logger.announce('Executed command via psexec')
+                    break
+                except:
+                    logging.debug('Error executing command via psexec, traceback:')
+                    logging.debug(format_exc())
+                    return 'fail'
+
 
         if hasattr(self, 'server'): self.server.track_host(self.host)
 
@@ -391,7 +402,7 @@ class smb(connection):
             methods = [self.args.exec_method]
 
         if not methods:
-            methods = ['wmiexec', 'mmcexec', 'atexec', 'smbexec']
+            methods = ['wmiexec', 'dcomexec', 'atexec', 'smbexec']
 
         for method in methods:
             if method == 'wmiexec':
@@ -404,9 +415,9 @@ class smb(connection):
                     logging.debug(format_exc())
                     continue
 
-            elif method == 'mmcexec':
+            elif method == 'dcomexec':
                 try:
-                    exec_method = MMCEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
+                    exec_method = DCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
                     logging.debug('Interactive shell using mmcexec')
                     break
                 except:
