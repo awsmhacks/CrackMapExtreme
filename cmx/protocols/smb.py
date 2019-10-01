@@ -249,6 +249,7 @@ class smb(connection):
                                         'port': self.args.port,
                                         'hostname': self.hostname
                                         })
+        self.options.logger = self.logger
 
 
 ###############################################################################
