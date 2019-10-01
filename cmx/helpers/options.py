@@ -19,7 +19,7 @@
 ####################################################################
 
 
-class options():
+class options:
 
     def init(args):
     #strings
