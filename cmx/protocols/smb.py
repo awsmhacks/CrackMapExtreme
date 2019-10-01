@@ -28,6 +28,7 @@ from cmx.protocols.smb.reg import RegHandler
 from cmx.protocols.smb.services import SVCCTL
 from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
+from cmx.helpers.options import options
 from cmx.helpers.powershell import create_ps_command
 from cmx.helpers.powerview import RPCRequester
 from cmx import config as cfg
@@ -121,21 +122,7 @@ def requires_smb_server(func):
 class smb(connection):
     """SMB connection class object.
 
-    Longer class information....
-
     Attributes:
-        domain          :
-        server_os       : string ~ Windows Server 2012 R2 Datacenter 9600
-        os_arch         : int ~ 32 | 64
-        hash            : string
-        lmhash          :
-        nthash          :
-        remote_ops      :
-        bootkey         :
-        output_filename :
-        smbv            :
-        signing         :
-        smb_share_name  :
 
     """
 
@@ -468,6 +455,8 @@ class smb(connection):
 ###############################################################################
 #   Connection functions
 #
+#       Sets the self.conn object up
+#
 # This section:
 #   create_smbv1_conn
 #   create_smbv3_conn
@@ -529,6 +518,7 @@ class smb(connection):
             return False
         logging.debug('Connected using SMBv3 to: {}'.format(self.host))
         return True
+
 
     def create_conn_obj(self):
         if self.create_smbv1_conn():
@@ -602,6 +592,7 @@ class smb(connection):
             if error == 'STATUS_LOGON_FAILURE': self.inc_failed_login(username)
 
             return False
+
 
     def hash_login(self, domain, username, ntlm_hash):
         """
