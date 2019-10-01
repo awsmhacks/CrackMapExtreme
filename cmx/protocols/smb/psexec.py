@@ -67,7 +67,7 @@ lock = Lock()
 
 
 class PSEXEC:
-    def __init__(self, host, port=445, username='', password='', domain='', hashes=None, aesKey=None, doKerberos=False, kdcHost=None, serviceName=None):
+    def __init__(self, host, port=445, username='', password='', domain='', hashes=None, aesKey=None, doKerberos=False, kdcHost=None, serviceName=''):
         self.__username = username
         self.__password = password
         self.__host = host
