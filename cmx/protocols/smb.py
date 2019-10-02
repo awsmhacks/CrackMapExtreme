@@ -407,7 +407,7 @@ class smb(connection):
             methods = [self.args.exec_method]
 
         if not methods:
-            methods = ['wmiexec', 'dcomexec', 'atexec', 'smbexec']
+            methods = ['wmiexec', 'dcomexec', 'atexec', 'smbexec', 'psexec']
 
         for method in methods:
             if method == 'wmiexec':
@@ -449,7 +449,16 @@ class smb(connection):
                     logging.debug('Error launching shell via smbexec, traceback:')
                     logging.debug(format_exc())
                     return 'fail'
-
+                    
+            elif method == 'psexec':
+                try:
+                    exec_method = PSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
+                    self.logger.announce('Interactive shell using psexec')
+                    break
+                except:
+                    logging.debug('Error executing command via psexec, traceback:')
+                    logging.debug(format_exc())
+                    return 'fail'
 
         try:
             exec_method.run(self.host, self.host)
