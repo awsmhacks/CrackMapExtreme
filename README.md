@@ -56,7 +56,7 @@ apt install pipenv
 cd /opt
 git clone https://github.com/awsmhacks/CrackMapExtreme 
 cd /opt/CrackMapExtreme  
-pipenv install --three               #ignore the errors and continue
+pipenv --three               #ignore any errors and continue
 pipenv shell  
 pip install -r requirements.txt 
 python setup.py -q install 
