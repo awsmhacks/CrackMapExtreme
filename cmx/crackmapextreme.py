@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   crackmapextreme.py   -   CMX entry point
+#   
+#   Loads protocols and modules
+#   Hooks database
+#   Parses command line inputs and executes threads 
+#   
+#
+#
+# Classes:
+#   -
+#
+# Non-Class Functions:
+#   main
+#
+####################################################################
+
 from gevent.pool import Pool
 from cmx.logger import setup_logger, setup_debug_logger, CMXLogAdapter
 from cmx.helpers.logger import highlight

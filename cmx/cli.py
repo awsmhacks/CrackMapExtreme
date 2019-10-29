@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 
+####################################################################
+#   cli.py   -   CMX command line interface 
+#   
+#   Displays CMX Banner
+#   Generates command line arguments for a given protocol 
+#
+#
+# Classes:
+#   - 
+#
+# Non-Class Functions:
+#   gen_cli_args
+#
+####################################################################
+
 import argparse
 import sys
 from argparse import RawTextHelpFormatter
@@ -82,7 +97,6 @@ def gen_cli_args():
     module_parser.add_argument("--server-host", type=str, default='0.0.0.0', metavar='HOST', help='IP to bind the server to (default: 0.0.0.0)')
     module_parser.add_argument("--server-port", metavar='PORT', type=int, help='start the server on the specified port')
 
-    
 
     for protocol in list(protocols.keys()):
         protocol_object = p_loader.load_protocol(protocols[protocol]['path'])
