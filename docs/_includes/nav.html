@@ -1,3 +1,7 @@
+
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
 <style>
 .topnav {
   overflow: hidden;
@@ -117,7 +121,7 @@
         {% endif %}
         {% if link.sublinks %}
         	<div class="dropdown">
-        		<button class="dropbtn">{{ link.title }}<i class="fa fa-caret-down"></i></button>
+        		<button class="dropbtn">{{ link.title }} <i class="fa fa-caret-down"></i></button>
             	<div class="dropdown-content">
                 	{% for sublink in link.sublinks %}
                     	{% if sublink.title == 'separator' %}
@@ -146,3 +150,58 @@ function myFunction() {
 </script>
 
 </div>
+
+
+<!-- Script to link-a-fy anchor tags -->
+<!-- http://blog.parkermoore.de/2014/08/01/header-anchor-links-in-vanilla-javascript-for-github-pages-and-jekyll/ -->
+<style>
+
+.fa {
+  display: inline-block;
+  font-family: FontAwesome;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.fa-link:before {
+  content: "\f0c1";
+}
+/*
+ * This code is courtesy Ben Balter, modified by Parker Moore for jekyllrb.com
+ * http://ben.balter.com/2014/03/13/pages-anchor-links/
+ */
+.header-link {
+  position: relative;
+  left: 0.5em;
+  opacity: 0;
+  font-size: 0.8em;
+
+  -webkit-transition: opacity 0.2s ease-in-out 0.1s;
+  -moz-transition: opacity 0.2s ease-in-out 0.1s;
+  -ms-transition: opacity 0.2s ease-in-out 0.1s;
+}
+h2:hover .header-link,
+h3:hover .header-link,
+h4:hover .header-link,
+h5:hover .header-link,
+h6:hover .header-link {
+  opacity: 1;
+}
+</style>
+
+
+<script>
+$(function() {
+  return $("h1, h2, h3, h4, h5, h6").each(function(i, el) {
+    var $el, icon, id;
+    $el = $(el);
+    id = $el.attr('id');
+    icon = '<i class="fa fa-link"></i>';
+    if (id) {
+      return $el.prepend($("<a />").addClass("header-link").attr("href", "#" + id).html(icon));
+    }
+  });
+});
+</script>
