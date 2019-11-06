@@ -1,4 +1,18 @@
-# CMX: General Usage 
+---
+layout: default
+title: Home
+---
+
+# C M X
+
+```                                          
+    ____ ____ ____ ____ _  _     _  _ ____ ___      ____ _  _ ___ ____ ____ _  _ ____ 
+    |    |__/ |__| |    |_/      |\/| |__| |__]     |___  \/   |  |__/ |___ |\/| |___ 
+    |___ |  \ |  | |___ | \_     |  | |  | |        |___ _/\_  |  |  \ |___ |  | |___ 
+		                                  			    
+		   Crack Map Exec - eXtreme edition                
+```
+
 Created by: @awsmhacks  
 Updated: 8/21/19   
 CMX Version: 5.0.1

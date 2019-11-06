@@ -1,0 +1,34 @@
+- title: Home
+  url: /index.md
+
+- title: Installation
+  url: /general/install.md
+
+- title: General Usage
+  url: /general.md
+  sublinks:
+    - title: Configuration
+      url: /general/configuration.md
+    - title: Understanding Output
+      url: /general/output.md
+
+- title: SMB
+  url: /smb.md
+  sublinks:
+    - title: Host Enum
+      url: /smb/smb-host-enum.md
+    - title: Domain Enum
+      url: /smb/smb-host-enum.md
+    - title: Password Spraying
+      url: /smb/smb-pass-spray.md
+    - title: separator
+    - title: SMB Command Reference
+      url: /smb/smb-command-ref.md
+      
+- title: CMX Database
+  url: /cmxdb
+  sublinks:
+    - title: Using the Database
+      url: /cmxdb/cmxdb-usage.md
+    - title: CMXDB Command Reference
+      url: /cmxdb/documentation.md
