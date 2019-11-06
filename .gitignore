@@ -13,6 +13,9 @@ __pycache__/
 TODOs
 todo/
 
+*/.jekyll-cache/*
+*/_site/*
+
 # Distribution / packaging
 Pipfile
 Pipfile.lock
