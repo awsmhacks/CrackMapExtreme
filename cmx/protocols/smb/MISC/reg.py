@@ -1,19 +1,10 @@
 #!/usr/bin/env python
-# SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
 #
-# This software is provided under a slightly modified version
-# of the Apache Software License. See the accompanying LICENSE file
-# for more information.
+# Modified version of https://github.com/SecureAuthCorp/impacket/blob/master/examples/reg.py
 #
 # Description: Remote registry manipulation tool.
 #              The idea is to provide similar functionality as the REG.EXE Windows utility.
 #
-#
-# Author:
-#  Manuel Porto (@manuporto)
-#  Alberto Solino (@agsolino)
-#
-# Reference for: [MS-RRP]
 #
 
 from __future__ import division
@@ -363,35 +354,80 @@ class RegHandler:
             logging.debug('Exception thrown when hBaseRegOpenKey: %s', str(e))
             return
 
+        #EnableLUA
         try:
             dataType, lua_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-            self.logger.highlight('     enableLua key does not exist!')
+
             lua_uac_value = 3
             pass
-
+        #LocalAccountTokenFilterPolicy
         try:
             dataType, latfp_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-            self.logger.highlight('     LocalAccountTokenFilterPolicy key does not exist!')
             latfp_uac_value = 3
+            pass
+        #LocalAccountTokenFilterPolicy
+        try:
+            dataType, fat_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'FilterAdministratorToken')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
+            fat_uac_value = 3
             pass
 
         if lua_uac_value == 1:
-            #print('enableLua = 1')
-            self.logger.highlight('    enableLua = 1') 
+            self.logger.highlight('    enableLua = 1  (default)   ')
+            self.logger.highlight('Auth Permissions will rely on LocalAccountTokenFilterPolicy and FilterAdministratorToken: ')
         elif lua_uac_value == 0:
-            #print('enableLua = 0')
             self.logger.highlight('    enableLua = 0')
+            self.logger.highlight('Privileged Auth available to any member of the local admins group')
+            self.logger.highlight('           using plaintext credentials or password hashes!')
+            return
+        else:
+            self.logger.highlight('     enableLua key does not exist!')
 
         if latfp_uac_value == 1:
-            #print('enableLua = 1')
             self.logger.highlight('    LocalAccountTokenFilterPolicy = 1') 
         elif latfp_uac_value == 0:
-            #print('enableLua = 0')
-            self.logger.highlight('    LocalAccountTokenFilterPolicy = 0')
+            self.logger.highlight('    LocalAccountTokenFilterPolicy = 0  (default)')
+            self.logger.highlight('    Privileged Auth only possible using either the plaintext pass or password hash')
+            self.logger.highlight('               of the RID 500 local administrator')
+            self.logger.highlight('    (and only then depending on the setting of FilterAdministratorToken)')
+        else:
+                self.logger.highlight('    LocalAccountTokenFilterPolicy key does not exist!')
 
+        if fat_uac_value == 1:
+            self.logger.highlight('    FilterAdministratorToken = 1    ')
+            self.logger.highlight('Privileged Auth not available for RID 500 local administrator')
+        elif fat_uac_value == 0:
+            self.logger.highlight('    FilterAdministratorToken = 0 (default)')
+            self.logger.highlight('No affect on auth')
+            return
+        else:
+            self.logger.highlight('    FilterAdministratorToken key does not exist!')
+
+
+        # explained/logic from: https://labs.f-secure.com/blog/enumerating-remote-access-policies-through-gpo/
+
+        # EnableLUA = Used to enable (1, the default) or disable (0) “Admin Approval” mode for the computer
+             # If disabled, all UAC policies are also disabled.  When disabled, it is possible to perform privileged 
+             # remote authentication with any member of the local administrators group using plaintext credentials or password hashes.
+
+             # When enabled, privileged remote authentication capability is determined by the settings of LocalAccountTokenFilterPolicy and FilterAdministratorToken
+        
+        # LocalAccountTokenFilterPolicy
+            #  When set to 0 (the default), remote connections with high integrity access tokens 
+            #  are only possible using either the plaintext credential or password hash of the 
+            #  RID 500 local administrator 
+            # (and only then depending on the setting of FilterAdministratorToken)
+
+            #  If set to 1, the policy allows remote connections with high integrity access tokens 
+            #  from any member of the local administrators group using either their plaintext credentials or password hashes.
+
+        # FilterAdministratorToken   enable (1) or disable (0)   disabled by default,
+            # When enabled it is not possible to perform privileged remote authentication using the 
+            # RID 500 local administrator using either plaintext credentials or password hashes
 
 
