@@ -309,7 +309,6 @@ class RegHandler:
             logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
             return
 
-
         try:
             resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
             keyHandle = resp['phkResult']
@@ -359,7 +358,6 @@ class RegHandler:
             dataType, lua_uac_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'EnableLUA')
         except Exception as e:
             logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
-
             lua_uac_value = 3
             pass
         #LocalAccountTokenFilterPolicy
@@ -377,14 +375,11 @@ class RegHandler:
             fat_uac_value = 3
             pass
 
+    #Results
         if lua_uac_value == 1:
             self.logger.highlight('    enableLua = 1  (default)   ')
-            self.logger.highlight('Auth Permissions will rely on LocalAccountTokenFilterPolicy and FilterAdministratorToken: ')
         elif lua_uac_value == 0:
             self.logger.highlight('    enableLua = 0')
-            self.logger.highlight('Privileged Auth available to any member of the local admins group')
-            self.logger.highlight('           using plaintext credentials or password hashes!')
-            return
         else:
             self.logger.highlight('     enableLua key does not exist!')
 
@@ -392,22 +387,42 @@ class RegHandler:
             self.logger.highlight('    LocalAccountTokenFilterPolicy = 1') 
         elif latfp_uac_value == 0:
             self.logger.highlight('    LocalAccountTokenFilterPolicy = 0  (default)')
-            self.logger.highlight('    Privileged Auth only possible using either the plaintext pass or password hash')
-            self.logger.highlight('               of the RID 500 local administrator')
-            self.logger.highlight('    (and only then depending on the setting of FilterAdministratorToken)')
         else:
-                self.logger.highlight('    LocalAccountTokenFilterPolicy key does not exist!')
+            self.logger.highlight('    LocalAccountTokenFilterPolicy key does not exist!')
 
         if fat_uac_value == 1:
             self.logger.highlight('    FilterAdministratorToken = 1    ')
-            self.logger.highlight('Privileged Auth not available for RID 500 local administrator')
         elif fat_uac_value == 0:
             self.logger.highlight('    FilterAdministratorToken = 0 (default)')
-            self.logger.highlight('No affect on auth')
-            return
         else:
             self.logger.highlight('    FilterAdministratorToken key does not exist!')
 
+    # Analysis
+        self.logger.highlight('')
+        self.logger.highlight('UAC Analysis:')
+        if lua_uac_value == 1:
+            self.logger.highlight('EnableLUA current setting means capabilities are determined by')
+            self.logger.highlight('         LocalAccountTokenFilterPolicy and/or FilterAdministratorToken')
+            self.logger.highlight('')
+        elif lua_uac_value == 0:
+            self.logger.highlight('High integrity access available to any member of the local admins group')
+            self.logger.highlight('           using plaintext credentials or password hashes!')
+            return
+
+        if latfp_uac_value == 1:
+            self.logger.highlight('LocalAccountTokenFilterPolicy configured to allow remote connections with high integrity access tokens!')
+            return
+        else:
+            self.logger.highlight('LocalAccountTokenFilterPolicy set to 0 tells us:')
+            self.logger.highlight('    High integrity access only possible using either the plaintext pass')
+            self.logger.highlight('    or password hash of the RID 500 local administrator')
+            self.logger.highlight('')
+
+        if fat_uac_value == 1:
+            self.logger.highlight('FilterAdministratorToken set to 1 tells us High integrity access not available for RID 500 local administrator')
+        else: # 0 or missing
+            self.logger.highlight('The FilterAdministratorToken setting should have no effect in this case')
+    
 
         # explained/logic from: https://labs.f-secure.com/blog/enumerating-remote-access-policies-through-gpo/
 

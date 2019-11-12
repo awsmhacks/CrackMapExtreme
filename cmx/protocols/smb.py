@@ -233,7 +233,7 @@ class smb(connection):
         supergroup.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
 
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
-        reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
+        reggroup.add_argument("-fix-uac", '--fix-uac', action='store_true', help='Sets the proper Keys for remote high-integrity processes')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
 
         servicegroup = smb_parser.add_argument_group("Interact with Services")
@@ -756,7 +756,7 @@ class smb(connection):
 ###############################################################################
 
     @requires_admin
-    def uac(self):
+    def fix_uac(self):
         """
         Adds the keys LocalAccountTokenFilterPolicy and EnableLUA 
         to HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System
