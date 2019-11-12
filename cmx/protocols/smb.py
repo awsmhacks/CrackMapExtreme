@@ -51,7 +51,7 @@ from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC
 
 from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
-from cmx.helpers.powerview import RPCRequester
+from cmx.helpers.wmirpc import RPCRequester
 
 
 smb_share_name = gen_random_string(5).upper()
