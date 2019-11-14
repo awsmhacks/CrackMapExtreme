@@ -21,7 +21,7 @@ from gevent.pool import Pool
 from cmx.logger import setup_logger, setup_debug_logger, CMXLogAdapter
 from cmx.helpers.logger import highlight
 from cmx.helpers.misc import identify_target_file
-from cmx.parsers.ip import parse_targets
+from cmx.helpers.ipparser import parse_targets
 from cmx.cli import gen_cli_args
 from cmx.loaders.protocol_loader import protocol_loader
 from cmx.loaders.module_loader import module_loader
