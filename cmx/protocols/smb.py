@@ -3,6 +3,14 @@
 
 import socket
 import ntpath
+import time
+from datetime import datetime
+from functools import wraps
+from traceback import format_exc
+from io import StringIO
+import pdb
+
+#Impacket
 from impacket.smbconnection import SMBConnection, SessionError
 from impacket.smb import SMB_DIALECT
 from impacket.smb3structs import SMB2_DIALECT_002, SMB2_DIALECT_21
@@ -15,43 +23,36 @@ from impacket.dcerpc.v5.epm import MSRPC_UUID_PORTMAP
 from impacket.dcerpc.v5.dcom.wmi import WBEM_FLAG_FORWARD_ONLY
 from impacket.dcerpc.v5.samr import SID_NAME_USE
 from impacket.dcerpc.v5.dtypes import MAXIMUM_ALLOWED
-from cmx.connection import *
-from cmx.logger import CMXLogAdapter
-from cmx.servers.smb import CMXSMBServer
-
-from cmx.protocols.smb.wmiexec import WMIEXEC
-from cmx.protocols.smb.atexec import TSCH_EXEC
-from cmx.protocols.smb.smbexec import SMBEXEC
-from cmx.protocols.smb.psexec import PSEXEC
-from cmx.protocols.smb.dcomexec import DCOMEXEC
-
-from cmx.protocols.smb.smbspider import SMBSpider
-from cmx.protocols.smb.passpol import PassPolDump
-
-from cmx.protocols.smb.reg import RegHandler
-from cmx.protocols.smb.services import SVCCTL
-
-from cmx.helpers.logger import write_log, highlight
-from cmx.helpers.misc import *
-from cmx.helpers.options import options
-from cmx.helpers.powershell import create_ps_command
-from cmx.helpers.powerview import RPCRequester
-from cmx import config as cfg
-import time
-from datetime import datetime
-from functools import wraps
-from traceback import format_exc
-from io import StringIO
-
-# added for powerview functionality
 from impacket.dcerpc.v5 import transport, scmr, srvs
 from impacket.dcerpc.v5 import wkst, samr
 from impacket.nt_errors import STATUS_MORE_ENTRIES
-import pdb
-
 from impacket.dcerpc.v5.drsuapi import MSRPC_UUID_DRSUAPI
 from impacket.dcerpc.v5.epm import hept_map
 from impacket.dcerpc.v5 import epm
+
+# Internals
+from cmx.connection import *
+from cmx import config as cfg
+from cmx.logger import CMXLogAdapter
+from cmx.servers.smb import CMXSMBServer
+
+from cmx.protocols.smb.MISC.smbspider import SMBSpider
+from cmx.protocols.smb.MISC.passpol import PassPolDump
+from cmx.protocols.smb.MISC.reg import RegHandler
+from cmx.protocols.smb.MISC.services import SVCCTL
+from cmx.helpers.options import options
+
+from cmx.protocols.smb.EXECMETHODS.wmiexec import WMIEXEC
+from cmx.protocols.smb.EXECMETHODS.atexec import TSCH_EXEC
+from cmx.protocols.smb.EXECMETHODS.smbexec import SMBEXEC
+from cmx.protocols.smb.EXECMETHODS.psexec import PSEXEC
+from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC
+
+
+from cmx.helpers.logger import write_log, highlight
+from cmx.helpers.misc import *
+from cmx.helpers.wmirpc import RPCRequester
+
 
 smb_share_name = gen_random_string(5).upper()
 smb_server = None
@@ -232,7 +233,7 @@ class smb(connection):
         supergroup.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
 
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
-        reggroup.add_argument("-uac", '--uac', action='store_true', help='Sets the Key for Remote UAC')
+        reggroup.add_argument("-fix-uac", '--fix-uac', action='store_true', help='Sets the proper Keys for remote high-integrity processes')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
 
         servicegroup = smb_parser.add_argument_group("Interact with Services")
@@ -391,6 +392,8 @@ class smb(connection):
         Returns:
 
         """
+        from cmx.helpers.powershell import create_ps_command
+
         if not payload and self.args.ps_execute:
             payload = self.args.ps_execute
             if not self.args.no_output: get_output = True
@@ -494,14 +497,8 @@ class smb(connection):
 
 
     def create_smbv1_conn(self):
-        """Setup connection using smbv1
-
-        Args:
-  
-        Raises:
-
-        Returns:
-
+        """
+        Setup connection using smbv1
         """
         try:
             logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
@@ -520,16 +517,11 @@ class smb(connection):
         logging.debug('Connected using SMBv1 to: {}'.format(self.host))
         return True
 
-    def create_smbv3_conn(self):
-        """Setup connection using smbv3
-        Used for both SMBv2 and SMBv3
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
 
+    def create_smbv3_conn(self):
+        """
+        Setup connection using smbv3
+        Used for both SMBv2 and SMBv3
         """
         try:
             logging.debug('Attempting SMBv3 connection to {}'.format(self.host))
@@ -763,20 +755,13 @@ class smb(connection):
 #
 ###############################################################################
 
-
     @requires_admin
-    def uac(self):
-        """Adds the keys LocalAccountTokenFilterPolicy and EnableLUA 
+    def fix_uac(self):
+        """
+        Adds the keys LocalAccountTokenFilterPolicy and EnableLUA 
         to HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System
 
-            Set values to 1
-
-        Args:
-
-        Raises:
-
-        Returns:
-
+        Set values to 1
         """
         
         #self.logger.announce('')
@@ -790,7 +775,6 @@ class smb(connection):
                 self.dc_ip = dcip 
                 self.hashes = None 
                 self.port = 445
-
 
         options = Ops()
 
@@ -813,13 +797,8 @@ class smb(connection):
 
     @requires_admin
     def uac_status(self):
-        """Checks the status of Remote UAC (EnableLUA + LocalAccountTokenFilterPolicy)
-
-        Args:
-
-        Raises:
-
-        Returns:
+        """
+        Checks the status of Remote UAC (EnableLUA + LocalAccountTokenFilterPolicy)
 
         """
 
@@ -833,7 +812,6 @@ class smb(connection):
                 self.dc_ip = dcip 
                 self.hashes = None 
                 self.port = 445
-
 
         options = Ops()
 

@@ -1,5 +1,5 @@
 from time import strftime, localtime
-from cmx.protocols.smb.remotefile import RemoteFile
+from cmx.protocols.smb.MISC.remotefile import RemoteFile
 from impacket.smb3structs import FILE_READ_DATA
 from impacket.smbconnection import SessionError
 import logging
