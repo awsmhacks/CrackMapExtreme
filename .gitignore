@@ -4,6 +4,7 @@ data/cmx.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.pyz
 
 # C extensions
 *.so
