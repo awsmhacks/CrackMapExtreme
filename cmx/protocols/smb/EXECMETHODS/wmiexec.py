@@ -87,7 +87,7 @@ class WMIEXEC:
             logging.debug("SMBv3.0 dialect used")
 
 
-        self.__dcom  = DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, 
+        self.__dcom  = impacket.dcerpc.v5.dcomrt.DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, 
                                       self.__nthash,self.__aesKey, oxidResolver=True, doKerberos=self.__doKerberos)
         try:
             iInterface = self.__dcom.CoCreateInstanceEx(wmi.CLSID_WbemLevel1Login,wmi.IID_IWbemLevel1Login)
