@@ -89,7 +89,7 @@ class WMIEXEC:
         try:
             iInterface = self.__dcom.CoCreateInstanceEx(impacket.dcerpc.v5.dcom.wmi.CLSID_WbemLevel1Login,impacket.dcerpc.v5.dcom.wmi.IID_IWbemLevel1Login)
             iWbemLevel1Login = impacket.dcerpc.v5.dcom.wmi.IWbemLevel1Login(iInterface)
-            iWbemServices= iWbemLevel1Login.NTLMLogin('//./root/cimv2', NULL, NULL)
+            iWbemServices= iWbemLevel1Login.NTLMLogin('//./root/cimv2', impacket.dcerpc.v5.dtypes.NULL, impacket.dcerpc.v5.dtypes.NULL)
             iWbemLevel1Login.RemRelease()
 
             self.__win32Process,_ = iWbemServices.GetObject('Win32_Process')
