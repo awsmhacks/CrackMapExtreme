@@ -74,11 +74,11 @@ class WMIEXEC:
 
         dialect = smbconnection.getDialect()
         
-        if dialect == SMB_DIALECT:
+        if dialect == impacket.smb.SMB_DIALECT:
             logging.debug("SMBv1 dialect used")
-        elif dialect == SMB2_DIALECT_002:
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_002:
             logging.debug("SMBv2.0 dialect used")
-        elif dialect == SMB2_DIALECT_21:
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_21:
             logging.debug("SMBv2.1 dialect used")
         else:
             logging.debug("SMBv3.0 dialect used")
@@ -87,8 +87,8 @@ class WMIEXEC:
         self.__dcom  = impacket.dcerpc.v5.dcomrt.DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, 
                                       self.__nthash,self.__aesKey, oxidResolver=True, doKerberos=self.__doKerberos)
         try:
-            iInterface = self.__dcom.CoCreateInstanceEx(wmi.CLSID_WbemLevel1Login,wmi.IID_IWbemLevel1Login)
-            iWbemLevel1Login = wmi.IWbemLevel1Login(iInterface)
+            iInterface = self.__dcom.CoCreateInstanceEx(impacket.dcerpc.v5.dcom.wmi.CLSID_WbemLevel1Login,impacket.dcerpc.v5.dcom.wmi.IID_IWbemLevel1Login)
+            iWbemLevel1Login = impacket.dcerpc.v5.dcom.wmi.IWbemLevel1Login(iInterface)
             iWbemServices= iWbemLevel1Login.NTLMLogin('//./root/cimv2', NULL, NULL)
             iWbemLevel1Login.RemRelease()
 
