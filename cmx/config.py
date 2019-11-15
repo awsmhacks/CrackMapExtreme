@@ -25,6 +25,9 @@ from impacket.dcerpc.v5.drsuapi import MSRPC_UUID_DRSUAPI
 from impacket.dcerpc.v5.epm import hept_map
 from impacket.dcerpc.v5 import epm
 
+from impacket.dcerpc.v5.dcomrt import DCOMConnection
+from impacket.dcerpc.v5.dcom import wmi
+from impacket.dcerpc.v5.dtypes import NULL
 
 
 VERSION='5.0.1'

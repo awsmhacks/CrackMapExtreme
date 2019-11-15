@@ -31,14 +31,11 @@ import cmd
 
 from gevent import sleep
 from cmx.helpers.misc import gen_random_string
-from impacket.dcerpc.v5.dcomrt import DCOMConnection
-from impacket.smbconnection import SMBConnection
-from impacket.smb import SMB_DIALECT
-from impacket.smb3structs import SMB2_DIALECT_002, SMB2_DIALECT_21
-from impacket.dcerpc.v5.dcom import wmi
-from impacket.dcerpc.v5.dtypes import NULL
+
 from cmx import config as cfg
 import time
+
+import impacket
 
 OUTPUT_FILENAME = '__output'
 BATCH_FILENAME  = 'execute.bat'
