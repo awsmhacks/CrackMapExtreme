@@ -20,7 +20,7 @@ class CMXSMBServer(threading.Thread):
             if verbose: self.server.setLogFile('')
             self.server.setSMB2Support(True)   #TODO: This needs a check on what version the login used.
 
-            # adding credentials incase the org has disabled anon smb access
+            
             # password can be a list of passwords, we only gonna make this work if you pass 1 password for now...
             if password is not '':
                 lmhash = compute_lmhash(password[0])
@@ -28,6 +28,8 @@ class CMXSMBServer(threading.Thread):
             else:
                 lmhash, nthash = hashes.split(':')
             
+        # adding credentials if the org has disabled anon smb access
+        # this will make wmiexec methods not work, must auth in as the user.
             # username can be a list of users, we only gonna make this work if you pass 1 user for now...
             #self.server.addCredential(username[0], 0, lmhash, nthash)
             #self.server.addCredential('', 0, '', '')
