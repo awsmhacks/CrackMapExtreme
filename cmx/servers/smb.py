@@ -29,9 +29,9 @@ class CMXSMBServer(threading.Thread):
                 lmhash, nthash = hashes.split(':')
             
             # username can be a list of users, we only gonna make this work if you pass 1 user for now...
-            self.server.addCredential(username[0], 0, lmhash, nthash)
-            self.server.addCredential('', 0, '', '')
-            self.server.addCredential(computer, 500, '', '')
+            #self.server.addCredential(username[0], 0, lmhash, nthash)
+            #self.server.addCredential('', 0, '', '')
+            #self.server.addCredential(computer, 500, '', '')
 
             # Here you can set a custom SMB challenge in hex format, If empty defaults to '4141414141414141'
             # e.g. server.setSMBChallenge('12345678abcdef00')
