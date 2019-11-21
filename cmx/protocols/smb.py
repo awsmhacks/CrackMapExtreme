@@ -31,10 +31,10 @@ from cmx.helpers.misc import *
 from cmx.helpers.wmirpc import RPCRequester
 
 from cmx.protocols.smb.EXECMETHODS.wmiexec import WMIEXEC as cmxWMIEXEC
-from cmx.protocols.smb.EXECMETHODS.atexec import TSCH_EXEC
-from cmx.protocols.smb.EXECMETHODS.smbexec import SMBEXEC
-from cmx.protocols.smb.EXECMETHODS.psexec import PSEXEC
-from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC
+from cmx.protocols.smb.EXECMETHODS.atexec import TSCH_EXEC as cmxTSCH_EXEC
+from cmx.protocols.smb.EXECMETHODS.smbexec import SMBEXEC as cmxSMBEXEC
+from cmx.protocols.smb.EXECMETHODS.psexec import PSEXEC as cmxPSEXEC
+from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC as cmxDCOMEXEC
 
 import cmx
 
