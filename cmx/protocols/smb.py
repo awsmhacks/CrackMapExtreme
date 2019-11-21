@@ -30,6 +30,12 @@ from cmx.helpers.logger import write_log, highlight
 from cmx.helpers.misc import *
 from cmx.helpers.wmirpc import RPCRequester
 
+from cmx.protocols.smb.EXECMETHODS.wmiexec import WMIEXEC as cmxWMIEXEC
+from cmx.protocols.smb.EXECMETHODS.atexec import TSCH_EXEC
+from cmx.protocols.smb.EXECMETHODS.smbexec import SMBEXEC
+from cmx.protocols.smb.EXECMETHODS.psexec import PSEXEC
+from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC
+
 import cmx
 
 smb_share_name = gen_random_string(5).upper()
@@ -287,7 +293,7 @@ class smb(connection):
 
             if method == 'wmiexec':
                 try:
-                    exec_method = cmx.protocols.smb.EXECMETHODS.wmiexec.WMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
+                    exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
                     self.logger.announce('Executed command via wmiexec')
                     break
                 except:
