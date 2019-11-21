@@ -30,6 +30,8 @@ from impacket.dcerpc.v5.dcom import wmi
 from impacket.dcerpc.v5.dtypes import NULL
 
 
+
+
 VERSION='5.0.1'
 RELEASED='n/a'
 
