@@ -17,7 +17,7 @@ class CMXSMBServer(threading.Thread):
 
             self.server = smbserver.SimpleSMBServer(listen_address, listen_port)
             self.server.addShare(share_name.upper(), share_path)
-            #self.server.setSMB2Support(True)   #TODO: This needs a check on what version the login used.
+            self.server.setSMB2Support(True)   #TODO: This needs a check on what version the login used.
 
             if verbose: self.server.setLogFile('')
             

@@ -114,7 +114,7 @@ else
     else:
         command = amsi_bypass + ps_command
 
-    logging.debug('Generated PS command:\n {}\n'.format(command))
+    logging.debug('Generated PS command:\n{}\n'.format(command))
 
     if not dont_obfs:
         obfs_attempts = 0
@@ -240,7 +240,7 @@ $request.GetResponse()'''.format(server=context.server,
                                   addr=context.localip,
                                   command=command)
 
-    logging.debug('Generated PS IEX Launcher:\n {}\n'.format(launcher))
+    logging.debug('Generated PS IEX Launcher:\n{}\n'.format(launcher))
 
     return launcher.strip()
 

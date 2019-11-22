@@ -206,6 +206,7 @@ class smb(connection):
         execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
         execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
         execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
+        execgroup.add_argument('--kd', action='store_true', help='Shut down defender before executing command (wmiexec)')
         execegroup = execgroup.add_mutually_exclusive_group()
         execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
@@ -221,10 +222,9 @@ class smb(connection):
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
 
         servicegroup = smb_parser.add_argument_group("Interact with Services")
-        servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='Check Remote UAC Status')
-        servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Check Remote UAC Status')
+        servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='C')
+        servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Che')
         
-
 
         return parser
 
@@ -279,76 +279,76 @@ class smb(connection):
         """
 
         if self.args.exec_method:
-            methods = [self.args.exec_method]
+            method = self.args.exec_method
+        else:
+            method = 'wmiexec' # 'dcomexec', 'atexec', 'smbexec', 'psexec'
 
-        if not methods:
-            methods = ['wmiexec'] #, 'dcomexec', 'atexec', 'smbexec', 'psexec']
-
-        if not payload and self.args.execute:
+        if not payload:
             payload = self.args.execute
-            if not self.args.no_output:
-                get_output = True
 
-        for method in methods:
+        if not self.args.no_output:
+            get_output = True
 
-            if method == 'wmiexec':
-                try:
-                    exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
-                    self.logger.announce('Executed command via wmiexec')
-                    break
-                except:
-                    logging.debug('Error executing command via wmiexec, traceback:')
-                    logging.debug(format_exc())
-                    continue
+        if self.args.kd:
+            killDefender = True 
+        else:
+            killDefender = False
 
-            elif method == 'dcomexec':
-                try:
-                    exec_method = DCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                    self.logger.announce('Executed command via mmcexec')
-                    break
-                except:
-                    logging.debug('Error executing command via mmcexec, traceback:')
-                    logging.debug(format_exc())
-                    continue
+        if method == 'wmiexec':
+            try:
+                exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender) # killDefender
+                self.logger.announce('Executed command via wmiexec')
+                
+            except:
+                logging.debug('Error executing command via wmiexec, traceback:')
+                logging.debug(format_exc())
+                
 
-            elif method == 'atexec':
-                try:
-                    exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
-                    self.logger.announce('Executed command via atexec')
-                    break
-                except:
-                    logging.debug('Error executing command via atexec, traceback:')
-                    logging.debug(format_exc())
-                    continue
+        elif method == 'dcomexec':
+            try:
+                exec_method = DCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
+                self.logger.announce('Executed command via mmcexec')
+                
+            except:
+                logging.debug('Error executing command via mmcexec, traceback:')
+                logging.debug(format_exc())
+                
 
-            elif method == 'smbexec':
-                try:
-                    exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-                    self.logger.announce('Executed command via smbexec')
-                    break
-                except:
-                    logging.debug('Error executing command via smbexec, traceback:')
-                    logging.debug(format_exc())
-                    return 'fail'
+        elif method == 'atexec':
+            try:
+                exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
+                self.logger.announce('Executed command via atexec')
+                
+            except:
+                logging.debug('Error executing command via atexec, traceback:')
+                logging.debug(format_exc())
+                
 
-            elif method == 'psexec':
-                try:
-                    exec_method = PSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
-                    self.logger.announce('Executed command via psexec')
-                    break
-                except:
-                    logging.debug('Error executing command via psexec, traceback:')
-                    logging.debug(format_exc())
-                    return 'fail'
+        elif method == 'smbexec':
+            try:
+                exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
+                self.logger.announce('Executed command via smbexec')
+                
+            except:
+                logging.debug('Error executing command via smbexec, traceback:')
+                logging.debug(format_exc())
+                return 'fail'
+
+        elif method == 'psexec':
+            try:
+                exec_method = PSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
+                self.logger.announce('Executed command via psexec')
+                
+            except:
+                logging.debug('Error executing command via psexec, traceback:')
+                logging.debug(format_exc())
+                return 'fail'
 
 
         if hasattr(self, 'server'): self.server.track_host(self.host)
 
-        meth = 'wmiexec'
-        if self.args.exec_method: 
-            meth = self.args.exec_method
 
-        self.logger.debug('Executing {} via {}'.format(payload,meth))
+        self.logger.debug('Executing {} via {}'.format(payload,method))
 
 
         output = '{}'.format(exec_method.execute(payload, get_output).strip())
@@ -380,7 +380,9 @@ class smb(connection):
 
         if not payload and self.args.ps_execute:
             payload = self.args.ps_execute
-            if not self.args.no_output: get_output = True
+
+        if not self.args.no_output: 
+            get_output = True
 
         return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=False, server_os=self.server_os), get_output, methods)
 

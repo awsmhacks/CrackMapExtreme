@@ -141,7 +141,7 @@ class connection(object):
             self.module.on_login(context, self)
 
         if self.admin_privs and hasattr(self.module, 'on_admin_login'):
-            self.module.on_admin_login(context, self)
+            self.module.on_admin_login(context, self) #self is our protocolconnection obj here
         elif hasattr(self.module, 'on_admin_login') and not self.admin_privs:
             print('')
             module_logger.announce('Unable to execute module, user must have local admin privileges')
