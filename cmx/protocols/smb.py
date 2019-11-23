@@ -246,13 +246,13 @@ class smb(connection):
 
 ###############################################################################
 
-       ####### #     # #######  #####  #     # ####### ####### 
-       #        #   #  #       #     # #     #    #    #       
-       #         # #   #       #       #     #    #    #       
-       #####      #    #####   #       #     #    #    #####   
-       #         # #   #       #       #     #    #    #       
-       #        #   #  #       #     # #     #    #    #       
-       ####### #     # #######  #####   #####     #    ####### 
+        ####### #     # #######  #####  #     # ####### #######
+        #        #   #  #       #     # #     #    #    #
+        #         # #   #       #       #     #    #    #
+        #####      #    #####   #       #     #    #    #####
+        #         # #   #       #       #     #    #    #
+        #        #   #  #       #     # #     #    #    #
+        ####### #     # #######  #####   #####     #    #######
 
 ###############################################################################
 ###############################################################################
@@ -484,14 +484,14 @@ class smb(connection):
 
 ###############################################################################
 
-        #####  ####### #     # #     # #######  #####  ####### 
-       #     # #     # ##    # ##    # #       #     #    #    
-       #       #     # # #   # # #   # #       #          #    
-       #       #     # #  #  # #  #  # #####   #          #    
-       #       #     # #   # # #   # # #       #          #    
-       #     # #     # #    ## #    ## #       #     #    #    
-        #####  ####### #     # #     # #######  #####     #    
-                                                      
+        #####  ####### #     # #     # #######  #####  #######
+       #     # #     # ##    # ##    # #       #     #    #
+       #       #     # # #   # # #   # #       #          #
+       #       #     # #  #  # #  #  # #####   #          #
+       #       #     # #   # # #   # # #       #          #
+       #     # #     # #    ## #    ## #       #     #    #
+        #####  ####### #     # #     # #######  #####     #
+
 ###############################################################################
 ###############################################################################
 #   Connection functions
@@ -545,6 +545,7 @@ class smb(connection):
         logging.debug('Connected using SMBv3 to: {}'.format(self.host))
         return True
 
+
     def create_conn_obj(self):
         if self.create_smbv1_conn():
             return True
@@ -552,7 +553,6 @@ class smb(connection):
             return True
 
         return False
-
 
 
 ###############################################################################
@@ -743,15 +743,15 @@ class smb(connection):
 ###############################################################################
 
 
-                ######     #######     #####  
-                #     #    #          #     # 
-                #     #    #          #       
-                ######     #####      #  #### 
-                #   #      #          #     # 
-                #    #     #          #     # 
-                #     #    #######     #####  
-                              
-                                                      
+                ######     #######     #####
+                #     #    #          #     #
+                #     #    #          #
+                ######     #####      #  ####
+                #   #      #          #     #
+                #    #     #          #     #
+                #     #    #######     #####
+
+
 ###############################################################################
 ###############################################################################
 #   Registry functions
@@ -835,22 +835,22 @@ class smb(connection):
 
 ###############################################################################
 
-         #####  ####### ######  #     # ###  #####  #######  #####  
-        #     # #       #     # #     #  #  #     # #       #     # 
-        #       #       #     # #     #  #  #       #       #       
-         #####  #####   ######  #     #  #  #       #####    #####  
-              # #       #   #    #   #   #  #       #             # 
-        #     # #       #    #    # #    #  #     # #       #     # 
-         #####  ####### #     #    #    ###  #####  #######  #####  
+         #####  ####### ######  #     # ###  #####  #######  #####
+        #     # #       #     # #     #  #  #     # #       #     #
+        #       #       #     # #     #  #  #       #       #
+         #####  #####   ######  #     #  #  #       #####    #####
+              # #       #   #    #   #   #  #       #             #
+        #     # #       #    #    # #    #  #     # #       #     #
+         #####  ####### #     #    #    ###  #####  #######  #####
 
-###############################################################################                                                       
 ###############################################################################
-#   Do stuff with services 
+###############################################################################
+#   Do stuff with services
 #
 # This section:
 #   wmi
 #   dualhome
-#   
+#
 #
 ###############################################################################
 
@@ -901,7 +901,6 @@ class smb(connection):
         Returns:
 
         """
-        
         #self.logger.announce('')
         dcip = self.dc_ip
 
@@ -931,14 +930,14 @@ class smb(connection):
 
 ###############################################################################
 
-                    #     #    #     #    ### 
-                    #  #  #    ##   ##     #  
-                    #  #  #    # # # #     #  
-                    #  #  #    #  #  #     #  
-                    #  #  #    #     #     #  
-                    #  #  #    #     #     #  
-                     ## ##     #     #    ### 
-                                                      
+                    #     #    #     #    ###
+                    #  #  #    ##   ##     #
+                    #  #  #    # # # #     #
+                    #  #  #    #  #  #     #
+                    #  #  #    #     #     #
+                    #  #  #    #     #     #
+                     ## ##     #     #    ###
+
 ###############################################################################
 ###############################################################################
 #   WMI functions
@@ -997,14 +996,9 @@ class smb(connection):
 
     @requires_admin
     def dualhome(self, wmi_query=None, namespace=None):
-        """Execute via WMI
+        """Check for dual homed networks.
 
-        Args:
-
-        Raises:
-
-        Returns:
-
+        as requested by the man @fang0654
         """
         #self.logger.announce('Checking for dual homed networks')
         records = []
@@ -1108,7 +1102,7 @@ class smb(connection):
         self.local_ip = self.conn.getSMBServer().get_socket().getsockname()[0]
 
         try:
-            self.conn.login('' , '')
+            self.conn.login('', '')
             logging.debug("Null login?")
             self.logger.success('Null login allowed')
         except SessionError as e:
@@ -1136,7 +1130,7 @@ class smb(connection):
         #print (self.conn.getServerDNSDomainName())     # ocean.depth
         #print (self.conn.getServerOSMajor())           # 6
         #print (self.conn.getServerOSMinor())           # 1
-        #print (self.conn.getServerOSBuild())           # 7601 
+        #print (self.conn.getServerOSBuild())           # 7601
         #print (self.conn.doesSupportNTLMv2())          # True
         #print (self.conn.isLoginRequired())            # True
 
@@ -1154,7 +1148,7 @@ class smb(connection):
             logging.debug("SMBv3.0 dialect used")
 
         # Get the DC if we arent local-auth and didnt specify
-        if not self.args.local_auth and self.dc_ip =='':
+        if not self.args.local_auth and self.dc_ip == '':
             self.dc_ip = self.conn.getServerDNSDomainName()
 
         if self.args.domain:
@@ -1198,7 +1192,7 @@ class smb(connection):
                 try:
                     logging.debug('Get disks via hNetrServerDiskEnum...')
                     #self.logger.announce('Attempting to enum disks...')
-                    resp = impacket.dcerpc.v5.srvs.hNetrServerDiskEnum(dce, 0)  
+                    resp = impacket.dcerpc.v5.srvs.hNetrServerDiskEnum(dce, 0)
                     self.logger.success('Disks enumerated on {} !'.format(self.host))
 
                     for disk in resp['DiskInfoStruct']['Buffer']:
@@ -1526,12 +1520,12 @@ class smb(connection):
         return
 
 
-    def rid_brute(self, maxRid=None):
+    def rid_brute(self, maxrid=None):
         """Brute force RIDs."""
         logging.debug('Starting RID Brute')
 
-        if not maxRid:
-            maxRid = int(self.args.rid_brute)
+        if not maxrid:
+            maxrid = int(self.args.rid_brute)
 
         try:
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\lsarpc', username=self.username, password=self.password, smb_connection=self.conn)
@@ -1563,9 +1557,9 @@ class smb(connection):
                     self.logger.highlight("         RID Information")
 
 
-                    for j in range(maxRid//SIMULTANEOUS+1):
-                        if (maxRid - soFar) // SIMULTANEOUS == 0:
-                            sidsToCheck = (maxRid - soFar) % SIMULTANEOUS
+                    for j in range(maxrid // SIMULTANEOUS + 1):
+                        if (maxrid - soFar) // SIMULTANEOUS == 0:
+                            sidsToCheck = (maxrid - soFar) % SIMULTANEOUS
                         else:
                             sidsToCheck = SIMULTANEOUS
 
@@ -1574,7 +1568,7 @@ class smb(connection):
 
                         sids = list()
 
-                        for i in range(soFar, soFar+sidsToCheck):
+                        for i in range(soFar, soFar + sidsToCheck):
                             sids.append(domainSid + '-%d' % i)
                         try:
                             #if self.debug:    # this is huge/gross, even for debug
@@ -1873,28 +1867,28 @@ class smb(connection):
                 dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
-                    logging.debug('Dump of hSamrConnect response:') 
+                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
+                    logging.debug('Dump of hSamrConnect response:')
                     if self.debug:
                         resp.dump()
-                    serverHandle = resp['ServerHandle'] 
+                    serverHandle = resp['ServerHandle']
 
                     self.logger.debug('Looking up domain name(s)')
                     resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
                     if self.debug:
                         resp2.dump()
 
                     domains = resp2['Buffer']['Buffer']
                     tmpdomain = domains[0]['Name']
 
-                    self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
+                    self.logger.debug('Looking up users in domain:' + domains[0]['Name'])
                     resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
                     logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
                     if self.debug:
                         resp.dump()
 
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId=resp['DomainId'])
                     logging.debug('Dump of hSamrOpenDomain response:')
                     if self.debug:
                         resp.dump()
@@ -1926,7 +1920,7 @@ class smb(connection):
                             if self.debug:
                                 r.dump()
 
-                            # r has the clases defined here: 
+                            # r has the clases defined here:
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
                             #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
                             self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
@@ -1940,7 +1934,7 @@ class smb(connection):
                                 info.dump()
                             impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
 
-                        enumerationContext = resp['EnumerationContext'] 
+                        enumerationContext = resp['EnumerationContext']
                         status = resp['ErrorCode']
 
                 except Exception as e: #failed function
@@ -1991,28 +1985,28 @@ class smb(connection):
                 dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
-                    logging.debug('Dump of hSamrConnect response:') 
+                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
+                    logging.debug('Dump of hSamrConnect response:')
                     if self.debug:
                         resp.dump()
-                    serverHandle = resp['ServerHandle'] 
+                    serverHandle = resp['ServerHandle']
 
                     self.logger.debug('Looking up domain name(s)')
                     resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
                     if self.debug:
                         resp2.dump()
 
                     domains = resp2['Buffer']['Buffer']
                     tmpdomain = domains[0]['Name']
 
-                    self.logger.debug('Looking up users in domain:'+ domains[0]['Name'])
+                    self.logger.debug('Looking up users in domain:' + domains[0]['Name'])
                     resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:')
                     if self.debug:
                         resp.dump()
 
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId = resp['DomainId'])
                     logging.debug('Dump of hSamrOpenDomain response:')
                     if self.debug:
                         resp.dump()
@@ -2052,7 +2046,7 @@ class smb(connection):
                             if self.debug:
                                 r.dump()
 
-                            # r has the clases defined here: 
+                            # r has the clases defined here:
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
                             self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
@@ -2081,7 +2075,7 @@ class smb(connection):
                             if self.debug:
                                 r.dump()
 
-                            # r has the clases defined here: 
+                            # r has the clases defined here:
                                 #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
 
                             #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
@@ -2098,7 +2092,7 @@ class smb(connection):
                             impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
 
 
-                        enumerationContext = respComps['EnumerationContext'] 
+                        enumerationContext = respComps['EnumerationContext']
                         status = respComps['ErrorCode']
 
                 except Exception as e: #failed function
@@ -2156,28 +2150,28 @@ class smb(connection):
                 dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
-                    logging.debug('Dump of hSamrConnect response:') 
+                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
+                    logging.debug('Dump of hSamrConnect response:')
                     if self.debug:
                         resp.dump()
-                    serverHandle = resp['ServerHandle'] 
+                    serverHandle = resp['ServerHandle']
 
                     self.logger.debug('Looking up reachable domain(s)')
                     resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
                     if self.debug:
                         resp2.dump()
 
                     domains = resp2['Buffer']['Buffer']
                     tmpdomain = domains[0]['Name']
 
-                    logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
+                    logging.debug('Looking up groups in domain: ' + domains[0]['Name'])
                     resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:')
                     if self.debug:
                         resp.dump()
 
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId = resp['DomainId'])
                     logging.debug('Dump of hSamrOpenDomain response:')
                     if self.debug:
                         resp.dump()
@@ -2240,7 +2234,7 @@ class smb(connection):
                             impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
 
-                        enumerationContext = resp['EnumerationContext'] 
+                        enumerationContext = resp['EnumerationContext']
                         status = resp['ErrorCode']
 
                 except Exception as e: #failed function
@@ -2337,6 +2331,7 @@ class smb(connection):
 
             SAM.finish()
 
+
     @requires_admin
     def lsa(self):
         """Extract LSA Secrets.
@@ -2351,7 +2346,6 @@ class smb(connection):
         still dont know about this, some can be cracked.
         https://ired.team/offensive-security/credential-access-and-credential-dumping/dumping-and-cracking-mscash-cached-domain-credentials
         """
-
         self.logger.announce('Dumping LSA Secrets on {}'.format(self.host))
         self.enable_remoteops()
 
@@ -2408,7 +2402,7 @@ class smb(connection):
                     hash = ntds_hash
 
                 try:
-                    username,_,lmhash,nthash,_,_,_ = hash.split(':')
+                    username, _, lmhash, nthash, _, _, _ = hash.split(':')
                     parsed_hash = ':'.join((lmhash, nthash))
                     if validate_ntlm(parsed_hash):
                         self.db.add_credential('hash', domain, username, parsed_hash, pillaged_from=host_id)
@@ -2503,14 +2497,14 @@ class smb(connection):
 ####################################################################################
 ####################################################################################
 
-    #     #    #######    #          ######     #######    ######      #####  
-    #     #    #          #          #     #    #          #     #    #     # 
-    #     #    #          #          #     #    #          #     #    #       
-    #######    #####      #          ######     #####      ######      #####  
-    #     #    #          #          #          #          #   #            # 
-    #     #    #          #          #          #          #    #     #     # 
-    #     #    #######    #######    #          #######    #     #     #####  
-                                                                         
+    #     #    #######    #          ######     #######    ######      #####
+    #     #    #          #          #     #    #          #     #    #     #
+    #     #    #          #          #     #    #          #     #    #
+    #######    #####      #          ######     #####      ######      #####
+    #     #    #          #          #          #          #   #            #
+    #     #    #          #          #          #          #    #     #     #
+    #     #    #######    #######    #          #######    #     #     #####
+
 ####################################################################################
 #   Helper / Misc functions
 #
@@ -2587,7 +2581,7 @@ class smb(connection):
                     # https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/scmr.py
 
                     logging.debug('Verify localadmin via ServicesActive...')
-                    ans = impacket.dcerpc.v5.scmr.hROpenSCManagerW(dce,'{}\x00'.format(self.hostname),'ServicesActive\x00', 0xF003F)
+                    ans = impacket.dcerpc.v5.scmr.hROpenSCManagerW(dce, '{}\x00'.format(self.hostname),'ServicesActive\x00', 0xF003F)
                     logging.debug('pewpewpewPwned baby')
                     dce.disconnect()
                     return True
@@ -2614,7 +2608,7 @@ class smb(connection):
             return
 
         try:
-            self.remote_ops  = impacket.examples.secretsdump.RemoteOperations(self.conn, False, None) #self.__doKerberos, self.__kdcHost
+            self.remote_ops = impacket.examples.secretsdump.RemoteOperations(self.conn, False, None) #self.__doKerberos, self.__kdcHost
             self.remote_ops.enableRegistry()
             self.bootkey = self.remote_ops.getBootKey()
         except Exception as e:
