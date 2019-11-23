@@ -1657,8 +1657,7 @@ class smb(connection):
                 write = False
 
                 try:
-                    #pdb.set_trace()
-                    self.conn.listPath(share_name, '*')
+                    self.conn.listPath(share_name, '\\')
                     read = True
                     share_info['access'].append('READ')
                 except SessionError:
