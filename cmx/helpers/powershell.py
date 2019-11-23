@@ -191,8 +191,7 @@ if (($injected -eq $False) -or ($inject_once -eq $False)){{
 
 
 def gen_ps_iex_cradle(context, scripts, command=str(), post_back=True, server_os='Windows'):
-    """
-    Generate a powershell download cradle for 1 or several scripts
+    """ Generate a powershell download cradle for 1 or several scripts
 
     """
 

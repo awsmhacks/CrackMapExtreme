@@ -58,6 +58,7 @@ def requires_dc(func):
     return wraps(func)(_decorator)
     
 class connection(object):
+    """ Base connection object """ 
 
     def __init__(self, args, db, host):
         self.args = args
@@ -105,6 +106,7 @@ class connection(object):
         return
 
     def proto_flow(self):
+        """ Program flow of cmx """ 
         self.proto_logger()
         if self.create_conn_obj():    # calls the create_conn_object method of the protocol class we are in     
             self.enum_host_info()
