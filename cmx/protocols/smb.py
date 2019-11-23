@@ -425,56 +425,51 @@ class smb(connection):
             try:
                 exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender)
                 logging.debug('Interactive shell using wmiexec')
-                break
             except:
                 self.logger.error('Failed to initiate wmiexec')
                 logging.debug('Error launching shell via wmiexec, traceback:')
                 logging.debug(format_exc())
-                break
+                return
 
         elif method == 'dcomexec':
             try:
                 exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
                 logging.debug('Interactive shell using mmcexec')
-                break
             except:
                 self.logger.error('Failed to initiate mmcexec')
                 logging.debug('Error launching shell via mmcexec, traceback:')
                 logging.debug(format_exc())
-                break
+                return
 
         elif method == 'atexec':
             try:
                 exec_method = cmxTSCH_EXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.hash) #self.args.share)
                 logging.debug('Interactive shell using atexec')
-                break
             except:
                 self.logger.error('Failed to initiate atexec')
                 logging.debug('Error launching shell via atexec, traceback:')
                 logging.debug(format_exc())
-                break
+                return
 
         elif method == 'smbexec':
             try:
                 exec_method = cmxSMBEXEC(self.host, self.smb_share_name, self.args.port, self.username, self.password, self.domain, self.hash, self.args.share)
                 logging.debug('Interactive shell using smbexec')
-                break
             except:
                 self.logger.error('Failed to initiate smbexec')
                 logging.debug('Error launching shell via smbexec, traceback:')
                 logging.debug(format_exc())
-                break
+                return
 
         elif method == 'psexec':
             try:
                 exec_method = cmxPSEXEC(self.host, self.args.port, self.username, self.password, self.domain, self.hash) # aesKey, doKerberos=False, kdcHost, serviceName)
                 self.logger.announce('Interactive shell using psexec')
-                break
             except:
                 self.logger.error('Failed to initiate psexec')
                 logging.debug('Error executing command via psexec, traceback:')
                 logging.debug(format_exc())
-                break
+                return
 
         try:
             exec_method.run(self.host, self.host)
@@ -1644,31 +1639,6 @@ class smb(connection):
         return spider.results
 
 
-
-###############################################################################
-
-     #     # ####### #######        ####### #     # #     # #     # 
-     ##    # #          #           #       ##    # #     # ##   ## 
-     # #   # #          #           #       # #   # #     # # # # # 
-     #  #  # #####      #    #####  #####   #  #  # #     # #  #  # 
-     #   # # #          #           #       #   # # #     # #     # 
-     #    ## #          #           #       #    ## #     # #     # 
-     #     # #######    #           ####### #     #  #####  #     # 
-
-
-###############################################################################
-###############################################################################
-#   Network/Domain Enum functions
-#
-# This section:
-#   shares
-#   pass_pol
-#   groups
-#   users
-#   computers
-#
-###############################################################################
-
     def shares(self):
         """Enum accessable shares and privileges.
 
@@ -1687,7 +1657,8 @@ class smb(connection):
                 write = False
 
                 try:
-                    self.conn.listPath(share_name, '*')
+                    pdb.set_trace()
+                    #self.conn.listPath(share_name, '*')
                     read = True
                     share_info['access'].append('READ')
                 except SessionError:
@@ -1723,6 +1694,30 @@ class smb(connection):
         return permissions
 
 
+
+###############################################################################
+
+     #     # ####### #######        ####### #     # #     # #     # 
+     ##    # #          #           #       ##    # #     # ##   ## 
+     # #   # #          #           #       # #   # #     # # # # # 
+     #  #  # #####      #    #####  #####   #  #  # #     # #  #  # 
+     #   # # #          #           #       #   # # #     # #     # 
+     #    ## #          #           #       #    ## #     # #     # 
+     #     # #######    #           ####### #     #  #####  #     # 
+
+
+###############################################################################
+###############################################################################
+#   Network/Domain Enum functions
+#
+# This section:
+#   pass_pol
+#   groups
+#   users
+#   computers
+#
+###############################################################################
+
     def pass_pol(self):
         """Grab domain password policy."""
         return PassPolDump(self).dump()
@@ -1742,7 +1737,7 @@ class smb(connection):
         #self.logger.announce('Starting Domain Group Enum')
 
         try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
+            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
             dce = rpctransport.get_dce_rpc()
             dce.connect()
             try:
@@ -1859,7 +1854,7 @@ class smb(connection):
         #self.logger.announce('Starting Domain Users Enum')
 
         try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
+            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
             dce = rpctransport.get_dce_rpc()
             dce.connect()
             try:
@@ -1964,7 +1959,7 @@ class smb(connection):
             self.logger.announce("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
         #self.logger.announce('Finished Domain Users Enum')
-        return list()
+        return
 
 
     @requires_dc
@@ -1977,7 +1972,7 @@ class smb(connection):
         #self.logger.announce('Starting Domain Computers Enum')
 
         try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password)
+            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
             dce = rpctransport.get_dce_rpc()
             dce.connect()
             try:
@@ -2127,7 +2122,7 @@ class smb(connection):
 
     @requires_dc
     def group(self):
-        """Enum domain groups.
+        """Enum domain a target group.
 
         Prints output and #adds them to cmxdb
         """
@@ -2270,13 +2265,13 @@ class smb(connection):
 
 ##############################################################################
 
-######  #     # #     # ######      #####  ######  ####### ######   #####  
-#     # #     # ##   ## #     #    #     # #     # #       #     # #     # 
-#     # #     # # # # # #     #    #       #     # #       #     # #       
-#     # #     # #  #  # ######     #       ######  #####   #     #  #####  
-#     # #     # #     # #          #       #   #   #       #     #       # 
-#     # #     # #     # #          #     # #    #  #       #     # #     # 
-######   #####  #     # #           #####  #     # ####### ######   ##### 
+######  #     # #     # ######      #####  ######  ####### ######   #####
+#     # #     # ##   ## #     #    #     # #     # #       #     # #     #
+#     # #     # # # # # #     #    #       #     # #       #     # #
+#     # #     # #  #  # ######     #       ######  #####   #     #  #####
+#     # #     # #     # #          #       #   #   #       #     #       #
+#     # #     # #     # #          #     # #    #  #       #     # #     #
+######   #####  #     # #           #####  #     # ####### ######   #####
 
 ##############################################################################
 ####################################################################################
@@ -2707,7 +2702,7 @@ class smb(connection):
         self.local_groups()
         time.sleep(1)
 
-        self.rid_brute(maxRid=4000)
+        self.rid_brute(maxrid=4000)
         time.sleep(1)
 
         self.disks()
@@ -2761,7 +2756,7 @@ class smb(connection):
         time.sleep(1)
         print('')
 
-        self.rid_brute(maxRid=4000)
+        self.rid_brute(maxrid=4000)
         time.sleep(1)
         print('')
 
@@ -2839,7 +2834,7 @@ class smb(connection):
         time.sleep(1)
         print('')
 
-        self.rid_brute(maxRid=4000)
+        self.rid_brute(maxrid=4000)
         time.sleep(1)
         print('')
 
