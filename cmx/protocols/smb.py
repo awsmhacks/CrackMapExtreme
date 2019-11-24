@@ -265,8 +265,9 @@ class smb(connection):
 #   ps_execute
 #   wmi
 #   interactive
-#
+# (fold next line)
 ###############################################################################
+
 
     @requires_admin
     @requires_smb_server
@@ -499,7 +500,7 @@ class smb(connection):
 #   create_smbv1_conn
 #   create_smbv3_conn
 #   create_conn_obj
-#
+# (fold next line)
 ###############################################################################
 
     def create_smbv1_conn(self):
@@ -569,7 +570,7 @@ class smb(connection):
 # This section:
 #   plaintext_login
 #   hash_login
-#
+# (fold next line)
 ###############################################################################
 
 
@@ -757,7 +758,7 @@ class smb(connection):
 #   fix_uac
 #   uac_status
 #
-#
+# (fold next line)
 ###############################################################################
 
     @requires_admin
@@ -848,7 +849,7 @@ class smb(connection):
 #   wmi
 #   dualhome
 #
-#
+# (fold next line)
 ###############################################################################
 
     def stop_service(self):
@@ -943,7 +944,7 @@ class smb(connection):
 #   wmi
 #   dualhome
 #
-#
+# (fold next line)
 ###############################################################################
 
     @requires_admin
@@ -1088,7 +1089,7 @@ class smb(connection):
 #   local_groups
 #   rid_brute
 #   spider
-#
+# (fold next line)
 ####################################################################################
 
     def enum_host_info(self):
@@ -1302,7 +1303,7 @@ class smb(connection):
 #   groups
 #   users
 #   computers
-#
+# (fold next line)
 ###############################################################################
 
     @requires_dc
@@ -1358,7 +1359,7 @@ class smb(connection):
 #   sam
 #   lsa
 #   ntds
-#
+# (fold next line)
 ####################################################################################
 
     @requires_admin
@@ -1589,7 +1590,7 @@ class smb(connection):
 #   domainfromdsn
 #   gen_relay_list
 #
-#   all
+# (fold next line)
 ####################################################################################
 
     def print_host_info(self):
