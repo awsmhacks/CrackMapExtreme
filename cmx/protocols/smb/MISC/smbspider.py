@@ -1,4 +1,5 @@
 from time import strftime, localtime
+import time
 from cmx.protocols.smb.MISC.remotefile import RemoteFile
 from impacket.smb3structs import FILE_READ_DATA
 from impacket.smbconnection import SessionError
@@ -19,6 +20,7 @@ class SMBSpider:
         self.onlyfiles = True
         self.content = False
         self.results = []
+        self.filecount = 0
 
     def spider(self, share, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
         if regex:
@@ -73,8 +75,6 @@ class SMBSpider:
         else:
             subfolder = subfolder.replace('/*/', '/') + '/*'
 
-        # End of the funky shit... or is it? Surprise! This whole thing is funky
-
         filelist = None
         try:
             filelist = self.smbconnection.listPath(self.share, subfolder)
@@ -105,6 +105,7 @@ class SMBSpider:
                                                                            path, 
                                                                            result.get_longname()))
                     else:
+                        self.filecount = self.filecount + 1
                         self.logger.highlight("//{}/{}/{}{} [lastm:'{}' size:{}]".format(self.smbconnection.getRemoteHost(), self.share,
                                                                                        path,
                                                                                        result.get_longname(),
@@ -117,6 +118,7 @@ class SMBSpider:
                     if not self.onlyfiles and result.is_directory():
                         self.logger.highlight("//{}/{}/{}{} [dir]".format(self.smbconnection.getRemoteHost(), self.share, path, result.get_longname()))
                     else:
+                        self.filecount = self.filecount + 1
                         self.logger.highlight("//{}/{}/{}{} [lastm:'{}' size:{}]".format(self.smbconnection.getRemoteHost(), self.share,
                                                                                        path,
                                                                                        result.get_longname(),

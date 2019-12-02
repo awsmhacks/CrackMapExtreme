@@ -507,7 +507,7 @@ class smb(connection):
         """Setup connection using smbv1."""
         try:
             logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
-            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port, preferredDialect=impacket.smb.SMB_DIALECT)
+            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port)
         except socket.error as e:
             if str(e).find('Connection reset by peer') != -1:
                 logging.debug('Connection was reset by target. SMBv1 might be disabled on {}'.format(self.host))

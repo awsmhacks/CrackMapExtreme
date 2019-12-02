@@ -28,8 +28,10 @@
 
 from cmx.helpers.misc import *
 from cmx.connection import *
+from cmx.protocols.smb.MISC.smbspider import *
 import impacket
 from datetime import datetime
+import time
 import cmx
 from cmx.helpers.logger import highlight, write_log
 from cmx import config as cfg
@@ -483,7 +485,7 @@ def rid_brute1(smb, maxrid=None):
     return
 
 
-def spider(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
+def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
     """Spider a share.
 
     Args:
@@ -494,11 +496,11 @@ def spider(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], d
 
     """
     self = smb
-    self.logger.announce('Starting Spider')
+    logging.debug('Starting Spider')
     spider = SMBSpider(self.conn, self.logger)
 
-    self.logger.announce('Started spidering')
-    start_time = time()
+    logging.debug('Start Spidering')
+    start_time = time.time()
     if not share:
         spider.spider(self.args.spider, self.args.spider_folder, self.args.pattern,
                       self.args.regex, self.args.exclude_dirs, self.args.depth,
@@ -506,9 +508,9 @@ def spider(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], d
     else:
         spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
 
-    self.logger.announce("Done spidering (Completed in {})".format(time() - start_time))
+    self.logger.success("Done spidering (Completed in {})".format(time.time() - start_time))
 
-    self.logger.announce('Finished Spidering')
+    self.logger.success('Total Files: {}'.format(spider.filecount))
     return spider.results
 
 
