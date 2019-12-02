@@ -1175,6 +1175,10 @@ class smb(connection):
 
 
     def disks(self):
+        """Enumerate disks.
+
+        *** This does require local admin i think. Made to return nothing if not admin.
+        """
         from cmx.protocols.smb.ENUM.hostenum import disks1
         disks1(self)
 
