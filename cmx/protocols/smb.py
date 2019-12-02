@@ -227,6 +227,8 @@ class smb(connection):
         servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='C')
         servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Che')
 
+        egroup.add_argument('--user', nargs='?', const='', metavar='USER', help='Enumerate and return all domain users')
+
         return parser
 
 
@@ -263,8 +265,9 @@ class smb(connection):
 #   ps_execute
 #   wmi
 #   interactive
-#
+# (fold next line)
 ###############################################################################
+
 
     @requires_admin
     @requires_smb_server
@@ -497,14 +500,14 @@ class smb(connection):
 #   create_smbv1_conn
 #   create_smbv3_conn
 #   create_conn_obj
-#
+# (fold next line)
 ###############################################################################
 
     def create_smbv1_conn(self):
         """Setup connection using smbv1."""
         try:
             logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
-            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port, preferredDialect=impacket.smb.SMB_DIALECT)
+            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port) #, preferredDialect=impacket.smb.SMB_DIALECT)
         except socket.error as e:
             if str(e).find('Connection reset by peer') != -1:
                 logging.debug('Connection was reset by target. SMBv1 might be disabled on {}'.format(self.host))
@@ -567,7 +570,7 @@ class smb(connection):
 # This section:
 #   plaintext_login
 #   hash_login
-#
+# (fold next line)
 ###############################################################################
 
 
@@ -755,7 +758,7 @@ class smb(connection):
 #   fix_uac
 #   uac_status
 #
-#
+# (fold next line)
 ###############################################################################
 
     @requires_admin
@@ -846,7 +849,7 @@ class smb(connection):
 #   wmi
 #   dualhome
 #
-#
+# (fold next line)
 ###############################################################################
 
     def stop_service(self):
@@ -941,7 +944,7 @@ class smb(connection):
 #   wmi
 #   dualhome
 #
-#
+# (fold next line)
 ###############################################################################
 
     @requires_admin
@@ -1086,7 +1089,7 @@ class smb(connection):
 #   local_groups
 #   rid_brute
 #   spider
-#
+# (fold next line)
 ####################################################################################
 
     def enum_host_info(self):
@@ -1170,473 +1173,59 @@ class smb(connection):
         self.create_conn_obj()
 
 
+
     def disks(self):
-        """Enumerate disks.
+        from cmx.protocols.smb.ENUM.hostenum import disks1
+        disks1(self)
 
-        *** This does require local admin i think. Made to return nothing if not admin.
-
-        """
-        try:
-            #self.logger.info('Attempting to enum disks...')
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('disks Binding start')
-                dce.bind(impacket.dcerpc.v5.srvs.MSRPC_UUID_SRVS)
-                try:
-                    logging.debug('Get disks via hNetrServerDiskEnum...')
-                    #self.logger.announce('Attempting to enum disks...')
-                    resp = impacket.dcerpc.v5.srvs.hNetrServerDiskEnum(dce, 0)
-                    self.logger.success('Disks enumerated on {} !'.format(self.host))
-
-                    for disk in resp['DiskInfoStruct']['Buffer']:
-                        if disk['Disk'] != '\x00':
-                            #self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
-                            self.logger.highlight("Found Disk: {}\\ ".format(disk['Disk']))
-                    return
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum disks, are you LocalAdmin?')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        #self.logger.info('Finished disk enum')
-        dce.disconnect()
         return
 
 
     def sessions(self):
-        """Enumerate sessions.
+        from cmx.protocols.smb.ENUM.hostenum import sessions1
+        sessions1(self)
 
-        Identifes sessions and their originating host.
-        Using impackets hNetrSessionEnum from https://github.com/SecureAuthCorp/impacket/blob/ec9d119d102251d13e2f9b4ff25966220f4005e9/impacket/dcerpc/v5/srvs.py
-        """
-        try:
-            #self.logger.announce('Starting Session Enum')
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('netsessions Binding start')
-                dce.bind(impacket.dcerpc.v5.srvs.MSRPC_UUID_SRVS)
-                try:
-                    logging.debug('Get netsessions via hNetrSessionEnum...')
-                    self.logger.success('Sessions enumerated on {} !'.format(self.host))
-                    resp = impacket.dcerpc.v5.srvs.hNetrSessionEnum(dce, '\x00', '\x00', 10)  #no clue why \x00 is used for client and username?? but it works!
-
-                    for session in resp['InfoStruct']['SessionInfo']['Level10']['Buffer']:
-                        userName = session['sesi10_username'][:-1]
-                        sourceIP = session['sesi10_cname'][:-1][2:]
-                        #self.logger.results('User: {} has session originating from {}'.format(userName, sourceIP))
-                        self.logger.highlight("{} has session originating from {} on {}".format(userName, sourceIP, self.host,))
-                    return
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        #self.logger.announce('Finished Session Enum')
-        dce.disconnect()
-        return
-
+        return   
 
     def loggedon(self):
-        """Enumerate Loggedon users.
+        from cmx.protocols.smb.ENUM.hostenum import loggedon1
+        loggedon1(self)
 
-        I think it requires localadmin, but handles if it doesnt work.
-        """
-        try:
-            #self.logger.announce('Checking for logged on users')
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\wkssvc', smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('loggedon Binding start')
-                dce.bind(impacket.dcerpc.v5.wkst.MSRPC_UUID_WKST)
-                try:
-                    logging.debug('Get loggedonUsers via hNetrWkstaUserEnum...')
-                    #self.logger.announce('Attempting to enum loggedon users...')
-                    resp = impacket.dcerpc.v5.wkst.hNetrWkstaUserEnum(dce, 1)   # theres a version that takes 0, not sure the difference?
-                    self.logger.success('Loggedon-Users enumerated on {} !'.format(self.host))
-
-                    for wksta_user in resp['UserInfo']['WkstaUserInfo']['Level1']['Buffer']:
-                        wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
-                        #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
-                        self.logger.highlight("{} is currently logged on {} ({})".format(wkst_username, self.host, self.hostname))
-
-                    return
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Loggedon Users, are you localadmin?')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        #self.logger.announce('Finished checking for logged on users')
-        dce.disconnect()
         return
 
 
     def local_users(self):
-        """Enumerate local users.
+        from cmx.protocols.smb.ENUM.hostenum import local_users1
+        local_users1(self)
 
-        Need to figure out if needs localadmin or its a waste of effort
-        """
-        try:
-            #self.logger.announce('Checking Local Users')
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-
-            try:
-                logging.debug('net local users Binding start')
-                dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
-
-                try:
-                    logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
-
-                    logging.debug('Dump of hSamrConnect response:')
-                    if self.debug:
-                        resp.dump()
-
-                    self.logger.debug('Looking up host name')
-                    serverHandle = resp['ServerHandle']
-                    resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
-                    if self.debug:
-                        resp2.dump()
-
-                    domains = resp2['Buffer']['Buffer']
-                    logging.debug('Looking up localusers on: '+ domains[0]['Name'])
-                    resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:')
-                    if self.debug:
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId=resp['DomainId'])
-
-                    logging.debug('Dump of hSamrOpenDomain response:')
-                    if self.debug:
-                        resp.dump()
-
-                    domainHandle = resp['DomainHandle']
-                    status = impacket.nt_errors.STATUS_MORE_ENTRIES
-                    enumerationContext = 0
-
-                    self.logger.success('Local Users enumerated on {} !'.format(self.host))
-                    self.logger.highlight("   Local User Accounts")
-
-                    while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
-                        try:
-                            resp = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                            logging.debug('Dump of hSamrEnumerateUsersInDomain response:')
-                            if self.debug:
-                                resp.dump()
-                        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                raise
-                            resp = e.get_packet()
-                        for user in resp['Buffer']['Buffer']:
-                            #users
-                            r = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-                            # r has the clases defined here: 
-                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-                            #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                            self.logger.highlight("{}\\{:<15} :{} ".format(self.hostname, user['Name'], user['RelativeId']))
-
-                            self.db.add_user(self.hostname, user['Name'])
-
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
-                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                            if self.debug:
-                                info.dump()
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
-                        enumerationContext = resp['EnumerationContext'] 
-                        status = resp['ErrorCode']
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Local Users, are you localadmin?')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        #self.logger.announce('Finished Checking Local Users')
-        dce.disconnect()
         return
 
 
     def local_groups(self):
-        """Enumerate local groups.
+        from cmx.protocols.smb.ENUM.hostenum import local_groups1
+        local_groups1(self)
 
-        Need to figure out if needs localadmin or its a waste of effort
-        """
-        try:
-            #self.logger.announce('Checking Local Groups')
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('Get net localgroups Binding start')
-                dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
-                try:
-                    logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
-
-                    logging.debug('Dump of hSamrConnect response:') 
-                    if self.debug:
-                        resp.dump()
-
-                    serverHandle = resp['ServerHandle'] 
-                    self.logger.debug('Checking host name')
-                    resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
-                    if self.debug:
-                        resp2.dump()
-
-                    domains = resp2['Buffer']['Buffer']
-                    tmpdomain = domains[0]['Name']
-                    resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
-                    if self.debug:
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-
-                    logging.debug('Dump of hSamrOpenDomain response:')
-                    if self.debug:
-                        resp.dump()
-
-                    domainHandle = resp['DomainHandle']
-                    status = impacket.nt_errors.STATUS_MORE_ENTRIES
-                    enumerationContext = 0
-                    self.logger.success('Local Groups enumerated on: {}'.format(self.host))
-                    self.logger.highlight("        Local Group Accounts")
-
-                    while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
-                        try:
-                            resp = impacket.dcerpc.v5.samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                            logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
-                            if self.debug:
-                                resp.dump()
-                        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                raise
-                            resp = e.get_packet()
-                        for group in resp['Buffer']['Buffer']:
-                            gid = group['RelativeId']
-                            r = impacket.dcerpc.v5.samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],impacket.dcerpc.v5.samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
-                            #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
-                            logging.debug('Dump of hSamrQueryInformationGroup response:')
-                            if self.debug:
-                                info.dump()
-                            #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            self.logger.highlight('Group: {:<20}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-
-                            groupResp = impacket.dcerpc.v5.samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
-                            logging.debug('Dump of hSamrGetMembersInGroup response:')
-                            if self.debug:
-                                groupResp.dump()
-
-                            for member in groupResp['Members']['Members']:
-                                m = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, member)
-                                guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
-
-                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                if self.debug:
-                                    guser.dump()
-
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['GroupHandle'])
-                        enumerationContext = resp['EnumerationContext'] 
-                        status = resp['ErrorCode']
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Local Groups, are you localadmin?')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        #self.logger.announce('Finished Checking Local Groups')
-        dce.disconnect()
         return
 
 
     def rid_brute(self, maxrid=None):
-        """Brute force RIDs."""
-        logging.debug('Starting RID Brute')
+        from cmx.protocols.smb.ENUM.hostenum import rid_brute1
+        rid_brute1(self, maxrid)
 
-        if not maxrid:
-            maxrid = int(self.args.rid_brute)
-
-        try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\lsarpc', username=self.username, password=self.password, smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-
-            dce.connect()
-            try:
-                logging.debug('Brute forcing RIDs')
-                dce.bind(impacket.dcerpc.v5.lsat.MSRPC_UUID_LSAT)
-                try:
-                    logging.debug('Open w/ hLsarOpenPolicy2...')
-                    resp = impacket.dcerpc.v5.lsad.hLsarOpenPolicy2(dce, impacket.dcerpc.v5.dtypes.MAXIMUM_ALLOWED | impacket.dcerpc.v5.lsat.POLICY_LOOKUP_NAMES)
-                    policyHandle = resp['PolicyHandle']
-
-                    if self.debug:
-                        logging.debug('Dump of hLsarOpenPolicy2 response:')
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.lsad.hLsarQueryInformationPolicy2(dce, policyHandle, impacket.dcerpc.v5.lsad.POLICY_INFORMATION_CLASS.PolicyAccountDomainInformation)
-                    domainSid = resp['PolicyInformation']['PolicyAccountDomainInfo']['DomainSid'].formatCanonical()
-
-                    if self.debug:
-                        logging.debug('Dump of hLsarQueryInformationPolicy2 response:')
-                        resp.dump()
-
-                    soFar = 0
-                    SIMULTANEOUS = 1000
-                    self.logger.success("RID's enumerated on: {}".format(self.host))
-                    self.logger.highlight("         RID Information")
-
-
-                    for j in range(maxrid // SIMULTANEOUS + 1):
-                        if (maxrid - soFar) // SIMULTANEOUS == 0:
-                            sidsToCheck = (maxrid - soFar) % SIMULTANEOUS
-                        else:
-                            sidsToCheck = SIMULTANEOUS
-
-                        if sidsToCheck == 0:
-                            break
-
-                        sids = list()
-
-                        for i in range(soFar, soFar + sidsToCheck):
-                            sids.append(domainSid + '-%d' % i)
-                        try:
-                            #if self.debug:    # this is huge/gross, even for debug
-                            #    logging.debug('Dump of hLsarLookupSids response:')
-                            #    resp.dump()
-                            resp = impacket.dcerpc.v5.lsat.hLsarLookupSids(dce, policyHandle, sids, impacket.dcerpc.v5.lsat.LSAP_LOOKUP_LEVEL.LsapLookupWksta)
-
-                        except Exception as e:
-                            if str(e).find('STATUS_NONE_MAPPED') >= 0:
-                                soFar += SIMULTANEOUS
-                                continue
-                            elif str(e).find('STATUS_SOME_NOT_MAPPED') >= 0:
-                                resp = e.get_packet()
-                            else:
-                                raise
-
-                        for n, item in enumerate(resp['TranslatedNames']['Names']):
-                            if item['Use'] != impacket.dcerpc.v5.samr.SID_NAME_USE.SidTypeUnknown:
-                                rid    = soFar + n
-                                domain = resp['ReferencedDomains']['Domains'][item['DomainIndex']]['Name']
-                                user   = item['Name']
-                                sid_type = impacket.dcerpc.v5.samr.SID_NAME_USE.enumItems(item['Use']).name
-                                self.logger.highlight("{}\\{:<15} :{} ({})".format(domain, user, rid, sid_type))
-
-                        soFar += SIMULTANEOUS
-
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to Brute force RIDs, are you localadmin?')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        dce.disconnect()
-
-        logging.debug('Finished RID brute')
         return
 
 
     def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
-        """Spider a share.
+        from cmx.protocols.smb.ENUM.hostenum import spider1
+        spider1(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True)
 
-        Args:
+        return
 
-        Raises:
+    def shares2(self): #session error not defined?
+        from cmx.protocols.smb.ENUM.hostenum import shares1
+        shares1(self)
 
-        Returns:
-
-        """
-        self.logger.announce('Starting Spider')
-        spider = SMBSpider(self.conn, self.logger)
-
-        self.logger.announce('Started spidering')
-        start_time = time()
-        if not share:
-            spider.spider(self.args.spider, self.args.spider_folder, self.args.pattern,
-                          self.args.regex, self.args.exclude_dirs, self.args.depth,
-                          self.args.content, self.args.only_files)
-        else:
-            spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
-
-        self.logger.announce("Done spidering (Completed in {})".format(time() - start_time))
-
-        self.logger.announce('Finished Spidering')
-        return spider.results
+        return
 
 
     def shares(self):
@@ -1714,551 +1303,41 @@ class smb(connection):
 #   groups
 #   users
 #   computers
-#
+# (fold next line)
 ###############################################################################
+
+    @requires_dc
+    def user(self):
+        from cmx.protocols.smb.ENUM.domainenum import users1
+        users1(self)
+
+        return
+
+    @requires_dc
+    def groups(self):
+        from cmx.protocols.smb.ENUM.domainenum import group1
+        group1(self)
+
+        return
+
+    @requires_dc
+    def computers(self):
+        from cmx.protocols.smb.ENUM.domainenum import computers1
+        computers1(self)
+
+        return
+
+    @requires_dc
+    def group(self):
+        from cmx.protocols.smb.ENUM.domainenum import group2
+        group2(self)
+
+        return
+
 
     def pass_pol(self):
         """Grab domain password policy."""
         return PassPolDump(self).dump()
-
-
-    @requires_dc
-    def groups(self):
-        """Enum domain groups.
-
-        Prints output and adds them to cmxdb
-        """
-        if self.args.groups:
-            targetGroup = self.args.groups
-
-        groupFound = False
-        groupLog = ''
-        #self.logger.announce('Starting Domain Group Enum')
-
-        try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('Get net groups Binding start')
-                dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
-                try:
-                    logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
-                    logging.debug('Dump of hSamrConnect response:') 
-                    if self.debug:
-                        resp.dump()
-                    serverHandle = resp['ServerHandle'] 
-
-                    self.logger.debug('Looking up reachable domain(s)')
-                    resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
-                    if self.debug:
-                        resp2.dump()
-
-                    domains = resp2['Buffer']['Buffer']
-                    tmpdomain = domains[0]['Name']
-
-                    logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
-                    resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
-                    if self.debug:
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-                    logging.debug('Dump of hSamrOpenDomain response:')
-                    if self.debug:
-                        resp.dump()
-
-                    domainHandle = resp['DomainHandle']
-
-                    status = impacket.nt_errors.STATUS_MORE_ENTRIES
-                    enumerationContext = 0
-
-                    self.logger.success('Domain Groups enumerated')
-                    self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
-
-                    while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
-                        try:
-                            resp = impacket.dcerpc.v5.samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                            logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
-                            if self.debug:
-                                resp.dump()
-
-                        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                raise
-                            resp = e.get_packet()
-
-                        for group in resp['Buffer']['Buffer']:
-                            gid = group['RelativeId']
-                            r = impacket.dcerpc.v5.samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],impacket.dcerpc.v5.samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
-                            #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
-
-                            logging.debug('Dump of hSamrQueryInformationGroup response:')
-                            if self.debug:
-                                info.dump()
-
-                            #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            #print('')
-                            self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                            groupLog += '{:<30}  membercount: {}\n'.format(group['Name'], info['Buffer']['General']['MemberCount'])
-
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['GroupHandle'])
-
-                        enumerationContext = resp['EnumerationContext'] 
-                        status = resp['ErrorCode']
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Domain Groups')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        try:
-            dce.disconnect()
-        except:
-            pass
-
-        if self.args.logs:
-            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
-            log_name = 'Domain_Groups_of_{}_on_{}.log'.format(tmpdomain, ctime)
-            write_log(str(groupLog), log_name)
-            self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
-
-        #self.logger.announce('Finished Domain Group Enum')
-        return
-
-
-    @requires_dc
-    def users(self):
-        """Enum domain users.
-
-        Prints output and adds them to cmxdb
-        """
-        users = ''
-        #self.logger.announce('Starting Domain Users Enum')
-
-        try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('NetUsers Binding start')
-                dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
-                try:
-                    logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
-                    logging.debug('Dump of hSamrConnect response:')
-                    if self.debug:
-                        resp.dump()
-                    serverHandle = resp['ServerHandle']
-
-                    self.logger.debug('Looking up domain name(s)')
-                    resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
-                    if self.debug:
-                        resp2.dump()
-
-                    domains = resp2['Buffer']['Buffer']
-                    tmpdomain = domains[0]['Name']
-
-                    self.logger.debug('Looking up users in domain:' + domains[0]['Name'])
-                    resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
-                    if self.debug:
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId=resp['DomainId'])
-                    logging.debug('Dump of hSamrOpenDomain response:')
-                    if self.debug:
-                        resp.dump()
-
-                    domainHandle = resp['DomainHandle']
-
-                    status = impacket.nt_errors.STATUS_MORE_ENTRIES
-                    enumerationContext = 0
-
-                    self.logger.success('Domain Users enumerated')
-                    self.logger.highlight("     {} Domain User Accounts".format(tmpdomain))
-
-                    while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
-                        try:
-                            resp = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                            logging.debug('Dump of hSamrEnumerateUsersInDomain response:')
-                            if self.debug:
-                                resp.dump()
-
-                        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                raise
-                            resp = e.get_packet()
-
-
-                        for user in resp['Buffer']['Buffer']:
-                            r = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-
-                            # r has the clases defined here:
-                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-                            #self.logger.results('username: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                            self.logger.highlight('{}\\{:<20}  rid: {}'.format(tmpdomain, user['Name'], user['RelativeId']))
-                            users += '{}\\{:<20}  rid: {}\n'.format(tmpdomain, user['Name'], user['RelativeId'])
-
-                            self.db.add_user(self.domain, user['Name'])
-
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
-                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                            if self.debug:
-                                info.dump()
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
-
-                        enumerationContext = resp['EnumerationContext']
-                        status = resp['ErrorCode']
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Domain Users')
-                    dce.disconnect()
-                    return list()
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return list()
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return list()
-
-        try:
-            dce.disconnect()
-        except:
-            self.logging.error('Failed dce disconnect during users')
-            pass
-
-        if self.args.logs:
-            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
-            log_name = 'Domain_Users_of_{}_on_{}.log'.format(tmpdomain, ctime)
-            write_log(str(users), log_name)
-            self.logger.announce("Saved Domain Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
-
-        #self.logger.announce('Finished Domain Users Enum')
-        return
-
-
-    @requires_dc
-    def computers(self):
-        """Enum Domain Computers.
-
-        Prints output and adds them to cmxdb
-        """
-        comps = ''
-        #self.logger.announce('Starting Domain Computers Enum')
-
-        try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('NetUsers Binding start')
-                dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
-                try:
-                    logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
-                    logging.debug('Dump of hSamrConnect response:')
-                    if self.debug:
-                        resp.dump()
-                    serverHandle = resp['ServerHandle']
-
-                    self.logger.debug('Looking up domain name(s)')
-                    resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
-                    if self.debug:
-                        resp2.dump()
-
-                    domains = resp2['Buffer']['Buffer']
-                    tmpdomain = domains[0]['Name']
-
-                    self.logger.debug('Looking up users in domain:' + domains[0]['Name'])
-                    resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:')
-                    if self.debug:
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId = resp['DomainId'])
-                    logging.debug('Dump of hSamrOpenDomain response:')
-                    if self.debug:
-                        resp.dump()
-
-                    domainHandle = resp['DomainHandle']
-
-                    status = impacket.nt_errors.STATUS_MORE_ENTRIES
-                    enumerationContext = 0
-
-                    while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
-                        try:
-                            #need one for workstations and second gets the DomainControllers
-                            respComps = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, impacket.dcerpc.v5.samr.USER_WORKSTATION_TRUST_ACCOUNT, enumerationContext=enumerationContext)
-                            respServs = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, impacket.dcerpc.v5.samr.USER_SERVER_TRUST_ACCOUNT, enumerationContext=enumerationContext)
-
-                            logging.debug('Dump of hSamrEnumerateUsersInDomain Comps response:')
-                            if self.debug:
-                                respComps.dump()
-                            logging.debug('Dump of hSamrEnumerateUsersInDomain Servs response:')
-                            if self.debug:
-                                respServs.dump()
-
-                        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                raise
-                            resp = e.get_packet()
-
-
-                        self.logger.success('Domain Controllers enumerated')
-                        self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
-                        comps += 'Domain Controllers  \n'
-
-                        for user in respServs['Buffer']['Buffer']:
-                            #servers
-                            r = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-
-                            # r has the clases defined here:
-                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-
-                            self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
-                            comps += '{:<23} rid: {} \n'.format(user['Name'], user['RelativeId'])
-
-                            #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
-                            self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain, dc='Yes')
-
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
-                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                            if self.debug:
-                                info.dump()
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
-
-
-                        print('')
-                        self.logger.success('Domain Computers enumerated')
-                        self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
-                        comps += '\nDomain Computers \n'
-
-
-                        for user in respComps['Buffer']['Buffer']:
-                            #workstations
-                            r = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, user['RelativeId'])
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-
-                            # r has the clases defined here:
-                                #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
-
-                            #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
-                            self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
-                            comps += '{:<23} rid: {}\n'.format(user['Name'], user['RelativeId'])
-
-                            #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
-                            self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain)
-
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
-                            logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                            if self.debug:
-                                info.dump()
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
-
-
-                        enumerationContext = respComps['EnumerationContext']
-                        status = respComps['ErrorCode']
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Domain Computers')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        try:
-            dce.disconnect()
-        except:
-            self.logging.error('Failed dce disconnect during computers')
-            pass
-
-        if self.args.logs:
-            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
-            log_name = 'Domain_Computers_of_{}_on_{}.log'.format(tmpdomain, ctime)
-            write_log(str(comps), log_name)
-            self.logger.announce("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
-
-        #self.logger.announce('Finished Domain Computer Enum')
-        return
-
-
-    @requires_dc
-    def group(self):
-        """Enum domain a target group.
-
-        Prints output and #adds them to cmxdb
-        """
-        targetGroup = self.args.group
-        groupFound = False
-        groupLog = ''
-
-        if targetGroup == '':
-            self.logger.error("Must specify a group name after --group ")
-            return list()
-
-        #self.logger.announce('Starting Domain Group Enum')
-
-        try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password, domain=self.domain)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('Get net groups Binding start')
-                dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
-                try:
-                    logging.debug('Connect w/ hSamrConnect...')
-                    resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
-                    logging.debug('Dump of hSamrConnect response:')
-                    if self.debug:
-                        resp.dump()
-                    serverHandle = resp['ServerHandle']
-
-                    self.logger.debug('Looking up reachable domain(s)')
-                    resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
-                    logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
-                    if self.debug:
-                        resp2.dump()
-
-                    domains = resp2['Buffer']['Buffer']
-                    tmpdomain = domains[0]['Name']
-
-                    logging.debug('Looking up groups in domain: ' + domains[0]['Name'])
-                    resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
-                    logging.debug('Dump of hSamrLookupDomainInSamServer response:')
-                    if self.debug:
-                        resp.dump()
-
-                    resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId = resp['DomainId'])
-                    logging.debug('Dump of hSamrOpenDomain response:')
-                    if self.debug:
-                        resp.dump()
-
-                    domainHandle = resp['DomainHandle']
-
-                    status = impacket.nt_errors.STATUS_MORE_ENTRIES
-                    enumerationContext = 0
-
-                    while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
-                        try:
-                            resp = impacket.dcerpc.v5.samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
-                            logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
-                            if self.debug:
-                                resp.dump()
-
-                        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                            if str(e).find('STATUS_MORE_ENTRIES') < 0:
-                                raise
-                            resp = e.get_packet()
-
-
-                        for group in resp['Buffer']['Buffer']:
-                            gid = group['RelativeId']
-                            r = impacket.dcerpc.v5.samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
-                            logging.debug('Dump of hSamrOpenUser response:')
-                            if self.debug:
-                                r.dump()
-
-                            info = impacket.dcerpc.v5.samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],impacket.dcerpc.v5.samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
-                            #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
-
-                            logging.debug('Dump of hSamrQueryInformationGroup response:')
-                            if self.debug:
-                                info.dump()
-
-                            if group['Name'] == targetGroup:
-                                self.logger.success('\"{}\" Domain Group Found in {}'.format(targetGroup, tmpdomain))
-                                self.logger.highlight("    \"{}\" Group Info".format(targetGroup))
-                                groupFound = True
-                                self.logger.highlight('Member Count: {}'.format(info['Buffer']['General']['MemberCount']))
-
-                                groupResp = impacket.dcerpc.v5.samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
-                                logging.debug('Dump of hSamrGetMembersInGroup response:')
-                                if self.debug:
-                                    groupResp.dump()
-
-                                for member in groupResp['Members']['Members']:
-                                    m = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, member)
-                                    guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
-                                    self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
-                                    groupLog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
-
-                                    logging.debug('Dump of hSamrQueryInformationUser2 response:')
-                                    if self.debug:
-                                        guser.dump()
-
-                        if groupFound is False:
-                            self.logger.error("Specified group was not found")
-                            impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['GroupHandle'])
-
-
-                        enumerationContext = resp['EnumerationContext']
-                        status = resp['ErrorCode']
-
-                except Exception as e: #failed function
-                    logging.debug('failed function {}'.format(str(e)))
-                    self.logger.error('Failed to enum Domain Groups')
-                    dce.disconnect()
-                    return
-            except Exception as e: #failed bind
-                logging.debug('failed bind {}'.format(str(e)))
-                dce.disconnect()
-                return
-        except Exception as e: #failed connect
-            logging.debug('failed connect {}'.format(str(e)))
-            dce.disconnect()
-            return
-
-        try:
-            dce.disconnect()
-        except:
-            self.logging.error('Failed dce disconnect during groups')
-            pass
-
-        if self.args.logs and groupFound:
-            ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
-            log_name = 'Members_of_{}_on_{}.log'.format(targetGroup, ctime)
-            write_log(str(groupLog), log_name)
-            self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
-
-        #self.logger.announce('Finished Group Enum')
-        return
 
 
 
@@ -2280,7 +1359,7 @@ class smb(connection):
 #   sam
 #   lsa
 #   ntds
-#
+# (fold next line)
 ####################################################################################
 
     @requires_admin
@@ -2511,7 +1590,7 @@ class smb(connection):
 #   domainfromdsn
 #   gen_relay_list
 #
-#   all
+# (fold next line)
 ####################################################################################
 
     def print_host_info(self):

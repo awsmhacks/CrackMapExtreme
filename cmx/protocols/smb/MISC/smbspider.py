@@ -1,4 +1,5 @@
 from time import strftime, localtime
+import time
 from cmx.protocols.smb.MISC.remotefile import RemoteFile
 from impacket.smb3structs import FILE_READ_DATA
 from impacket.smbconnection import SessionError
@@ -19,6 +20,8 @@ class SMBSpider:
         self.onlyfiles = True
         self.content = False
         self.results = []
+        self.filecount = 0
+        self.dircount = 0
 
     def spider(self, share, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
         if regex:
@@ -51,7 +54,7 @@ class SMBSpider:
                 self.logger.error('Error enumerating shares: {}'.format(e))
         else:
             self.share = share
-            self.logger.info("Spidering {0}".format(folder))
+            self.logger.info("Spidering {}{}".format(share,folder))
             self._spider(folder, depth)
 
         return self.results
@@ -72,8 +75,6 @@ class SMBSpider:
             subfolder = subfolder[2:] + '/*'
         else:
             subfolder = subfolder.replace('/*/', '/') + '/*'
-
-        # End of the funky shit... or is it? Surprise! This whole thing is funky
 
         filelist = None
         try:
@@ -101,10 +102,12 @@ class SMBSpider:
             for pattern in self.pattern:
                 if result.get_longname().lower().find(pattern.lower()) != -1:
                     if not self.onlyfiles and result.is_directory():
+                        self.dircount = self.dircount + 1
                         self.logger.highlight("//{}/{}/{}{} [dir]".format(self.smbconnection.getRemoteHost(), self.share, 
                                                                            path, 
                                                                            result.get_longname()))
                     else:
+                        self.filecount = self.filecount + 1
                         self.logger.highlight("//{}/{}/{}{} [lastm:'{}' size:{}]".format(self.smbconnection.getRemoteHost(), self.share,
                                                                                        path,
                                                                                        result.get_longname(),
@@ -115,8 +118,10 @@ class SMBSpider:
             for regex in self.regex:
                 if regex.findall(result.get_longname()):
                     if not self.onlyfiles and result.is_directory():
+                        self.dircount = self.dircount + 1
                         self.logger.highlight("//{}/{}/{}{} [dir]".format(self.smbconnection.getRemoteHost(), self.share, path, result.get_longname()))
                     else:
+                        self.filecount = self.filecount + 1
                         self.logger.highlight("//{}/{}/{}{} [lastm:'{}' size:{}]".format(self.smbconnection.getRemoteHost(), self.share,
                                                                                        path,
                                                                                        result.get_longname(),
