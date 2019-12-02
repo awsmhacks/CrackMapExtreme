@@ -509,11 +509,11 @@ def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], 
         spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
 
     seconds = time.time() - start_time
-    mins = divemod(seconds, 60)
-    hrs = divemod(mins, 60)
+    mins, seconds = divmod(seconds, 60)
+    hrs, mins = divmod(mins, 60)
 
     self.logger.success("Done spidering (Completed in %02d hours, %02d minutes, %02d seconds)"%(hrs,mins,seconds))
-
+    self.logger.success('Total Directories: {}'.format(spider.dircount))
     self.logger.success('Total Files: {}'.format(spider.filecount))
     return spider.results
 
@@ -521,7 +521,8 @@ def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], 
 def shares1(smb):
     """Enum accessable shares and privileges.
 
-    Prints output
+    OpSec Warning, this attempts to create a randomly named folder on each enumerated share
+        to check for WRITE access.
     """
     self = smb
     temp_dir = ntpath.normpath("\\" + gen_random_string())

@@ -1217,7 +1217,7 @@ class smb(connection):
 
     def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
         from cmx.protocols.smb.ENUM.hostenum import spider1
-        spider1(self)
+        spider1(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True)
 
         return
 

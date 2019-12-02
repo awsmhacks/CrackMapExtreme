@@ -21,6 +21,7 @@ class SMBSpider:
         self.content = False
         self.results = []
         self.filecount = 0
+        self.dircount = 0
 
     def spider(self, share, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
         if regex:
@@ -53,7 +54,7 @@ class SMBSpider:
                 self.logger.error('Error enumerating shares: {}'.format(e))
         else:
             self.share = share
-            self.logger.info("Spidering {0}".format(folder))
+            self.logger.info("Spidering {}{}".format(share,folder))
             self._spider(folder, depth)
 
         return self.results
@@ -101,6 +102,7 @@ class SMBSpider:
             for pattern in self.pattern:
                 if result.get_longname().lower().find(pattern.lower()) != -1:
                     if not self.onlyfiles and result.is_directory():
+                        self.dircount = self.dircount + 1
                         self.logger.highlight("//{}/{}/{}{} [dir]".format(self.smbconnection.getRemoteHost(), self.share, 
                                                                            path, 
                                                                            result.get_longname()))
@@ -116,6 +118,7 @@ class SMBSpider:
             for regex in self.regex:
                 if regex.findall(result.get_longname()):
                     if not self.onlyfiles and result.is_directory():
+                        self.dircount = self.dircount + 1
                         self.logger.highlight("//{}/{}/{}{} [dir]".format(self.smbconnection.getRemoteHost(), self.share, path, result.get_longname()))
                     else:
                         self.filecount = self.filecount + 1
