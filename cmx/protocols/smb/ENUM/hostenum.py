@@ -508,7 +508,11 @@ def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], 
     else:
         spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
 
-    self.logger.success("Done spidering (Completed in {})".format(time.time() - start_time))
+    seconds = time.time() - start_time
+    mins = divemod(seconds, 60)
+    hrs = divemod(mins, 60)
+
+    self.logger.success("Done spidering (Completed in %02d hours, %02d minutes, %02d seconds)"%(hrs,mins,seconds))
 
     self.logger.success('Total Files: {}'.format(spider.filecount))
     return spider.results
