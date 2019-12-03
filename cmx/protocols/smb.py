@@ -505,7 +505,6 @@ class smb(connection):
         self.parsedump(dumpFile)
 
 
-
     def parsedump(self, dumpfile):
         # Inspiration by @HackAndDo aka Pixis for these parse bits
         from pypykatz.pypykatz import pypykatz
@@ -555,8 +554,6 @@ class smb(connection):
             else:
                 credentials.append((domain, username, password))
         return set(credentials)
-
-
 
 
 ###############################################################################
