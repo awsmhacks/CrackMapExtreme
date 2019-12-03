@@ -253,9 +253,14 @@ class WMIEXEC:
 
         Thanks https://gist.githubusercontent.com/knavesec/0bf192d600ee15f214560ad6280df556/raw/36ff756346ebfc7f9721af8c18dff7d2aaf005ce/autoProc.py
         """
+        if not cfg.PROC_PATH.is_file():
+            self.logger.error('procdump64.exe not found at {}'.format(str(cfg.PROC_PATH)))
+            self.logger.error('Place procdump64.exe in location or update config.py and rebuild'.format(str(cfg.PROC_PATH)))
+            return
         self.__remoteshell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
 
         self.logger.announce('Uploading procdump64')
+        
 
         self.__remoteshell.do_put(str(cfg.PROC_PATH)) # default path is /.cmx/procdump64.exe
         time.sleep(1)
