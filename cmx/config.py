@@ -67,3 +67,6 @@ DATA_PATH = CMX_DIR / 'data'
 
 PROC_PATH = CMX_HOME / 'procdump64.exe'
 DUMP_PATH = 'safe.dmp'
+
+AZ_PATH = CMX_HOME / 'azure'
+AZ_CONFIG_PATH = AZ_PATH / 'configdone.txt'

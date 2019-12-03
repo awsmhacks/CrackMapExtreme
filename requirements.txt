@@ -1,5 +1,6 @@
 asciitable==0.8.0
 asn1crypto==0.24.0
+azure-cli==2.0.77
 certifi==2019.6.16
 cffi==1.12.3
 chardet==3.0.4
