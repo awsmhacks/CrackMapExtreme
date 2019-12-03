@@ -13,6 +13,7 @@ __pycache__/
 
 TODOs
 todo/
+*.dmp
 
 */.jekyll-cache/*
 */_site/*
