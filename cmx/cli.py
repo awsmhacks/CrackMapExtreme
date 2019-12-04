@@ -67,6 +67,7 @@ def gen_cli_args():
        cmx az 1 --config   (get an azure session up, follow prompts)
        cmx az 1 --user <useremail>   (gets all info about a single user)
        cmx az 1 --users      (gets all users)
+       cmx az 1 -h  (for all current azure stuffs)
 
  *Check the /docs/ for detailed usage* 
 
