@@ -16,6 +16,8 @@ import subprocess
 import json
 import pprint
 
+import pdb
+
 class az(connection):
 
     def __init__(self, args, db, host):
@@ -37,7 +39,7 @@ class az(connection):
         self.args = args
         self.dc_ip = ''
         self.az_cli = None
-        self.user = ''
+        self.username = ''
         self.domain = ''
 
         if args.config:
@@ -93,7 +95,7 @@ class az(connection):
 
     def proto_logger(self):
         self.logger = CMXLogAdapter(extra={'protocol': 'AZURE',
-                                        'host': self.user,
+                                        'host': self.username,
                                         'port': self.domain,
                                         'hostname': 'CLI'})
 
@@ -108,7 +110,7 @@ class az(connection):
         f = open(cfg.AZ_CONFIG_PATH,"r")
         data = f.read()
         f.close()
-        self.user = data.split()[0].split('@')[0]
+        self.username = data.split()[0].split('@')[0]
         self.domain = data.split()[0].split('@')[1]
         self.proto_logger()
 
@@ -183,12 +185,15 @@ class az(connection):
 
 
     def user(self):
+
         user_id = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.user], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             user_id_json = json.loads(user_id.stdout.decode('utf-8'))
         except:
             self.logger.error("Current user has no subscriptions")
             return
+        
+        #pdb.set_trace()
         pprint.pprint(user_id_json)
 
 

@@ -58,7 +58,6 @@ def gen_cli_args():
            epilog="""Usage: 
        cmx [-D] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
 
-       cmx smb -L                       (List of <smb> modules)
        cmx smb -M mimikatz --options    (List a particular module's options)
        cmx smb 10.10.10.10 -u Administrator -p Password --recon
        cmx -D smb 192.168.1.1 -u username -p password -M mimikatz

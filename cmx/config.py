@@ -32,7 +32,7 @@ from impacket.dcerpc.v5.dtypes import NULL
 
 
 
-VERSION='1.0-az'
+VERSION='1.0_azure'
 RELEASED='n/a'
 
 # grabs the install directory to reference cmx's location.
