@@ -85,6 +85,9 @@ class az(connection):
         spngroup = azure_parser.add_argument_group("SPN Checks", "Interact with Service Principals")
         spngroup.add_argument('--spn-list', action='store_true', help='List all SPNs for current subscription')
 
+        appgroup = azure_parser.add_argument_group("App Checks", "Interact with Apps")
+        appgroup.add_argument('--app-list', action='store_true', help='List all Apps for current subscription')
+
         return parser
        
 
@@ -193,8 +196,23 @@ class az(connection):
             self.logger.error("Current user has no subscriptions")
             return
         
-        #pdb.set_trace()
-        pprint.pprint(user_id_json)
+        plans = []
+        for plan in user_id_json["assignedPlans"]:
+            plans.append(plan["service"])
+
+        self.logger.announce("Getting User Info")
+
+        self.logger.highlight("{:<26} {}".format('mail: ', user_id_json['mail']))
+        self.logger.highlight("{:<26} {}".format('mailNickname: ', user_id_json['mailNickname']))
+        self.logger.highlight("{:<26} {}".format('TelephoneNumber: ', user_id_json['telephoneNumber']))
+        self.logger.highlight("{:<26} {}".format('objectId: ', user_id_json['objectId']))
+
+        self.logger.highlight("Assigned Plan Memberships: {}".format(plans))
+        self.logger.highlight("{:<26} {}".format('SID: ', user_id_json['onPremisesSecurityIdentifier']))
+        self.logger.highlight("{:<26} {}".format('userPrincipalName: ', user_id_json['userPrincipalName']))
+        self.logger.highlight("{:<26} {}".format('isCompromised: ', user_id_json['isCompromised']))
+
+
 
 
     def usergroups(self):
@@ -634,3 +652,16 @@ class az(connection):
             self.logger.error("Current user has no VM subscriptions")
             return
         pprint.pprint(stg_list_json)
+
+
+    def app_list(self):
+
+        app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            app_list_json = json.loads(app_list.stdout.decode('utf-8'))
+        except:
+            self.logger.error("Current user has no VM subscriptions")
+            return
+        pprint.pprint(app_list_json)
+
+
