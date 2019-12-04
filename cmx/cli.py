@@ -56,12 +56,17 @@ def gen_cli_args():
            highlight('(/.__.)/ The python3 EXTREME edition \(.__.\)', 'yellow')),
            formatter_class=RawTextHelpFormatter,
            epilog="""Usage: 
-       cmx [--verbose] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
+       cmx [-D] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
 
        cmx smb -L                       (List of <smb> modules)
        cmx smb -M mimikatz --options    (List a particular module's options)
        cmx smb 10.10.10.10 -u Administrator -p Password --recon
        cmx -D smb 192.168.1.1 -u username -p password -M mimikatz
+
+  Azure!
+       cmx az 1 --config   (get an azure session up, follow prompts)
+       cmx az 1 --user <useremail>   (gets all info about a single user)
+       cmx az 1 --users      (gets all users)
 
  *Check the /docs/ for detailed usage* 
 
