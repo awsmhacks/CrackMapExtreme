@@ -189,7 +189,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         Called from anywhere
             DEBUG <msg>
         """
-        pass
+        logging.debug(msg)
 
 
     def success(self, msg, *args, **kwargs):
