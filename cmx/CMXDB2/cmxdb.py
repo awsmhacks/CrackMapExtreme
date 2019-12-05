@@ -15,12 +15,13 @@ from cmx import config as cfg
 init()
 
 my_completer = WordCompleter(['back', 'help', 'smb', 'list', 'creds',
-                              'hosts', 'users', 'exit'], ignore_case=True)
+                              'hosts', 'users', 'apps', 'az', 'exit'], ignore_case=True)
 
 
 genHelp = """Available Commands:
     help - Show Help Menu
     smb - Enter the SMB Database
+    az - Enter the Azure Database
     exit - Exits CMXDB
     """
 
@@ -31,19 +32,16 @@ smbHelp = """Available Commands:
     list - show available tables
     creds - List Credentials Stored in Database
     hosts - List Hosts Stored in Database
-    add host - Add a host to the database
-    add cred - Add a credential to the database
 """
 
-addHostHelp = """Adding a Host to the DB:
-    All values are required
-add host <ip> <hostname> <domain> <os> <dc>
+azHelp = """Available Commands:
+    back - Go back one level
+    help - Show Help for this protocol
+    help <command> - Show Help for command
+    list - show available tables
+    apps [id or appId] - List apps Stored in Database
 """
 
-addCredHelp = """Adding a Cred to the DB:
-    All values are required
-add cred <domain> <username> <password> <credtype> <HostID-creds-obtained-from>
-"""
 
 
 class CMXDB():
@@ -75,6 +73,7 @@ class CMXDB():
         if proto_db_path.is_file():
             self.connection = sqlite3.connect(proto_db_path)
             self.proto = protocol
+            self.prompt_str = 'cmxdb {} {}> '.format(self.workspace, self.proto)
             return
         else:
             print('No database found for {}'.format(protocol))
@@ -83,19 +82,16 @@ class CMXDB():
     def show_help(self, command):
         global genHelp
         global smbHelp
-        global addHostHelp
-        global addCredHelp
+        global azHelp
 
         if command == 'help' and self.proto == '':
             print(genHelp)
         elif command == 'help' and self.proto == 'smb':
             print(smbHelp)
-        elif command.startswith('help add cred'):
-            print(addCredHelp)
-        elif command.startswith('help add host'):
-            print(addHostHelp)
         elif command.startswith('help smb'):
             print(smbHelp)
+        elif command.startswith('help az'):
+            print(azHelp)
         else:
             print("There's no help for you")
 
@@ -120,6 +116,7 @@ class CMXDB():
         if self.connection:
             self.proto = ''
             self.connection = None
+            self.prompt_str = 'cmxdb {} {}> '.format(self.workspace, self.proto)
         else:
             print('Nowhere to back out of')
 
@@ -197,7 +194,7 @@ class CMXDB():
         if self.connection:
             with self.connection:
                 try:
-                        # if we're returning a single credential by ID
+                        # if we're returning a single host by ID
                     if self.is_credential_valid(filterTerm):
                         print(colored(pd.read_sql_query(
                             "SELECT * FROM computers WHERE id=? LIMIT 1", [filterTerm])))
@@ -206,13 +203,13 @@ class CMXDB():
                         print(colored(pd.read_sql_query(
                             "SELECT * FROM computers WHERE credtype=?", [credType])))
 
-                    # if we're filtering by username
+                    # if we're filtering by hostname
                     elif filterTerm and filterTerm != '':
                         print(colored(pd.read_sql_query(
                             "SELECT * FROM computers WHERE LOWER(hostname) "
                             "LIKE LOWER(?)", ['%{}%'.format(filterTerm)])))
 
-                    # otherwise return all credentials
+                    # otherwise return all hosts
                     else:
                         print(colored(pd.read_sql_query(
                             "SELECT * FROM computers",
@@ -247,6 +244,132 @@ class CMXDB():
             print('Not connected to a database yet')
             return False
 
+
+###############################################################################
+# azure
+###############################################################################
+    def show_az_apps(self, filterTerm=None):
+        """Show apps info."""
+        pd.set_option('display.max_colwidth', 100)
+        #print(filterTerm)
+        filterTerm = filterTerm[5:]  # Removes 'apps '
+
+        if self.connection:
+            with self.connection:
+                try:
+                        # if we're returning a single app by appID
+                    if self.is_appid_valid(filterTerm):
+                        q = "SELECT * FROM apps WHERE appId='{}' LIMIT 1".format(filterTerm)
+                        print(colored(pd.read_sql_query(q, self.connection, index_col='id'), "green"))
+
+                    # if we're filtering by id number
+                    elif filterTerm and filterTerm != '':
+                        q = "SELECT * FROM apps WHERE id={} LIMIT 1".format(filterTerm)
+                        print(colored(pd.read_sql_query(q, self.connection, index_col='id'), "green"))
+
+                    # otherwise return all apps
+                    else:
+                        print(colored(pd.read_sql_query(
+                            "SELECT id,DisplayName,appID,objectId FROM apps",
+                            self.connection, index_col='id'), "green"))
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    # for result in results:
+                    print('')
+        else:
+            print('Not connected to a database yet')
+
+
+
+    def is_appid_valid(self, appID):
+        """Check if this app ID is valid."""
+        if self.connection:
+            with self.connection:
+                try:
+                    results = self.connection.execute(
+                        'SELECT * FROM apps WHERE appId=? LIMIT 1', [appID])
+                except Exception as e:
+                    print(repr(e))
+                    return False
+                else:
+                    result = results.fetchall()
+                    return len(result) > 0
+        else:
+            print('Not connected to a database yet')
+            return False
+
+
+    def show_az_users(self, filterTerm=None):
+        """Show az_users info.
+
+        Fields:
+            assignedPlans
+            displayName
+            mail
+            mailNickname
+            objectId
+            sid
+            otherMails
+            telephoneNumber
+            userPrincipalName
+        """
+        pd.set_option('display.max_rows', 500)
+        pd.set_option('display.max_columns', 10)
+        pd.set_option('display.width', 200)
+        pd.set_option('display.min_rows', 500)
+
+        #print(filterTerm)
+        filterTerm = filterTerm[6:]  # Removes 'users '
+
+        if self.connection:
+            with self.connection:
+                try:
+                        # if we're returning a single user by objectID
+                    if self.is_userid_valid(filterTerm):
+                        q = "SELECT id,displayName,mail,mailNickname,objectId,sid,otherMails,telephoneNumber,userPrincipalName FROM users WHERE objectId='{}' LIMIT 1".format(filterTerm)
+                        print(colored(pd.read_sql_query(q, self.connection, index_col='id'), "green"))
+
+                    # if we're filtering by id number
+                    elif filterTerm and filterTerm != '':
+                        q = "SELECT id,displayName,mail,mailNickname,objectId,sid,otherMails,telephoneNumber,userPrincipalName FROM users WHERE id={} LIMIT 1".format(filterTerm)
+                        print(colored(pd.read_sql_query(q, self.connection, index_col='id'), "green"))
+
+                    # otherwise return all users
+                    else:
+                        print(colored(pd.read_sql_query(
+                            "SELECT id,userPrincipalName,telephoneNumber,mail,objectId FROM users",
+                            self.connection, index_col='id'), "green"))
+                except Exception as e:
+                    print(repr(e))
+                else:
+                    # for result in results:
+                    print('')
+        else:
+            print('Not connected to a database yet')
+
+
+    def is_userid_valid(self, userID):
+        """Check if this app ID is valid."""
+        if self.connection:
+            with self.connection:
+                try:
+                    results = self.connection.execute(
+                        'SELECT * FROM users WHERE objectId=? LIMIT 1', [userID])
+                except Exception as e:
+                    print(repr(e))
+                    return False
+                else:
+                    result = results.fetchall()
+                    return len(result) > 0
+        else:
+            print('Not connected to a database yet')
+            return False
+
+###############################################################################
+
+
+
     def do_work(self, command=''):
 
         if command == '':
@@ -258,6 +381,10 @@ class CMXDB():
 
         if command == 'smb':
             self.connect_db('smb')
+            return
+
+        if command == 'az':
+            self.connect_db('az')
             return
 
         if command == 'list':
@@ -272,17 +399,29 @@ class CMXDB():
             self.working = False
             return
 
-        if command == 'creds':
-            self.show_creds()
-            return
+    # SMB
+        if self.proto == 'smb':
+            if command == 'creds':
+                self.show_creds()
+                return
+    
+            if command == 'users':
+                self.show_users()
+                return
+    
+            if command == 'hosts':
+                self.show_hosts()
+                return
 
-        if command == 'users':
-            self.show_users()
-            return
-
-        if command == 'hosts':
-            self.show_hosts()
-            return
+    # Azure
+        if self.proto == 'az':
+            if command.startswith('apps'):
+                self.show_az_apps(command)
+                return
+    
+            if command.startswith('users'):
+                self.show_az_users(command)
+                return
 
         else:
             print("Unknown Command")

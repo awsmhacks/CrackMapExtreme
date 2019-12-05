@@ -22,22 +22,8 @@ class az(connection):
 
     def __init__(self, args, db, host):
   
-        self.hostname = 'azureAD'
-        self.os_arch = None
-        self.local_ip = None
-        self.domain = None
-        self.server_os = None
-        self.os_arch = 0
-        self.hash = None
-        self.lmhash = ''
-        self.nthash = ''
-        self.remote_ops = None
-        self.bootkey = None
-        self.output_filename = None
-        self.smbv1 = None
-        self.signing = False
+        self.db = db
         self.args = args
-        self.dc_ip = ''
         self.az_cli = None
         self.username = ''
         self.domain = ''
@@ -51,6 +37,8 @@ class az(connection):
     @staticmethod
     def proto_args(parser, std_parser, module_parser):
         azure_parser = parser.add_parser('az', help="owning over azure", parents=[std_parser, module_parser])
+        azure_parser.add_argument('--full', action='store_true', help='Display full json output for azure commands')
+
         configgroup = azure_parser.add_argument_group("Configure Azure CLI", "Configure the Azure Connection")
         configgroup.add_argument('--config', action='store_true', help='Setup or re-bind azure connection')
 
@@ -195,6 +183,8 @@ class az(connection):
         except:
             self.logger.error("Current user has no subscriptions")
             return
+
+        self.db.add_user(user_id_json)
         
         plans = []
         for plan in user_id_json["assignedPlans"]:
@@ -202,16 +192,18 @@ class az(connection):
 
         self.logger.announce("Getting User Info")
 
-        self.logger.highlight("{:<26} {}".format('mail: ', user_id_json['mail']))
-        self.logger.highlight("{:<26} {}".format('mailNickname: ', user_id_json['mailNickname']))
-        self.logger.highlight("{:<26} {}".format('TelephoneNumber: ', user_id_json['telephoneNumber']))
-        self.logger.highlight("{:<26} {}".format('objectId: ', user_id_json['objectId']))
+        if self.args.full: 
+            pprint.pprint(user_id_json)
+        else:
+            self.logger.highlight("{:<26} {}".format('mail: ', user_id_json['mail']))
+            self.logger.highlight("{:<26} {}".format('mailNickname: ', user_id_json['mailNickname']))
+            self.logger.highlight("{:<26} {}".format('TelephoneNumber: ', user_id_json['telephoneNumber']))
+            self.logger.highlight("{:<26} {}".format('objectId: ', user_id_json['objectId']))
 
-        self.logger.highlight("Assigned Plan Memberships: {}".format(plans))
-        self.logger.highlight("{:<26} {}".format('SID: ', user_id_json['onPremisesSecurityIdentifier']))
-        self.logger.highlight("{:<26} {}".format('userPrincipalName: ', user_id_json['userPrincipalName']))
-        self.logger.highlight("{:<26} {}".format('isCompromised: ', user_id_json['isCompromised']))
-
+            self.logger.highlight("Assigned Plan Memberships: {}".format(plans))
+            self.logger.highlight("{:<26} {}".format('SID: ', user_id_json['onPremisesSecurityIdentifier']))
+            self.logger.highlight("{:<26} {}".format('userPrincipalName: ', user_id_json['userPrincipalName']))
+            self.logger.highlight("{:<26} {}".format('isCompromised: ', user_id_json['isCompromised']))
 
 
 
@@ -226,13 +218,35 @@ class az(connection):
 
 
     def users(self):
-        user_id = subprocess.run(['az','ad', 'user', 'list', '--query', '[].{display_name:displayName, description: description, object_id: objectId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.logger.announce("Getting all users info, this might take a minute")
+        user_id = subprocess.run(['az','ad', 'user', 'list'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             user_id_json = json.loads(user_id.stdout.decode('utf-8'))
         except:
             self.logger.error("Current user has no subscriptions")
             return
-        pprint.pprint(user_id_json)
+
+        try:
+            for user1 in user_id_json:
+                pdb.set_trace()
+                self.db.add_user(user1)
+        except:
+            self.logger.error("add user error tracebak:")
+            self.logger.error(format_exc())
+
+
+        if self.args.full: 
+            pprint.pprint(user_id_json)
+
+        else:
+            for user1 in user_id_json:
+                if user1['isCompromised'] == None: 
+                    comp = 'No' 
+                else:
+                    comp = 'Yes'
+                self.logger.highlight("{:<36}  id:{}  compromised:{} ".format(user1['userPrincipalName'], user1['objectId'], comp))
+
+        self.logger.success("All user info complete. Check the db for more details")
 
 
     def group(self):
@@ -654,14 +668,20 @@ class az(connection):
         pprint.pprint(stg_list_json)
 
 
+
     def app_list(self):
 
-        app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        app_list = subprocess.run(['az','ad', 'app', 'list', '--all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             app_list_json = json.loads(app_list.stdout.decode('utf-8'))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
+
+        for app in app_list_json:
+            self.db.add_app(str(app['displayName']), str(app['appId']), str(app['homepage']), str(app['objectId']), str(app['allowGuestsSignIn']), str(app['keyCredentials']), str(app['passwordCredentials']), str(app['wwwHomepage']) )
+
         pprint.pprint(app_list_json)
 
 

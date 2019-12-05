@@ -63,12 +63,12 @@ def gen_cli_args():
        cmx -D smb 192.168.1.1 -u username -p password -M mimikatz
 
   Azure!
-       cmx az 1 --config   (get an azure session up, follow prompts)
-       cmx az 1 --user <useremail>   (gets all info about a single user)
-       cmx az 1 --users      (gets all users)
-       cmx az 1 -h  (for all current azure stuffs)
+       cmx az --config   (get an azure session up, follow prompts)
+       cmx az --user <useremail>   (gets all info about a single user)
+       cmx az --users      (gets all users)
+       cmx az -h  (for all current azure stuffs)
 
- *Check the /docs/ for detailed usage* 
+ *Check https://awsmhacks.github.io/CrackMapExtreme/ for detailed usage* 
 
 """,
            add_help=False, usage=argparse.SUPPRESS)
