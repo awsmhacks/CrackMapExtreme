@@ -1,6 +1,9 @@
 import logging
 
 
+# Todo 
+# add functions to change pd display options on the fly
+
 class database:
 
     def __init__(self, conn):
