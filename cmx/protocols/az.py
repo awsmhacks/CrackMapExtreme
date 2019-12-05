@@ -228,7 +228,6 @@ class az(connection):
 
         try:
             for user1 in user_id_json:
-                pdb.set_trace()
                 self.db.add_user(user1)
         except:
             self.logger.error("add user error tracebak:")
@@ -239,13 +238,15 @@ class az(connection):
             pprint.pprint(user_id_json)
 
         else:
+            usercount = 0
             for user1 in user_id_json:
                 if user1['isCompromised'] == None: 
                     comp = 'No' 
                 else:
                     comp = 'Yes'
+                count = count + 1
                 self.logger.highlight("{:<36}  id:{}  compromised:{} ".format(user1['userPrincipalName'], user1['objectId'], comp))
-
+        self.logger.success("Total Users Found: {}".format(count))
         self.logger.success("All user info complete. Check the db for more details")
 
 
