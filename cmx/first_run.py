@@ -32,6 +32,9 @@ def first_run_setup(logger):
     if not cfg.TMP_PATH.is_dir():
         cfg.TMP_PATH.mkdir(parents=True, exist_ok=True)
 
+    if not cfg.AZ_PATH.is_dir():
+        cfg.AZ_PATH.mkdir(parents=True, exist_ok=True)
+
     if not cfg.CMX_HOME.is_dir():
         logger.announce('First time use detected')
         logger.announce('Creating home directory structure. Files will be located in {}'.format(cfg.CMX_HOME))

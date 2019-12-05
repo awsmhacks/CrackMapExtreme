@@ -195,7 +195,7 @@ def main():
 
     try:
         '''
-            Open all the greenlet threads
+            Open threads
         '''
 
         pool = Pool(args.threads)
@@ -203,6 +203,11 @@ def main():
         
         for target in targets:
             jobs.append(pool.spawn(protocol_object, args, db, str(target)))
+
+        # Lets azure not require a target
+        if args.protocol == 'az':
+            if not targets:
+                jobs.append(pool.spawn(protocol_object, args, db, '1'))
 
         if args.timeout == 0 : args.timeout=None
         

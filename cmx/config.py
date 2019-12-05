@@ -32,7 +32,7 @@ from impacket.dcerpc.v5.dtypes import NULL
 
 
 
-VERSION='5.0.1'
+VERSION='1.0_azure'
 RELEASED='n/a'
 
 # grabs the install directory to reference cmx's location.
@@ -67,3 +67,6 @@ DATA_PATH = CMX_DIR / 'data'
 
 PROC_PATH = CMX_HOME / 'procdump64.exe'
 DUMP_PATH = 'safe.dmp'
+
+AZ_PATH = CMX_HOME / 'azure'
+AZ_CONFIG_PATH = AZ_PATH / 'configdone.txt'

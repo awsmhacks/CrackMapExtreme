@@ -56,20 +56,25 @@ def gen_cli_args():
            highlight('(/.__.)/ The python3 EXTREME edition \(.__.\)', 'yellow')),
            formatter_class=RawTextHelpFormatter,
            epilog="""Usage: 
-       cmx [--verbose] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
+       cmx [-D] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
 
-       cmx smb -L                       (List of <smb> modules)
        cmx smb -M mimikatz --options    (List a particular module's options)
        cmx smb 10.10.10.10 -u Administrator -p Password --recon
        cmx -D smb 192.168.1.1 -u username -p password -M mimikatz
 
- *Check the /docs/ for detailed usage* 
+  Azure!
+       cmx az --config   (get an azure session up, follow prompts)
+       cmx az --user <useremail>   (gets all info about a single user)
+       cmx az --users      (gets all users)
+       cmx az -h  (for all current azure stuffs)
+
+ *Check https://awsmhacks.github.io/CrackMapExtreme/ for detailed usage* 
 
 """,
            add_help=False, usage=argparse.SUPPRESS)
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
-    parser.add_argument("--timeout", default=18, type=int, help=argparse.SUPPRESS) # use --timeout 0 for no timeout
+    parser.add_argument("--timeout", default=0, type=int, help=argparse.SUPPRESS) # use --timeout 0 for no timeout
     parser.add_argument("-D","--debug", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--darrell", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--rekt", action='store_true', help=argparse.SUPPRESS)

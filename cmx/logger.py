@@ -17,6 +17,7 @@
 ####################################################################
 
 from cmx.helpers.misc import called_from_cmd_args
+from cmx.helpers.logger import highlight
 from cmx import config as cfg
 from termcolor import colored
 from colorama import init
@@ -144,6 +145,18 @@ class CMXLogAdapter(logging.LoggerAdapter):
         host_port = colored(self.extra['port'], 'white')
         host_name = colored(self.hostname, 'magenta')
 
+        if 'protocol' in self.extra.keys():
+            if self.extra['protocol'] == 'AZURE':
+                host_ip = colored(self.extra['host'], 'red') 
+                host_port = colored('CLI', 'cyan')
+                return u'{:<19} {:<21} {:<13}   {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
+                                            module_name,
+                                            host_port,
+                                            msg), kwargs
+
+
+        # DATE              PROTOCOL    hostIP:PORT     HOSTNAME      MSG
+        # Dec.04.19 14:16:49  SMB    192.168.1.1:445     WIN1923    [-] error
         return u'{:<19} {:<21} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                                     module_name,
                                                     host_ip,
@@ -189,7 +202,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         Called from anywhere
             DEBUG <msg>
         """
-        pass
+        logging.debug(msg)
 
 
     def success(self, msg, *args, **kwargs):
