@@ -687,6 +687,7 @@ class az(connection):
 #
 ###############################################################################
 
+
     def app_list(self):
 
         #app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
