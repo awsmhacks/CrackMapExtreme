@@ -195,7 +195,7 @@ class smb(connection):
         egroup.add_argument("--wmi-namespace", metavar='NAMESPACE', default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
 
         sgroup = smb_parser.add_argument_group("Spidering", "Options for spidering shares")
-        sgroup.add_argument("--spider", metavar='SHARE', type=str, help='share to spider')
+        sgroup.add_argument("--spider", metavar='SHARE', type=str, help='share to spider, requires a pattern!')
         sgroup.add_argument("--spider-folder", metavar='FOLDER', default='.', type=str, help='folder to spider (default: root share directory)')
         sgroup.add_argument("--content", action='store_true', help='enable file content searching')
         sgroup.add_argument("--exclude-dirs", type=str, metavar='DIR_LIST', default='', help='directories to exclude from spidering')
@@ -213,6 +213,7 @@ class smb(connection):
         execegroup = execgroup.add_mutually_exclusive_group()
         execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
+
         execegroup.add_argument("-dump", "--dump", action='store_true', help="Uses Procdumpx64 to dump lsass and retrieve the output.")
 
         supergroup = smb_parser.add_argument_group("Multi-execution Commands")
@@ -502,7 +503,9 @@ class smb(connection):
             dumpFile = exec_method.dump()
         except Exception as e:
             logging.debug('dump failed because: {}'.format(str(e)))
-        self.parsedump(dumpFile)
+
+        if dumpFile:
+            self.parsedump(dumpFile)
 
 
     def parsedump(self, dumpfile):
@@ -680,7 +683,7 @@ class smb(connection):
             self.logger.success(out)
             if not self.args.continue_on_success:
                 return True
-        except SessionError as e:
+        except impacket.smbconnection.SessionError as e:
             error, desc = e.getErrorString()
             self.logger.error('{}\\{}:{} {} {}'.format(domain,
                                                        username,
@@ -737,7 +740,7 @@ class smb(connection):
             self.logger.success(out)
             if not self.args.continue_on_success:
                 return True
-        except SessionError as e:
+        except impacket.smbconnection.SessionError as e:
             error, desc = e.getErrorString()
             self.logger.error('{}\\{} {} {} {}'.format(domain,
                                                        username,
@@ -1179,7 +1182,7 @@ class smb(connection):
             self.conn.login('', '')
             logging.debug("Null login?")
             self.logger.success('Null login allowed')
-        except SessionError as e:
+        except impacket.smbconnection.SessionError as e:
             if "STATUS_ACCESS_DENIED" in str(e):
                 pass
 
@@ -1293,7 +1296,7 @@ class smb(connection):
 
     def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
         from cmx.protocols.smb.ENUM.hostenum import spider1
-        spider1(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True)
+        spider1(self, share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
 
         return
 
@@ -1325,7 +1328,7 @@ class smb(connection):
                     self.conn.listPath(share_name, '\\')
                     read = True
                     share_info['access'].append('READ')
-                except SessionError:
+                except impacket.smbconnection.SessionError:
                     pass
 
                 try:
@@ -1333,7 +1336,7 @@ class smb(connection):
                     self.conn.deleteDirectory(share_name, temp_dir)
                     write = True
                     share_info['access'].append('WRITE')
-                except SessionError:
+                except impacket.smbconnection.SessionError:
                     pass
 
                 permissions.append(share_info)
@@ -1383,7 +1386,7 @@ class smb(connection):
 ###############################################################################
 
     @requires_dc
-    def user(self):
+    def users(self):
         from cmx.protocols.smb.ENUM.domainenum import users1
         users1(self)
 
@@ -1459,7 +1462,7 @@ class smb(connection):
         if self.remote_ops and self.bootkey:
             #try:
             SAMFileName = self.remote_ops.saveSAM()
-            self.logger.success('SAM hashes dump:')
+            self.logger.success('SAM hashes dump of {}'.format(self.host))
             SAM = impacket.examples.secretsdump.SAMHashes(SAMFileName, self.bootkey, isRemote=True, perSecretCallback=lambda secret: add_sam_hash(secret, host_id))
 
             #self.logger.announce('Dumping SAM hashes')
@@ -1506,7 +1509,7 @@ class smb(connection):
         if self.remote_ops and self.bootkey:
 
             SECURITYFileName = self.remote_ops.saveSECURITY()
-            self.logger.success('LSA Secrets dump:')
+            self.logger.success('LSA Secrets dump for {}'.format(self.host))
 
             LSA = impacket.examples.secretsdump.LSASecrets(SECURITYFileName, self.bootkey, self.remote_ops, isRemote=True,
                              perSecretCallback=lambda secretType, secret: add_lsa_secret(secret))

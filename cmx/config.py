@@ -70,3 +70,5 @@ DUMP_PATH = 'safe.dmp'
 
 AZ_PATH = CMX_HOME / 'azure'
 AZ_CONFIG_PATH = AZ_PATH / 'configdone.txt'
+
+TEST_PATH = CMX_HOME / 'test.txt'
