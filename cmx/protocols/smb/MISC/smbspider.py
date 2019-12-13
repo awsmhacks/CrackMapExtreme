@@ -31,7 +31,8 @@ class SMBSpider:
                 self.logger.error('Regex compilation error: {}'.format(e))
 
         self.folder = folder
-        self.pattern = pattern
+        if pattern:
+            self.pattern = pattern
         self.exclude_dirs = exclude_dirs
         self.content = content
         self.onlyfiles = onlyfiles

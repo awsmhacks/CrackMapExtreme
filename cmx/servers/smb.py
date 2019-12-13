@@ -38,6 +38,7 @@ class CMXSMBServer(threading.Thread):
             # Here you can set a custom SMB challenge in hex format, If empty defaults to '4141414141414141'
             # e.g. server.setSMBChallenge('12345678abcdef00')
             #self.server.setSMBChallenge('') 
+            
 
         except Exception as e:
             errno, message = e.args
