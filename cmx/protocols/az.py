@@ -244,9 +244,9 @@ class az(connection):
                     comp = 'No' 
                 else:
                     comp = 'Yes'
-                count = count + 1
+                usercount = usercount + 1
                 self.logger.highlight("{:<36}  id:{}  compromised:{} ".format(user1['userPrincipalName'], user1['objectId'], comp))
-        self.logger.success("Total Users Found: {}".format(count))
+        self.logger.success("Total Users Found: {}".format(usercount))
         self.logger.success("All user info complete. Check the db for more details")
 
 
