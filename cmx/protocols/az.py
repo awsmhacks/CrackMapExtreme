@@ -38,6 +38,7 @@ class az(connection):
     def proto_args(parser, std_parser, module_parser):
         azure_parser = parser.add_parser('az', help="owning over azure", parents=[std_parser, module_parser])
         azure_parser.add_argument('--full', action='store_true', help='Display full json output for azure commands')
+        azure_parser.add_argument('--save', action='store_true', help='Saves just usernames to a file in current directory when doing user enum')
 
         configgroup = azure_parser.add_argument_group("Configure Azure CLI", "Configure the Azure Connection")
         configgroup.add_argument('--config', action='store_true', help='Setup or re-bind azure connection')
@@ -176,6 +177,8 @@ class az(connection):
 
 
     def user(self):
+        #if self.args.user == '':
+        #    self.args.user = self.user
 
         user_id = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.user], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
@@ -233,6 +236,11 @@ class az(connection):
             self.logger.error("add user error tracebak:")
             self.logger.error(format_exc())
 
+        # Do we save usernames
+        if self.args.save:
+            filename = "{}-users.txt".format(self.domain)
+            savefile = open(filename,"w")
+
 
         if self.args.full: 
             pprint.pprint(user_id_json)
@@ -244,8 +252,17 @@ class az(connection):
                     comp = 'No' 
                 else:
                     comp = 'Yes'
+
+                if self.args.save:
+                    savefile.write("{}\n".format(user1['mail']))
+
                 usercount = usercount + 1
                 self.logger.highlight("{:<36}  id:{}  compromised:{} ".format(user1['userPrincipalName'], user1['objectId'], comp))
+
+        if self.args.save: 
+            savefile.close()
+            self.logger.success("Email addresses saved to: {}".format(filename))
+
         self.logger.success("Total Users Found: {}".format(usercount))
         self.logger.success("All user info complete. Check the db for more details")
 
