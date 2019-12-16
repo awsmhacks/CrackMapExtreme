@@ -276,17 +276,7 @@ class smb(connection):
     @requires_admin
     @requires_smb_server
     def execute(self, payload=None, get_output=False, methods=None):
-        """Execute a command using specified execution method. Defualt: wmiexec.
-
-        Defaults to wmiexec
-
-        Args:
-
-        Raises:
-
-        Returns:
-
-        """
+        """Execute a command using specified execution method. Defualt: wmiexec."""
         if self.args.exec_method:
             method = self.args.exec_method
         else:
@@ -308,7 +298,6 @@ class smb(connection):
 
 
     # Start of execution method object builders
-
         if method == 'wmiexec':
             try:
                 exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender)
@@ -321,11 +310,11 @@ class smb(connection):
 
         elif method == 'dcomexec':
             try:
-                exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                self.logger.announce('Executed command via mmcexec')
+                exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender, self.logger)
+                self.logger.announce('Executed command via dcomexec')
             except:
-                self.logger.error('Failed to initiate mmcexec')
-                logging.debug('Error executing via mmcexec, traceback:')
+                self.logger.error('Failed to initiate dcomexec')
+                logging.debug('Error executing via dcomexec, traceback:')
                 logging.debug(format_exc())
                 return
 
@@ -415,9 +404,6 @@ class smb(connection):
         if not payload:
             payload = self.args.execute
 
-        if not self.args.no_output:
-            get_output = True
-
         if self.args.kd:
             killDefender = True
         else:
@@ -440,11 +426,11 @@ class smb(connection):
 
         elif method == 'dcomexec':
             try:
-                exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash)
-                logging.debug('Interactive shell using mmcexec')
+                exec_method = cmxDCOMEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender, self.logger, get_output)
+                logging.debug('Interactive shell using DCOMEXEC')
             except:
-                self.logger.error('Failed to initiate mmcexec')
-                logging.debug('Error launching shell via mmcexec, traceback:')
+                self.logger.error('Failed to initiate DCOMEXEC')
+                logging.debug('Error launching shell via DCOMEXEC, traceback:')
                 logging.debug(format_exc())
                 return
 

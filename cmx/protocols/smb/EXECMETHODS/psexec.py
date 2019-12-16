@@ -1,5 +1,8 @@
-#!/usr/bin/env python3
-
+#!/usr/bin/env python
+#
+#       Executes as SYSTEM
+#
+#
 # SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
 #
 # This software is provided under under a slightly modified version
@@ -13,7 +16,7 @@
 #
 # Reference for:
 #  DCE/RPC and SMB.
-
+import pdb
 import sys
 import os
 import cmd
@@ -93,6 +96,7 @@ class PSEXEC:
         #return self.__outputBuffer
 
     def execute(self, command, output=False):
+
         stringbinding = r'ncacn_np:%s[\pipe\svcctl]' % self.__host
         logging.debug('StringBinding %s'%stringbinding)
         rpctransport = transport.DCERPCTransportFactory(stringbinding)
@@ -169,7 +173,9 @@ class PSEXEC:
             # Create the pipes threads
             stdin_pipe = RemoteStdInPipe(rpctransport,
                                          r'\%s%s%d' % (RemComSTDIN, packet['Machine'], packet['ProcessID']),
-                                         smb.FILE_WRITE_DATA | smb.FILE_APPEND_DATA, installService.getShare())
+                                         smb.FILE_WRITE_DATA | smb.FILE_APPEND_DATA, installService.getShare(),
+                                         command)
+            
             stdin_pipe.start()
             stdout_pipe = RemoteStdOutPipe(rpctransport,
                                            r'\%s%s%d' % (RemComSTDOUT, packet['Machine'], packet['ProcessID']),
@@ -182,9 +188,11 @@ class PSEXEC:
             
             # And we stay here till the end
             ans = s.readNamedPipe(tid,fid_main,8)
+            #pdb.set_trace()
 
             if len(ans):
                 retCode = RemComResponse(ans)
+
                 logging.info("Process %s finished with ErrorCode: %d, ReturnCode: %d" % (
                 self.__command, retCode['ErrorCode'], retCode['ReturnCode']))
             installService.uninstall()
@@ -195,7 +203,13 @@ class PSEXEC:
         except:
             print ('error')
             pass
-        return ans
+
+        #read our result file - this executes in RemoteStdInPipe.run functions
+        with open(cfg.TEST_PATH, 'r') as file:
+            data = file.read()
+
+        return data
+
 
     def openPipe(self, s, tid, pipe, accessMask):
         pipeReady = False
@@ -216,6 +230,32 @@ class PSEXEC:
 
         return fid
 
+
+    def run(self, addr, dummy):
+        """ starts interactive shell """
+        logging.debug('inside dcomshell.run')
+
+        try:
+            self.shell.cmdloop()
+
+        except (Exception, KeyboardInterrupt) as e:
+            if logging.getLogger().level == logging.DEBUG:
+                import traceback
+                traceback.print_exc()
+            logging.error(str(e))
+            if self.__smbconnection is not None:
+                self.__smbconnection.logoff()
+            self.dcom.disconnect()
+            sys.stdout.flush()
+            sys.exit(1)
+
+        try:
+            if self.__smbconnection is not None:
+                self.__smbconnection.logoff()
+            #self.dcom.disconnect() #hangs forever?
+
+        except (Exception, KeyboardInterrupt) as e:
+            logging.debug('Error: {}'.format(e))
 
 
 
@@ -418,11 +458,25 @@ class RemoteShell(cmd.Cmd):
 
 
 class RemoteStdInPipe(Pipes):
-    def __init__(self, transport, pipe, permisssions, share=None):
+    def __init__(self, transport, pipe, permisssions, share=None, command=''):
         self.shell = None
+        self.command = command
         Pipes.__init__(self, transport, pipe, permisssions, share)
 
     def run(self):
         self.connectPipe()
         self.shell = RemoteShell(self.server, self.port, self.credentials, self.tid, self.fid, self.share, self.transport)
-        self.shell.cmdloop()
+        #self.shell.cmdloop()
+
+        #store OG stdout
+        a, b, c = sys.stdout, sys.stdin, sys.stderr
+
+        #switch stdout to our 'buffer'
+        buff = open(cfg.TEST_PATH,"w")
+        sys.stdout, sys.stdin, sys.stderr = buff, buff, buff
+
+        self.shell.onecmd(self.command)
+
+        # switch back to normal
+        sys.stdout, sys.stdin, sys.stderr = a, b, c 
+        buff.close()

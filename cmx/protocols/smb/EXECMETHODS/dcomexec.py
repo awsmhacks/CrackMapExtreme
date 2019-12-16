@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+#       Executes as the USER
+#
+#
 # SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
 #
 # This software is provided under under a slightly modified version
@@ -52,26 +56,131 @@ from impacket.dcerpc.v5.dtypes import NULL
 from impacket.examples import logger
 from impacket.smbconnection import SMBConnection, SMB_DIALECT, SMB2_DIALECT_002, SMB2_DIALECT_21
 
+from cmx import config as cfg
+
 OUTPUT_FILENAME = '__' + str(time.time())[:5]
 
 class DCOMEXEC:
-    def __init__(self, command='', username='', password='', domain='', hashes=None, aesKey=None, share=None,
-                 noOutput=False, doKerberos=False, kdcHost=None, dcomObject=None):
-        self.__command = command
+    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None,
+                 share=None, killDefender=False, logger=None, output=False):
         self.__username = username
         self.__password = password
         self.__domain = domain
         self.__lmhash = ''
         self.__nthash = ''
-        self.__aesKey = aesKey
+        self.__aesKey = None
         self.__share = share
-        self.__noOutput = noOutput
-        self.__doKerberos = doKerberos
-        self.__kdcHost = kdcHost
-        self.__dcomObject = dcomObject
+        self.__share_name = share_name
+        self.__noOutput = output
+        self.__kdcHost = None
+        self.__aesKey = None
+        self.__doKerberos = False
+        self.__retOutput = True
+        self.__dcomObject = 'MMC20'
+        self.__smbconnection = smbconnection
+        self.__target = target
+        self.logger = logger
+        self.dcom = None
+        print('a{}'.format(self.__noOutput))
+
         self.shell = None
         if hashes is not None:
-            self.__lmhash, self.__nthash = hashes.split(':')
+            if hashes.find(':') != -1:
+                self.__lmhash, self.__nthash = hashes.split(':')
+            else:
+                self.__nthash = hashes
+
+        if self.__noOutput is False:
+            smbConnection = self.__smbconnection
+            if self.__doKerberos is False:
+                smbConnection.login(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
+            else:
+                smbConnection.kerberosLogin(self.__username, self.__password, self.__domain, self.__lmhash,
+                                            self.__nthash, self.__aesKey, kdcHost=self.__kdcHost)
+
+            dialect = smbConnection.getDialect()
+            if dialect == SMB_DIALECT:
+                logging.info("SMBv1 dialect used")
+            elif dialect == SMB2_DIALECT_002:
+                logging.info("SMBv2.0 dialect used")
+            elif dialect == SMB2_DIALECT_21:
+                logging.info("SMBv2.1 dialect used")
+            else:
+                logging.info("SMBv3.0 dialect used")
+        else:
+            smbConnection = None
+
+        self.dcom = DCOMConnection(self.__target, self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash,
+                              self.__aesKey, oxidResolver=True, doKerberos=self.__doKerberos, kdcHost=self.__kdcHost)
+        try:
+            dispParams = DISPPARAMS(None, False)
+            dispParams['rgvarg'] = NULL
+            dispParams['rgdispidNamedArgs'] = NULL
+            dispParams['cArgs'] = 0
+            dispParams['cNamedArgs'] = 0
+
+            if self.__dcomObject == 'ShellWindows':
+                # ShellWindows CLSID (Windows 7, Windows 10, Windows Server 2012R2)
+                logging.debug('in execute: ShellWindows')
+                iInterface = self.dcom.CoCreateInstanceEx(string_to_bin('9BA05972-F6A8-11CF-A442-00A0C90A8F39'), IID_IDispatch)
+                iMMC = IDispatch(iInterface)
+                resp = iMMC.GetIDsOfNames(('Item',))
+                resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_METHOD, dispParams, 0, [], [])
+                iItem = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
+                resp = iItem.GetIDsOfNames(('Document',))
+                resp = iItem.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
+                pQuit = None
+            elif self.__dcomObject == 'ShellBrowserWindow':
+                # ShellBrowserWindow CLSID (Windows 10, Windows Server 2012R2)
+                logging.debug('in execute: ShellBrowserWindow')
+                iInterface = self.dcom.CoCreateInstanceEx(string_to_bin('C08AFD90-F2A1-11D1-8455-00A0C91F3880'), IID_IDispatch)
+                iMMC = IDispatch(iInterface)
+                resp = iMMC.GetIDsOfNames(('Document',))
+                resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
+                pQuit = iMMC.GetIDsOfNames(('Quit',))[0]
+            elif self.__dcomObject == 'MMC20':
+                logging.debug('in execute: MMC20')
+                iInterface = self.dcom.CoCreateInstanceEx(string_to_bin('49B2791A-B1AE-4C90-9B8E-E860BA07F889'), IID_IDispatch)
+                iMMC = IDispatch(iInterface)
+                resp = iMMC.GetIDsOfNames(('Document',))
+                resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
+                pQuit = iMMC.GetIDsOfNames(('Quit',))[0]
+            else:
+                logging.fatal('Invalid object %s' % self.__dcomObject)
+                return
+
+            iDocument = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
+            logging.debug('in execute: iDocument = IDispatch')
+
+            if self.__dcomObject == 'MMC20':
+                resp = iDocument.GetIDsOfNames(('ActiveView',))
+                resp = iDocument.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
+                logging.debug('in execute: MMC20 - 2')
+
+                iActiveView = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
+                pExecuteShellCommand = iActiveView.GetIDsOfNames(('ExecuteShellCommand',))[0]
+                self.shell = RemoteShellMMC20(self.__share, (iMMC, pQuit), (iActiveView, pExecuteShellCommand), smbConnection)
+            else:
+                resp = iDocument.GetIDsOfNames(('Application',))
+                resp = iDocument.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
+
+                iActiveView = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
+                pExecuteShellCommand = iActiveView.GetIDsOfNames(('ShellExecute',))[0]
+                self.shell = RemoteShell(self.__share, (iMMC, pQuit), (iActiveView, pExecuteShellCommand), smbConnection)
+
+        except  (Exception, KeyboardInterrupt) as e:
+            if logging.getLogger().level == logging.DEBUG:
+                import traceback
+                traceback.print_exc()
+            if self.shell is not None:
+                self.shell.do_exit('')
+            logging.error(str(e))
+            if smbConnection is not None:
+                smbConnection.logoff()
+            self.dcom.disconnect()
+            sys.stdout.flush()
+            sys.exit(1)
+
 
     def getInterface(self, interface, resp):
         # Now let's parse the answer and build an Interface instance
@@ -93,102 +202,77 @@ class DCOMEXEC:
                       oxid=objRef['std']['oxid'], oid=objRef['std']['oxid'],
                       target=interface.get_target()))
 
-    def run(self, addr):
-        if self.__noOutput is False:
-            smbConnection = SMBConnection(addr, addr)
-            if self.__doKerberos is False:
-                smbConnection.login(self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash)
-            else:
-                smbConnection.kerberosLogin(self.__username, self.__password, self.__domain, self.__lmhash,
-                                            self.__nthash, self.__aesKey, kdcHost=self.__kdcHost)
+    def execute(self, command, output=False):
+        self.__command = command
 
-            dialect = smbConnection.getDialect()
-            if dialect == SMB_DIALECT:
-                logging.info("SMBv1 dialect used")
-            elif dialect == SMB2_DIALECT_002:
-                logging.info("SMBv2.0 dialect used")
-            elif dialect == SMB2_DIALECT_21:
-                logging.info("SMBv2.1 dialect used")
-            else:
-                logging.info("SMBv3.0 dialect used")
+        if self.__command != ' ':
+            logging.debug('Trying onecmd: {}'.format(self.__command))
+            #store OG stdout
+            a, b, c = sys.stdout, sys.stdin, sys.stderr
+        
+            #switch stdout to our 'buffer'
+            buff = open(cfg.TEST_PATH,"w")
+            sys.stdout, sys.stdin, sys.stderr = buff, buff, buff
+        
+            self.shell.onecmd(self.__command)
+        
+            # switch back to normal
+            sys.stdout, sys.stdin, sys.stderr = a, b, c 
+            buff.close()
+            
+            if self.shell is not None:
+                self.shell.do_exit(' ')
+                #logging.debug('after exit')
         else:
-            smbConnection = None
+            logging.debug('before cmdloop')
+            self.shell.cmdloop()
+        
 
-        dcom = DCOMConnection(addr, self.__username, self.__password, self.__domain, self.__lmhash, self.__nthash,
-                              self.__aesKey, oxidResolver=True, doKerberos=self.__doKerberos, kdcHost=self.__kdcHost)
+        if self.__smbconnection is not None:
+            self.__smbconnection.logoff()
+
+        if self.dcom is not None:
+            try:
+                logging.debug('be4 disconnect')
+                #self.dcom.disconnect() #hangs forever?
+                logging.debug('after disconnect')
+            except:
+                pass
+
+        with open(cfg.TEST_PATH, 'r') as file:
+            data = file.read()
+
+        return data
+
+
+    def run(self, addr, dummy):
+        """ starts interactive shell """
+        logging.debug('inside dcomshell.run')
+
         try:
-            dispParams = DISPPARAMS(None, False)
-            dispParams['rgvarg'] = NULL
-            dispParams['rgdispidNamedArgs'] = NULL
-            dispParams['cArgs'] = 0
-            dispParams['cNamedArgs'] = 0
+            self.shell.cmdloop()
 
-            if self.__dcomObject == 'ShellWindows':
-                # ShellWindows CLSID (Windows 7, Windows 10, Windows Server 2012R2)
-                iInterface = dcom.CoCreateInstanceEx(string_to_bin('9BA05972-F6A8-11CF-A442-00A0C90A8F39'), IID_IDispatch)
-                iMMC = IDispatch(iInterface)
-                resp = iMMC.GetIDsOfNames(('Item',))
-                resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_METHOD, dispParams, 0, [], [])
-                iItem = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
-                resp = iItem.GetIDsOfNames(('Document',))
-                resp = iItem.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
-                pQuit = None
-            elif self.__dcomObject == 'ShellBrowserWindow':
-                # ShellBrowserWindow CLSID (Windows 10, Windows Server 2012R2)
-                iInterface = dcom.CoCreateInstanceEx(string_to_bin('C08AFD90-F2A1-11D1-8455-00A0C91F3880'), IID_IDispatch)
-                iMMC = IDispatch(iInterface)
-                resp = iMMC.GetIDsOfNames(('Document',))
-                resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
-                pQuit = iMMC.GetIDsOfNames(('Quit',))[0]
-            elif self.__dcomObject == 'MMC20':
-                iInterface = dcom.CoCreateInstanceEx(string_to_bin('49B2791A-B1AE-4C90-9B8E-E860BA07F889'), IID_IDispatch)
-                iMMC = IDispatch(iInterface)
-                resp = iMMC.GetIDsOfNames(('Document',))
-                resp = iMMC.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
-                pQuit = iMMC.GetIDsOfNames(('Quit',))[0]
-            else:
-                logging.fatal('Invalid object %s' % self.__dcomObject)
-                return
-
-            iDocument = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
-
-            if self.__dcomObject == 'MMC20':
-                resp = iDocument.GetIDsOfNames(('ActiveView',))
-                resp = iDocument.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
-
-                iActiveView = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
-                pExecuteShellCommand = iActiveView.GetIDsOfNames(('ExecuteShellCommand',))[0]
-                self.shell = RemoteShellMMC20(self.__share, (iMMC, pQuit), (iActiveView, pExecuteShellCommand), smbConnection)
-            else:
-                resp = iDocument.GetIDsOfNames(('Application',))
-                resp = iDocument.Invoke(resp[0], 0x409, DISPATCH_PROPERTYGET, dispParams, 0, [], [])
-
-                iActiveView = IDispatch(self.getInterface(iMMC, resp['pVarResult']['_varUnion']['pdispVal']['abData']))
-                pExecuteShellCommand = iActiveView.GetIDsOfNames(('ShellExecute',))[0]
-                self.shell = RemoteShell(self.__share, (iMMC, pQuit), (iActiveView, pExecuteShellCommand), smbConnection)
-
-            if self.__command != ' ':
-                self.shell.onecmd(self.__command)[:5]
-                if self.shell is not None:
-                    self.shell.do_exit('')
-            else:
-                self.shell.cmdloop()
-        except  (Exception, KeyboardInterrupt) as e:
+        except (Exception, KeyboardInterrupt) as e:
             if logging.getLogger().level == logging.DEBUG:
                 import traceback
                 traceback.print_exc()
-            if self.shell is not None:
-                self.shell.do_exit('')
             logging.error(str(e))
-            if smbConnection is not None:
-                smbConnection.logoff()
-            dcom.disconnect()
+            if self.__smbconnection is not None:
+                self.__smbconnection.logoff()
+            self.dcom.disconnect()
             sys.stdout.flush()
             sys.exit(1)
 
-        if smbConnection is not None:
-            smbConnection.logoff()
-        dcom.disconnect()
+        try:
+            if self.__smbconnection is not None:
+                self.__smbconnection.logoff()
+            #self.dcom.disconnect() #hangs forever?
+
+        except (Exception, KeyboardInterrupt) as e:
+            logging.debug('Error: {}'.format(e))
+
+
+
 
 class RemoteShell(cmd.Cmd):
     def __init__(self, share, quit, executeShellCommand, smbConnection):
@@ -271,6 +355,7 @@ class RemoteShell(cmd.Cmd):
             pass
 
     def do_exit(self, s):
+        logging.debug('in do_exit')
         dispParams = DISPPARAMS(None, False)
         dispParams['rgvarg'] = NULL
         dispParams['rgdispidNamedArgs'] = NULL
@@ -402,6 +487,8 @@ class RemoteShell(cmd.Cmd):
 
 class RemoteShellMMC20(RemoteShell):
     def execute_remote(self, data):
+        logging.debug('in execute_remote: RemoteShellMMC20')
+
         command = '/Q /c ' + data
         if self._noOutput is False:
             command += ' 1> ' + '\\\\127.0.0.1\\%s' % self._share + self._output  + ' 2>&1'
@@ -443,6 +530,7 @@ class RemoteShellMMC20(RemoteShell):
 
         self._executeShellCommand[0].Invoke(self._executeShellCommand[1], 0x409, DISPATCH_METHOD, dispParams,
                                             0, [], [])
+        logging.debug('in execute_remote: RemoteShellMMC20 after executeShellCommand()')
         self.get_output()
 
 class AuthFileSyntaxError(Exception):
@@ -493,88 +581,3 @@ def load_smbclient_auth_file(path):
             raise AuthFileSyntaxError(path, lineno, 'Unknown option %s' % repr(k))
 
     return (domain, username, password)
-
-# Process command-line arguments.
-if __name__ == '__main__':
-    # Init the example's logger theme
-    logger.init()
-    print(version.BANNER)
-
-    parser = argparse.ArgumentParser(add_help = True, description = "Executes a semi-interactive shell using the "
-                                                                    "ShellBrowserWindow DCOM object.")
-    parser.add_argument('target', action='store', help='[[domain/]username[:password]@]<targetName or address>')
-    parser.add_argument('-share', action='store', default = 'ADMIN$', help='share where the output will be grabbed from '
-                                                                           '(default ADMIN$)')
-    parser.add_argument('-nooutput', action='store_true', default = False, help='whether or not to print the output '
-                                                                                '(no SMB connection created)')
-    parser.add_argument('-debug', action='store_true', help='Turn DEBUG output ON')
-    parser.add_argument('-object', choices=['ShellWindows', 'ShellBrowserWindow', 'MMC20'], nargs='?', default='ShellWindows',
-                        help='DCOM object to be used to execute the shell command (default=ShellWindows)')
-
-    parser.add_argument('command', nargs='*', default = ' ', help='command to execute at the target. If empty it will '
-                                                                  'launch a semi-interactive shell')
-
-    group = parser.add_argument_group('authentication')
-
-    group.add_argument('-hashes', action="store", metavar = "LMHASH:NTHASH", help='NTLM hashes, format is LMHASH:NTHASH')
-    group.add_argument('-no-pass', action="store_true", help='don\'t ask for password (useful for -k)')
-    group.add_argument('-k', action="store_true", help='Use Kerberos authentication. Grabs credentials from ccache file '
-                       '(KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the '
-                       'ones specified in the command line')
-    group.add_argument('-aesKey', action="store", metavar = "hex key", help='AES key to use for Kerberos Authentication '
-                                                                            '(128 or 256 bits)')
-    group.add_argument('-dc-ip', action='store',metavar = "ip address",  help='IP Address of the domain controller. If '
-                       'ommited it use the domain part (FQDN) specified in the target parameter')
-    group.add_argument('-A', action="store", metavar = "authfile", help="smbclient/mount.cifs-style authentication file. "
-                                                                        "See smbclient man page's -A option.")
-
-    if len(sys.argv)==1:
-        parser.print_help()
-        sys.exit(1)
-
-    options = parser.parse_args()
-
-    if ' '.join(options.command) == ' ' and options.nooutput is True:
-        logging.error("-nooutput switch and interactive shell not supported")
-        sys.exit(1)
-
-    if options.debug is True:
-        logging.getLogger().setLevel(logging.DEBUG)
-    else:
-        logging.getLogger().setLevel(logging.INFO)
-
-    import re
-
-    domain, username, password, address = re.compile('(?:(?:([^/@:]*)/)?([^@:]*)(?::([^@]*))?@)?(.*)').match(
-        options.target).groups('')
-
-    #In case the password contains '@'
-    if '@' in address:
-        password = password + '@' + address.rpartition('@')[0]
-        address = address.rpartition('@')[2]
-
-    try:
-        if options.A is not None:
-            (domain, username, password) = load_smbclient_auth_file(options.A)
-            logging.debug('loaded smbclient auth file: domain=%s, username=%s, password=%s' % (repr(domain), repr(username), repr(password)))
-
-        if domain is None:
-            domain = ''
-
-        if password == '' and username != '' and options.hashes is None and options.no_pass is False and options.aesKey is None:
-            from getpass import getpass
-            password = getpass("Password:")
-
-        if options.aesKey is not None:
-            options.k = True
-
-        executer = DCOMEXEC(' '.join(options.command), username, password, domain, options.hashes, options.aesKey,
-                            options.share, options.nooutput, options.k, options.dc_ip, options.object)
-        executer.run(address)
-    except (Exception, KeyboardInterrupt) as e:
-        if logging.getLogger().level == logging.DEBUG:
-            import traceback
-            traceback.print_exc()
-        logging.error(str(e))
-    sys.exit(0)
-    

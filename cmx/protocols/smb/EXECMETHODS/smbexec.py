@@ -1,5 +1,8 @@
-
-# smbexec runs as SYSTEM
+#!/usr/bin/env python
+#
+#       Executes as SYSTEM
+#
+#
 # SECUREAUTH LABS. Copyright 2018 SecureAuth Corporation. All rights reserved.
 #
 # This software is provided under under a slightly modified version
@@ -92,6 +95,8 @@ class SMBEXEC:
         if self.__password is None:
             self.__password = ''
 
+
+    def execute(self, command, output=False):
         stringbinding = r'ncacn_np:%s[\pipe\svcctl]' % self.__host
         logging.debug('StringBinding %s'%stringbinding)
         self.__rpctransport = transport.DCERPCTransportFactory(stringbinding)
@@ -116,18 +121,16 @@ class SMBEXEC:
         # We don't wanna deal with timeouts from now on.
         s.setTimeout(100000)
 
-
         self.__scmr.bind(scmr.MSRPC_UUID_SCMR)
         resp = scmr.hROpenSCManagerW(self.__scmr)
 
         self.__scHandle = resp['lpScHandle']
 
-
-    def execute(self, command, output=False):
         self.__retOutput = output
         self.execute_fileless(command)
         self.finish()
         return self.__outputBuffer
+
 
     def output_callback(self, data):
         self.__outputBuffer += data
