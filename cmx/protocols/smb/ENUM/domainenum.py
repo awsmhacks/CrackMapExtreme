@@ -170,6 +170,9 @@ def users1(smb):
     users = ''
     self = smb
     #self.logger.announce('Starting Domain Users Enum')
+    if self.args.save:
+        filename = "{}-users.txt".format(self.domain)
+        savefile = open(filename,"w")
 
     try:
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
@@ -241,6 +244,9 @@ def users1(smb):
 
                         self.db.add_user(self.domain, user['Name'])
 
+                        if self.args.save:
+                            savefile.write("{}\n".format(user['Name']))
+
                         info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                         logging.debug('Dump of hSamrQueryInformationUser2 response:')
                         if self.debug:
@@ -263,6 +269,10 @@ def users1(smb):
         logging.debug('failed connect {}'.format(str(e)))
         dce.disconnect()
         return list()
+
+    if self.args.save: 
+        savefile.close()
+        self.logger.success("Usernames saved to: {}".format(filename))
 
     try:
         dce.disconnect()
@@ -288,6 +298,9 @@ def computers1(smb):
     comps = ''
     self = smb
     #self.logger.announce('Starting Domain Computers Enum')
+    if self.args.save:
+        filename = "{}-computers.txt".format(self.domain)
+        savefile = open(filename,"w")
 
     try:
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
@@ -367,6 +380,8 @@ def computers1(smb):
 
                         #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
                         self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain, dc='Yes')
+                        if self.args.save:
+                            savefile.write("{}\n".format(user['Name']))
 
                         info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                         logging.debug('Dump of hSamrQueryInformationUser2 response:')
@@ -397,6 +412,8 @@ def computers1(smb):
 
                         #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
                         self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain)
+                        if self.args.save:
+                            savefile.write("{}\n".format(user['Name']))
 
                         info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                         logging.debug('Dump of hSamrQueryInformationUser2 response:')
@@ -421,6 +438,10 @@ def computers1(smb):
         logging.debug('failed connect {}'.format(str(e)))
         dce.disconnect()
         return
+
+    if self.args.save: 
+        savefile.close()
+        self.logger.success("Computers saved to: {}".format(filename))
 
     try:
         dce.disconnect()

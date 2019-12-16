@@ -16,6 +16,8 @@ import subprocess
 import json
 import pprint
 
+from cmx.connection import *
+
 import pdb
 
 class az(connection):

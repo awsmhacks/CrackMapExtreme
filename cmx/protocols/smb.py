@@ -6,6 +6,7 @@ import socket
 import time
 import pdb
 
+
 import impacket
 
 from datetime import datetime
@@ -229,6 +230,8 @@ class smb(connection):
         servicegroup = smb_parser.add_argument_group("Interact with Services")
         servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='not finished')
         servicegroup.add_argument("-stop-service", '--stop-service', action='store_true', help='not finished')
+
+        smb_parser.add_argument('--save', action='store_true', help='Saves names to a file in current directory when doing user or computer enum')
 
         return parser
 

@@ -39,8 +39,11 @@ import os
 import cmd
 import sys
 from gevent import sleep
+
+import impacket
 from impacket.dcerpc.v5 import transport, scmr
 from impacket.smbconnection import *
+
 from cmx.helpers.misc import gen_random_string
 from cmx.servers.smb import CMXSMBServer
 from cmx import config as cfg
@@ -98,7 +101,7 @@ class SMBEXEC:
             self.__rpctransport.setRemoteHost(self.__host)
 
         #if hasattr(self.__rpctransport,'preferred_dialect'):
-        #    self.__rpctransport.preferred_dialect(SMB_DIALECT)
+        #    self.__rpctransport.preferred_dialect(impacket.smb.SMB_DIALECT)
 
         if hasattr(self.__rpctransport, 'set_credentials'):
             # This method exists only for selected protocol sequences.

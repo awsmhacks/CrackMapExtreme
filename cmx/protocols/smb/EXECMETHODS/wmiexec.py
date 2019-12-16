@@ -45,7 +45,8 @@ DUMMY_SHARE     = 'TMP'
 CODEC = sys.stdout.encoding
 
 class WMIEXEC:
-    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None, share=None, killDefender=False, logger=None):
+    def __init__(self, target, share_name, username, password, domain, smbconnection, hashes=None,
+                 share=None, killDefender=False, logger=None):
         self.__target = target
         self.__username = username
         self.__password = password
