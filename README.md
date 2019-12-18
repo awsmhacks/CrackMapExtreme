@@ -7,7 +7,7 @@
 		   Crack Map Exec - eXtreme edition                
 ```
 
-Check the new (and in progress) pages site! [CMX](https://awsmhacks.github.io/cmxdocs/index)  
+Check the new (and in progress) cmx documentation site! [C M X](https://awsmhacks.github.io/cmxdocs/index)  
   
 These are a bit out of date now, hoping to get to new documentation soon!  
 [General Overview](https://github.com/awsmhacks/CrackMapExtreme/blob/master/docs/CMX-Usage-Home.md)  
