@@ -8,11 +8,6 @@
 
 **Check the new (and in progress) cmx documentation site!** [C M X](https://awsmhacks.github.io/cmxdocs/index)    
   
-These are a bit out of date now, hoping to get to new documentation soon!  
-[General Overview](https://github.com/awsmhacks/CrackMapExtreme/blob/master/docs/CMX-Usage-Home.md)  
-[SMB: Command Execution Reference](https://github.com/awsmhacks/CrackMapExtreme/blob/master/docs/SMB-Command-Reference.md)  
-[Mimikatz](https://github.com/awsmhacks/CrackMapExtreme/blob/master/docs/SMB-Module-Reference.md#mimikatz)  
-  
   
 ------------------------------------------------------------------------
 # CrackMapExtreme
