@@ -1,13 +1,12 @@
-
 ```                                          
     ____ ____ ____ ____ _  _     _  _ ____ ___      ____ _  _ ___ ____ ____ _  _ ____ 
     |    |__/ |__| |    |_/      |\/| |__| |__]     |___  \/   |  |__/ |___ |\/| |___ 
     |___ |  \ |  | |___ | \_     |  | |  | |        |___ _/\_  |  |  \ |___ |  | |___ 
 		                                  			    
-		   					CrackMapExec - eXtreme edition                
+                            CrackMapExec - eXtreme edition                
 ```
 
-**Check the new (and in progress) cmx documentation site!** [C M X](https://awsmhacks.github.io/cmxdocs/index)  
+**Check the new (and in progress) cmx documentation site!** [C M X](https://awsmhacks.github.io/cmxdocs/index)    
   
 These are a bit out of date now, hoping to get to new documentation soon!  
 [General Overview](https://github.com/awsmhacks/CrackMapExtreme/blob/master/docs/CMX-Usage-Home.md)  
