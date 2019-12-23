@@ -68,7 +68,7 @@ def gen_cli_args():
        cmx az --users      (gets all users)
        cmx az -h  (for all current azure stuffs)
 
- *Check https://awsmhacks.github.io/CrackMapExtreme/ for detailed usage* 
+ *Check https://awsmhacks.github.io/cmxdocs/index for detailed usage* 
 
 """,
            add_help=False, usage=argparse.SUPPRESS)
