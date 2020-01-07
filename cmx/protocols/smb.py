@@ -205,6 +205,7 @@ class smb(connection):
         segroup.add_argument("--regex", nargs='+', help='regex(s) to search for in folders, filenames and file content')
         sgroup.add_argument("--depth", type=int, default=None, help='max spider recursion depth (default: infinity & beyond)')
         sgroup.add_argument("--only-files", action='store_true', help='only spider files')
+        sgroup.add_argument("--only-dir", action='store_true', help='only list contents of a directory')
 
         execgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
         execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
@@ -1283,9 +1284,9 @@ class smb(connection):
         return
 
 
-    def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
+    def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True, onlydir=False):
         from cmx.protocols.smb.ENUM.hostenum import spider1
-        spider1(self, share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
+        spider1(self, share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles, onlydir)
 
         return
 

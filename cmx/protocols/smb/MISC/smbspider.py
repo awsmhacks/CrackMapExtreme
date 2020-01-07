@@ -6,6 +6,7 @@ from impacket.smbconnection import SessionError
 import logging
 import re
 import traceback
+import pdb
 
 class SMBSpider:
 
@@ -22,8 +23,9 @@ class SMBSpider:
         self.results = []
         self.filecount = 0
         self.dircount = 0
+        self.onlydir = False
 
-    def spider(self, share, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
+    def spider(self, share, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True, onlydir=False):
         if regex:
             try:
                 self.regex = [re.compile(rx) for rx in regex]
@@ -36,6 +38,7 @@ class SMBSpider:
         self.exclude_dirs = exclude_dirs
         self.content = content
         self.onlyfiles = onlyfiles
+        self.onlydir = onlydir
 
         if share == "*":
             self.logger.info("Enumerating shares for spidering")
@@ -80,7 +83,10 @@ class SMBSpider:
         filelist = None
         try:
             filelist = self.smbconnection.listPath(self.share, subfolder)
-            self.dir_list(filelist, subfolder)
+            if self.onlydir:
+                self.list_all(filelist, subfolder)
+            else:
+                self.dir_list(filelist, subfolder)
             if depth == 0:
                 return
         except SessionError as e:
@@ -198,3 +204,14 @@ class SMBSpider:
             pass
 
         return lastm_time
+
+
+    def list_all(self, files, path):
+            path = path.replace('*', '')
+            for result in files:
+                self.logger.highlight("//{}/{}/{}{} [dir]".format(self.smbconnection.getRemoteHost(), self.share, 
+                                                                   path, 
+                                                                   result.get_longname()))
+                self.results.append('{}{}'.format(path, result.get_longname()))
+    
+            return

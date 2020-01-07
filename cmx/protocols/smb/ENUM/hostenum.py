@@ -485,7 +485,7 @@ def rid_brute1(smb, maxrid=None):
     return
 
 
-def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True):
+def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True, onlydir=False):
     """Spider a share.
 
     Args:
@@ -504,9 +504,9 @@ def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], 
     if not share:
         spider.spider(self.args.spider, self.args.spider_folder, self.args.pattern,
                       self.args.regex, self.args.exclude_dirs, self.args.depth,
-                      self.args.content, self.args.only_files)
+                      self.args.content, self.args.only_files, self.args.only_dir)
     else:
-        spider.spider(share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles)
+        spider.spider(share, folder, pattern, regex, exclude_dirs, self.args.depth, content, onlyfiles, onlydir)
 
     seconds = time.time() - start_time
     mins, seconds = divmod(seconds, 60)
