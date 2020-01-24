@@ -51,7 +51,7 @@ def requires_admin(func):
 
 def requires_dc(func):
     def _decorator(self, *args, **kwargs):
-        if self.dc_ip is '': 
+        if self.dc_ip == '': 
             print('\n          Unable to execute, must specify a domain controller (-dc)\n') # ... logger would be better...
             return
         return func(self, *args, **kwargs)

@@ -22,7 +22,7 @@ class CMXSMBServer(threading.Thread):
             if verbose: self.server.setLogFile('')
             
             # password can be a list of passwords, we only gonna make this work if you pass 1 password for now...
-            if password is not '':
+            if password != '':
                 lmhash = compute_lmhash(password[0])
                 nthash = compute_nthash(password[0])
             else:

@@ -799,7 +799,7 @@ class smb(connection):
                     # So, if that's the case we'll force using RC4 by converting
                     # the password to lm/nt hashes and hope for the best. If that's already
                     # done, byebye.
-                    if lmhash is '' and nthash is '' and (aesKey is '' or aesKey is None) and TGT is None and TGS is None:
+                    if lmhash == '' and nthash == '' and (aesKey == '' or aesKey is None) and TGT is None and TGS is None:
                         lmhash = compute_lmhash(password)
                         nthash = compute_nthash(password) 
                     else:
@@ -1561,7 +1561,7 @@ class smb(connection):
 
         if self.remote_ops and self.bootkey:
             try:
-                if self.args.ntds is 'vss':
+                if self.args.ntds == 'vss':
                     NTDSFileName = self.remote_ops.saveNTDS()
                     use_vss_method = True
 
