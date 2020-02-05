@@ -63,6 +63,7 @@ THIRD_PARTY_PATH = CMX_DIR / 'thirdparty'
 CMX_MOD_DIR = CMX_DIR / 'modules'
 CMX_PROTO_DIR = CMX_DIR / 'protocols'
 DATA_PATH = CMX_DIR / 'data'
+PS_PATH = DATA_PATH / 'powershell_scripts'
 
 
 PROC_PATH = CMX_HOME / 'procdump64.exe'
