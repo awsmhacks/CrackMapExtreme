@@ -29,6 +29,7 @@ class az(connection):
         self.az_cli = None
         self.username = ''
         self.domain = ''
+        self.username_full = ''
 
         if args.config:
             self.config1()
@@ -54,6 +55,7 @@ class az(connection):
         enumgroup.add_argument('--group', nargs='?', const='', metavar='GROUP', help='Enumerate and return all members of a group')
         enumgroup.add_argument('--groups', action='store_true', help='Enumerate and return all groups')
         enumgroup.add_argument('--usergroups', nargs='?', const='', metavar='USERSGROUPS', help='Enumerate and return all groups a user is a member of')
+        enumgroup.add_argument('--whoami', action='store_true', help='Show information about current identity')
 
         privgroup = azure_parser.add_argument_group("Privilege Checks", "Get Privs and identify PrivEsc")
         privgroup.add_argument('--suggest', action='store_true', help='Check for potentially abusable permissions')
@@ -72,12 +74,17 @@ class az(connection):
         vmgroup = azure_parser.add_argument_group("VM Checks", "Interact with VMs and VM Scale Sets")
         vmgroup.add_argument('--vm-list', nargs='?', const='', metavar='RESOURCEGROUP', help='List all VMs for current subscription or target resource group')
         vmgroup.add_argument('--vmss-list', nargs='?', const='', metavar='RESOURCEGROUP', help='List all VM Scale Sets for current subscription or target resource group')
+        #vmgroup.add_argument('--mimiaz', action='store_true', help='Execute mimikats on a target VM')
 
         spngroup = azure_parser.add_argument_group("SPN Checks", "Interact with Service Principals")
         spngroup.add_argument('--spn-list', action='store_true', help='List all SPNs for current subscription')
 
         appgroup = azure_parser.add_argument_group("App Checks", "Interact with Apps")
         appgroup.add_argument('--app-list', action='store_true', help='List all Apps for current subscription')
+
+
+
+
 
         return parser
        
@@ -106,9 +113,9 @@ class az(connection):
         f.close()
         self.username = data.split()[0].split('@')[0]
         self.domain = data.split()[0].split('@')[1]
+        self.username_full = data.split()[0]
+
         self.proto_logger()
-
-
         self.az_cli = get_default_cli()
 
         return True
@@ -119,7 +126,6 @@ class az(connection):
 
         login = subprocess.run(['az','login', '--allow-no-subscriptions'], stdout=subprocess.PIPE)
         user = re.findall('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', str(login.stdout))
-        #print("               Logged in as {}".format(user[0]))
         self.logger.success('Logged in as {}'.format(user[0]))
 
         if not cfg.AZ_PATH.is_dir():
@@ -177,10 +183,34 @@ class az(connection):
 # (fold next line)
 ###############################################################################
 
+    def whoami(self):
+
+        my_user_id = subprocess.run(['az','ad', 'signed-in-user', 'show'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            my_user_id_json = json.loads(my_user_id.stdout.decode('utf-8'))
+        except:
+            self.logger.error("Have you setup a session? cmx az --config")
+            return
+
+        self.logger.announce("Getting User Info")
+
+        if self.args.full: 
+            pprint.pprint(my_user_id_json)
+        else:
+            self.logger.highlight("{:>26} {}".format('userPrincipalName: ', my_user_id_json['userPrincipalName']))
+            self.logger.highlight("{:>26} {}".format('mail: ', my_user_id_json['mail']))
+            self.logger.highlight("{:>26} {}".format('mailNickname: ', my_user_id_json['mailNickname']))
+            self.logger.highlight("{:>26} {}".format('TelephoneNumber: ', my_user_id_json['telephoneNumber']))
+            self.logger.highlight("{:>26} {}".format('objectId: ', my_user_id_json['objectId']))
+            self.logger.highlight("{:>26} {}".format('SID: ', my_user_id_json['onPremisesSecurityIdentifier']))
+            self.logger.highlight("{:>26} {}".format('isCompromised: ', my_user_id_json['isCompromised']))
+
 
     def user(self):
-        #if self.args.user == '':
-        #    self.args.user = self.user
+        if self.args.user == '':
+            self.logger.announce("No user specified, calling whoami")
+            self.whoami()
+            return
 
         user_id = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.user], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
@@ -200,16 +230,14 @@ class az(connection):
         if self.args.full: 
             pprint.pprint(user_id_json)
         else:
+            self.logger.highlight("{:<26} {}".format('userPrincipalName: ', user_id_json['userPrincipalName']))
             self.logger.highlight("{:<26} {}".format('mail: ', user_id_json['mail']))
             self.logger.highlight("{:<26} {}".format('mailNickname: ', user_id_json['mailNickname']))
             self.logger.highlight("{:<26} {}".format('TelephoneNumber: ', user_id_json['telephoneNumber']))
             self.logger.highlight("{:<26} {}".format('objectId: ', user_id_json['objectId']))
-
-            self.logger.highlight("Assigned Plan Memberships: {}".format(plans))
+            self.logger.highlight("Plan Memberships: {}".format(plans))
             self.logger.highlight("{:<26} {}".format('SID: ', user_id_json['onPremisesSecurityIdentifier']))
-            self.logger.highlight("{:<26} {}".format('userPrincipalName: ', user_id_json['userPrincipalName']))
             self.logger.highlight("{:<26} {}".format('isCompromised: ', user_id_json['isCompromised']))
-
 
 
     def usergroups(self):
@@ -656,6 +684,22 @@ class az(connection):
             vmss_iplist = subprocess.run(['az','vmss', 'list-instance-public-ips', '--resource-group', vmss_list_json[i]['rgrp'], '--name', vmss_list_json[i]['name'],  '--query', '[].{ipAddress:ipAddress}'], stdout=subprocess.PIPE)
             vmss_iplist_json = json.loads(vmss_iplist.stdout.decode('utf-8'))
             pprint.pprint(vmss_iplist_json)
+
+
+    def mimiaz(self):
+        # testing with just running coffee
+        # need to figure out how we gonna get output back - limited to 4096 this way...
+        try:
+            commander_json = json.loads(commander.stdout.decode('utf-8'))
+        except:
+            self.logger.error("Current user has no VM subscriptions")
+            return
+
+        if self.args.full: 
+            pprint.pprint(commander_json)
+
+        else:
+            print(commander_json['value'][0]['message'])
 
 
 ###############################################################################

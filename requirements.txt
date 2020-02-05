@@ -13,7 +13,7 @@ future==0.17.1
 gevent==1.4.0
 greenlet==0.4.15
 idna==2.8
-impacket==0.9.20
+git+https://github.com/SecureAuthCorp/impacket.git
 itsdangerous==1.1.0
 Jinja2==2.10.1
 ldap3==2.5.1

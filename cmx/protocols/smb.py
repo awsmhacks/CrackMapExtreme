@@ -362,7 +362,7 @@ class smb(connection):
 
             buf = StringIO(output).readlines()
             for line in buf:
-                self.logger.highlight('    ' + line.strip())
+                self.logger.highlight(line.strip())
 
         return output
 
@@ -529,7 +529,7 @@ class smb(connection):
 
         self.logger.highlight("Results:")
         for credential in credentials:
-            self.logger.highlight("        %s\\%s:%s" % credential)
+            self.logger.highlight(" %s\\%s:%s" % credential)
 
 
     def parse_output(self, output):
@@ -1378,29 +1378,37 @@ class smb(connection):
     @requires_dc
     def users(self):
         from cmx.protocols.smb.ENUM.domainenum import users1
-        users1(self)
-
+        try:
+            users1(self)
+        except:
+            pass
         return
 
     @requires_dc
     def groups(self):
         from cmx.protocols.smb.ENUM.domainenum import group1
-        group1(self)
-
+        try:
+            group1(self)
+        except:
+            pass
         return
 
     @requires_dc
     def computers(self):
         from cmx.protocols.smb.ENUM.domainenum import computers1
-        computers1(self)
-
+        try:
+            computers1(self)
+        except:
+            pass
         return
 
     @requires_dc
     def group(self):
         from cmx.protocols.smb.ENUM.domainenum import group2
-        group2(self)
-
+        try:
+            group2(self)
+        except:
+            pass
         return
 
 

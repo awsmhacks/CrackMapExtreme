@@ -146,8 +146,15 @@ def group1(smb):
             dce.disconnect()
             return
     except Exception as e: #failed connect
-        logging.debug('failed connect {}'.format(str(e)))
-        dce.disconnect()
+        logging.debug('failed connect in group1.a {}'.format(str(e)))
+        self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
+        self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        try:
+            dce.disconnect()
+        except:
+            logging.debug('failed disconnect in group1.a')
+            pass
         return
 
     try:
@@ -266,9 +273,16 @@ def users1(smb):
             dce.disconnect()
             return list()
     except Exception as e: #failed connect
-        logging.debug('failed connect {}'.format(str(e)))
-        dce.disconnect()
-        return list()
+        logging.debug('failed connect in users1.a {}'.format(str(e)))
+        self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
+        self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        try:
+            dce.disconnect()
+        except:
+            logging.debug('failed disconnect in users1.a')
+            pass
+        return
 
     if self.args.save: 
         savefile.close()
@@ -277,7 +291,7 @@ def users1(smb):
     try:
         dce.disconnect()
     except:
-        self.logging.error('Failed dce disconnect during users')
+        logging.debug('Failed dce disconnect in users1')
         pass
 
     if self.args.logs:
@@ -435,8 +449,15 @@ def computers1(smb):
             dce.disconnect()
             return
     except Exception as e: #failed connect
-        logging.debug('failed connect {}'.format(str(e)))
-        dce.disconnect()
+        logging.debug('failed connect in computers1.a {}'.format(str(e)))
+        self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
+        self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        try:
+            dce.disconnect()
+        except:
+            logging.debug('failed disconnect in computers')
+            pass
         return
 
     if self.args.save: 
@@ -581,8 +602,15 @@ def group2(smb):
             dce.disconnect()
             return
     except Exception as e: #failed connect
-        logging.debug('failed connect {}'.format(str(e)))
-        dce.disconnect()
+        logging.debug('failed connect in group2.a {}'.format(str(e)))
+        self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
+        self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        try:
+            dce.disconnect()
+        except:
+            logging.debug('failed disconnect in group2.a')
+            pass
         return
 
     try:
