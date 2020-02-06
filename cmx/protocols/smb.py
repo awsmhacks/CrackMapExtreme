@@ -211,7 +211,7 @@ class smb(connection):
         execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
         execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
         execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
-        execgroup.add_argument('--kd', action='store_true', help='Shut down defender before executing command (wmiexec)')
+        execgroup.add_argument('--kd','-kd', action='store_true', help='Shut down defender before executing command (wmiexec)')
         execegroup = execgroup.add_mutually_exclusive_group()
         execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
@@ -227,6 +227,8 @@ class smb(connection):
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-fix-uac", '--fix-uac', action='store_true', help='Sets the proper Keys for remote high-integrity processes')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
+        reggroup.add_argument("--disable-tamper",'--dt', '-dt', action='store_true', help='Disable Tamper Protection via registry key')
+        reggroup.add_argument("--check-tamper",'--ct', '-ct', action='store_true', help='Disable Tamper Protection via registry key')
 
         servicegroup = smb_parser.add_argument_group("Interact with Services")
         servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='not finished')
@@ -899,6 +901,83 @@ class smb(connection):
 
         return
 
+    @requires_admin
+    def disable_tamper(self):
+        r"""Make reg modifications for Tamper Protection.
+
+        Sets the tamper protection key to 0
+        HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Defender\Features\TamperProtection
+
+        logic is in protocols/smb/misc/reg.py
+        """
+        dcip = self.dc_ip
+        # self.logger.announce('')
+
+        class Ops:
+            def __init__(self):
+                self.action = 'DISABLETAMPER'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip
+                self.hashes = None
+                self.port = 445
+
+        options = Ops()
+
+        try:
+            reghandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
+            reghandler.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error creating/running regHandler connection: {}'.format(e))
+            return
+
+        #try:
+        #    restart_uac()
+        #except Exception as e:
+        #    self.logger.error('Error restarting Server Service: {}'.format(e))
+        #    return 
+
+        return
+
+
+    def check_tamper(self):
+        r"""Make reg modifications for Tamper Protection.
+
+        Sets the tamper protection key to 0
+        HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Defender\Features\TamperProtection
+
+        logic is in protocols/smb/misc/reg.py
+        """
+        dcip = self.dc_ip
+        # self.logger.announce('')
+
+        class Ops:
+            def __init__(self):
+                self.action = 'CHECKTAMPER'
+                self.aesKey = None
+                self.k = False
+                self.dc_ip = dcip
+                self.hashes = None
+                self.port = 445
+
+        options = Ops()
+
+        try:
+            reghandler = RegHandler(self.username, self.password, self.domain, self.logger, options)
+            reghandler.run(self.host, self.host)
+
+        except Exception as e:
+            self.logger.error('Error creating/running regHandler connection: {}'.format(e))
+            return
+
+        #try:
+        #    restart_uac()
+        #except Exception as e:
+        #    self.logger.error('Error restarting Server Service: {}'.format(e))
+        #    return 
+
+        return
 
 ###############################################################################
 

