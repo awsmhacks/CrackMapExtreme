@@ -89,9 +89,6 @@ class az(connection):
         appgroup.add_argument('--app-list', action='store_true', help='List all Apps for current subscription')
 
 
-
-
-
         return parser
        
 
@@ -132,7 +129,34 @@ class az(connection):
 
         login = subprocess.run(['az','login', '--allow-no-subscriptions'], stdout=subprocess.PIPE)
         user = re.findall('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', str(login.stdout))
-        self.logger.success('Logged in as {}'.format(user[0]))
+        self.logger.success('Logged in as {}'.format(user[0])) #maybe not working
+        print(" ")
+        subs_resp = subprocess.run(['az','account', 'list', '--query', '[].{SubscriptionName:name, Id:id, TenantId:tenantId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        roles_resp = subprocess.run(['az','role', 'assignment', 'list', '--all', '--query', "[?principalName=='$User'].{Role:roleDefinitionName,ResoureGroup:resourceGroup}" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+    #Show subs
+        try:
+            subs_resp_json = json.loads(subs_resp.stdout.decode('utf-8'))
+            #print("subs: {}".format(subs_resp_json))
+            print("Current user has the following subscriptions:")
+            print("{:<14}{:<22}   {}".format('','TenantId','SubscriptionName'))
+
+            for sub in subs_resp_json:
+                print("{:<36} | {}".format(sub['TenantId'],sub['SubscriptionName']))
+
+        except:
+            #self.logger.error("Current user has no subscriptions")
+            pass
+
+    # Show roles
+        print("")
+        try:
+            roles_resp_json = json.loads(roles_resp.stdout.decode('utf-8'))
+            print("And the following roles: {}".format(roles_resp_json))
+        except:
+            self.logger.error("Current user has no roles")
+            pass
+
 
         if not cfg.AZ_PATH.is_dir():
             cfg.AZ_PATH.mkdir(parents=True, exist_ok=True)
@@ -787,13 +811,25 @@ class az(connection):
 
     def spn_list(self):
 
-        stg_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            stg_list_json = json.loads(stg_list.stdout.decode('utf-8'))
+            spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
-        pprint.pprint(stg_list_json)
+
+        self.logger.announce("Getting SPN Info")
+
+        if self.args.full: 
+            pprint.pprint(spn_list_json)
+        else:
+            self.logger.highlight("{:<40}  |      {}".format('    appDisplayName', '         appId'))
+            for spn in spn_list_json:
+                #self.logger.highlight("{} {}".format('appDisplayName: ', spn['appDisplayName']))
+                #self.logger.highlight("{:<16} {}".format('appId: ', spn['appId']))
+                if spn['appDisplayName'] and spn['appId']:
+                    self.logger.highlight("{:<40}  |  {}".format((spn['appDisplayName'][:37] + (spn['appDisplayName'][37:] and '..')),
+                                                                 spn['appId']))
 
 
 ###############################################################################
@@ -825,9 +861,17 @@ class az(connection):
             self.logger.error("Current user has no VM subscriptions")
             return
 
+        self.logger.highlight("{:<35}     {:<35}    {}     {}  ".format('     displayName',
+                                                                        'homepage',
+                                                                        'keyProps',
+                                                                        'passwordProps' ))
         for app in app_list_json:
             self.db.add_app(str(app['displayName']), str(app['appId']), str(app['homepage']), str(app['objectId']), str(app['allowGuestsSignIn']), str(app['keyCredentials']), str(app['passwordCredentials']), str(app['wwwHomepage']) )
+            if not self.args.full:
+                self.logger.highlight("{:<35}  |  {:<35}  | {:<9}  |  {:<}".format((app['displayName'][:33] + (app['displayName'][33:] and '..')),
+                                                                                  ((app['homepage'][:33] + (app['homepage'][33:] and '..')) if app['homepage'] else ' '),
+                                                                                  ('Check' if app['keyCredentials'] else ' '),
+                                                                                  ('Check' if app['passwordCredentials'] else ' ') ) )
 
-        pprint.pprint(app_list_json)
-
-
+        if self.args.full: 
+            pprint.pprint(app_list_json)

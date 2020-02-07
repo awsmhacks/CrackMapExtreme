@@ -260,7 +260,7 @@ class CMXLogAdapter(logging.LoggerAdapter):
         except AttributeError:
             pass
         # Adding some space before highlight(akd results) output 
-        msg, kwargs = self.process(u'        {}'.format(colored(msg, 'yellow', attrs=['bold'])), kwargs)
+        msg, kwargs = self.process(u'   {}'.format(colored(msg, 'yellow', attrs=['bold'])), kwargs)
         self.logger.info(msg, *args, **kwargs)
 
     # For Impacket's TDS library
