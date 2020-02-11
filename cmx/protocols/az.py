@@ -32,6 +32,7 @@ class az(connection):
         self.domain = ''
         self.username_full = ''
         self.windows = False
+        self.decoder = 'utf-8'
 
         if args.config:
             self.config1()
@@ -103,6 +104,7 @@ class az(connection):
     def proto_logger(self):
         if os.name == 'nt': 
             self.windows = True
+            self.decoder = 'cp1252'
         self.logger = CMXLogAdapter(extra={'protocol': 'AZURE',
                                         'host': self.username,
                                         'port': self.domain,
@@ -111,7 +113,8 @@ class az(connection):
     def test_connection(self):
         if os.name == 'nt': 
             self.windows = True
-            
+            self.decoder = 'cp1252'
+
         if not cfg.AZ_CONFIG_PATH.is_file():
             self.logger.error('Azure connection has not been configured.')
             self.logger.error('Run: cmx az 1 --config')
@@ -144,7 +147,7 @@ class az(connection):
         
     #Show subs
         try:
-            subs_resp_json = json.loads(subs_resp.stdout.decode('utf-8'))
+            subs_resp_json = json.loads(subs_resp.stdout.decode(self.decoder))
             #print("subs: {}".format(subs_resp_json))
             print("Current user has the following subscriptions:")
             print("{:<14}{:<22}   {}".format('','TenantId','SubscriptionName'))
@@ -159,7 +162,7 @@ class az(connection):
     # Show roles
         print("")
         try:
-            roles_resp_json = json.loads(roles_resp.stdout.decode('utf-8'))
+            roles_resp_json = json.loads(roles_resp.stdout.decode(self.decoder))
             print("And the following roles: {}".format(roles_resp_json))
         except:
             self.logger.error("Current user has no roles")
@@ -225,7 +228,8 @@ class az(connection):
 
         my_user_id = subprocess.run(['az','ad', 'signed-in-user', 'show'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            my_user_id_json = json.loads(my_user_id.stdout.decode('utf-8'))
+            #my_user_id_json = json.loads(my_user_id.stdout.decode('utf-8'))
+            my_user_id_json = json.loads(my_user_id.stdout.decode(self.decoder))
         except:
             self.logger.error("Have you setup a session? cmx az --config")
             return
@@ -252,7 +256,7 @@ class az(connection):
 
         user_id = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.user], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            user_id_json = json.loads(user_id.stdout.decode('utf-8'))
+            user_id_json = json.loads(user_id.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -281,7 +285,7 @@ class az(connection):
     def usergroups(self):
         users_groups = subprocess.run(['az','ad', 'user', 'get-member-groups', '--id', self.args.usergroups], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            users_groups_json = json.loads(users_groups.stdout.decode('utf-8'))
+            users_groups_json = json.loads(users_groups.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -292,7 +296,7 @@ class az(connection):
         self.logger.announce("Getting all users info, this might take a minute")
         user_id = subprocess.run(['az','ad', 'user', 'list'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            user_id_json = json.loads(user_id.stdout.decode('utf-8'))
+            user_id_json = json.loads(user_id.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -342,7 +346,7 @@ class az(connection):
         
         group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'member', 'list', '--group', self.args.group ], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            group_list_json = json.loads(group_list.stdout.decode('utf-8'))
+            group_list_json = json.loads(group_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -352,7 +356,7 @@ class az(connection):
     def groups(self):
         group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'list', '--query', '[].{display_name:displayName, description: description, object_id: objectId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            group_list_json = json.loads(group_list.stdout.decode('utf-8'))
+            group_list_json = json.loads(group_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -382,14 +386,14 @@ class az(connection):
         # Grab user UPN
         self.logger.announce("Function is a work-in-progress, try running --privs to see current privileges")
         upn_resp = subprocess.run(['az', 'ad', 'signed-in-user', 'show','--query', '{upn:userPrincipalName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        upn_json_obj = json.loads(upn_resp.stdout.decode('utf-8'))
+        upn_json_obj = json.loads(upn_resp.stdout.decode(self.decoder))
         upn = upn_json_obj['upn']
         logging.debug('upn: {}'.format(upn))
 
         # GetCurrent users roles
         role_resp = subprocess.run(['az', 'role', 'assignment', 'list', '--assignee', upn, '--query', '[].{roleDefinitionName:roleDefinitionName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            role_json_obj = json.loads(role_resp.stdout.decode('utf-8'))
+            role_json_obj = json.loads(role_resp.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -407,7 +411,7 @@ class az(connection):
         tmp_list_perms = []
         for role in role_list:
             role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role], shell = self.windows, stdout=subprocess.PIPE)
-            role_show_json = json.loads(role_show.stdout.decode('utf-8'))
+            role_show_json = json.loads(role_show.stdout.decode(self.decoder))
             tmp_list_perms.append(role_show_json[0]['permissions'][0]['actions'][0])
 
         all_permissions = [item for sublist in tmp_list_perms for item in sublist]
@@ -504,7 +508,7 @@ class az(connection):
 
 
         try:
-            upn_json_obj = json.loads(upn_resp.stdout.decode('utf-8'))
+            upn_json_obj = json.loads(upn_resp.stdout.decode(self.decoder))
             upn = upn_json_obj['upn']
             logging.debug("upn {}".format(upn))
         except:
@@ -515,7 +519,7 @@ class az(connection):
         # az role assignment list --assignee XXX
         role_resp = subprocess.run(['az', 'role', 'assignment', 'list', '--assignee', upn], shell = self.windows, stdout=subprocess.PIPE)
         try:
-            role_json_obj = json.loads(role_resp.stdout.decode('utf-8'))
+            role_json_obj = json.loads(role_resp.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -546,7 +550,7 @@ class az(connection):
             #print(role.upper())
             #role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role, '--query', '[].{actions:permissions[].actions[], dataActions:permissions[].dataActions[], notActions:permissions[].notActions[], notDataActions:permissions[].notDataActions[]}'], shell = self.windows, stdout=subprocess.PIPE)
             role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role], shell = self.windows, stdout=subprocess.PIPE)
-            role_show_json = json.loads(role_show.stdout.decode('utf-8'))
+            role_show_json = json.loads(role_show.stdout.decode(self.decoder))
             for role in role_show_json:
                     self.logger.highlight("{:<20}  |  {} ".format(role['roleName'],
                                                                   (role['description'][:58] + (role['description'][58:] and '..')) ))
@@ -574,7 +578,7 @@ class az(connection):
         # az group list --query
         rgroup = subprocess.run(['az','group', 'list', '--query', '[].{name:name, location: location, id: id}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            rgroup_json = json.loads(rgroup.stdout.decode('utf-8'))
+            rgroup_json = json.loads(rgroup.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no subscriptions")
             return
@@ -605,7 +609,7 @@ class az(connection):
         # az sql server list
         sql_info = subprocess.run(['az', 'sql', 'server', 'list', '--query', '[].{fqdn:fullyQualifiedDomainName, name:name, rgrp: resourceGroup, admin_username:administratorLogin} '], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            sql_info_json = json.loads(sql_info.stdout.decode('utf-8'))
+            sql_info_json = json.loads(sql_info.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no SQL subscriptions")
             return
@@ -618,7 +622,7 @@ class az(connection):
         # az sql server list
         sql_info = subprocess.run(['az', 'sql', 'server', 'list', '--query', '[].{name:name, rgrp: resourceGroup} '], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            sql_info_json = json.loads(sql_info.stdout.decode('utf-8'))
+            sql_info_json = json.loads(sql_info.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no SQL subscriptions")
             return
@@ -634,7 +638,7 @@ class az(connection):
         # az sql db list --server XXX --resource-group XXX
         for i in range(len(servers)):
             sql_info = subprocess.run(['az', 'sql', 'db', 'list', '--server', servers[i], '--resource-group', rgrps[i], '--query', '[].{collation:collation, name:name, location:location, dbId:databaseId}'], shell = self.windows, stdout=subprocess.PIPE)
-            sql_info_json = json.loads(sql_info.stdout.decode('utf-8'))
+            sql_info_json = json.loads(sql_info.stdout.decode(self.decoder))
             print(servers[i], "\n")
             pprint.pprint(sql_info_json)
 
@@ -661,7 +665,7 @@ class az(connection):
         # az storage account list
         stg_list = subprocess.run(['az','storage', 'account', 'list', '--query', '[].{resource_group:resourceGroup, storage_types:primaryEndpoints}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            stg_list_json = json.loads(stg_list.stdout.decode('utf-8'))
+            stg_list_json = json.loads(stg_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no Storage subscriptions")
             return
@@ -695,14 +699,14 @@ class az(connection):
         if self.args.vm_list == '':
             vm_list = subprocess.run(['az','vm', 'list', '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             try:
-                vm_list_json = json.loads(vm_list.stdout.decode('utf-8'))
+                vm_list_json = json.loads(vm_list.stdout.decode(self.decoder))
             except:
                 self.logger.error("Current user has no VM subscriptions")
                 return
             # az vm list-ip-addresses
             vm_iplist = subprocess.run(['az','vm', 'list-ip-addresses', '--query', '[].{name:virtualMachine.name, privateIp:virtualMachine.network.privateIpAddresses, publicIp:virtualMachine.network.publicIpAddresses[].ipAddress}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
-                vm_iplist_json = json.loads(vm_iplist.stdout.decode('utf-8'))
+                vm_iplist_json = json.loads(vm_iplist.stdout.decode(self.decoder))
             except:
                 self.logger.error("Current user has no VM subscriptions")
                 return
@@ -711,14 +715,14 @@ class az(connection):
             # az vm list -g XXX 
             vm_list = subprocess.run(['az','vm', 'list', '-g', self.args.vm_list, '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
-                vm_list_json = json.loads(vm_list.stdout.decode('utf-8'))
+                vm_list_json = json.loads(vm_list.stdout.decode(self.decoder))
             except:
                 self.logger.error("Current user has no VM subscriptions")
                 return
             # az vm list-ip-addresses -g XXX
             vm_iplist = subprocess.run(['az','vm', 'list-ip-addresses', '-g', self.args.vm_list, '--query', '[].{name:virtualMachine.name, privateIp:virtualMachine.network.privateIpAddresses, publicIp:virtualMachine.network.publicIpAddresses[].ipAddress}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
-                vm_iplist_json = json.loads(vm_iplist.stdout.decode('utf-8'))
+                vm_iplist_json = json.loads(vm_iplist.stdout.decode(self.decoder))
             except:
                 self.logger.error("Current user has no VM subscriptions")
                 return
@@ -766,7 +770,7 @@ class az(connection):
         # az vmss list
         vmss_list = subprocess.run(['az','vmss', 'list', '--query', '[].{name:name, rgrp:resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            vmss_list_json = json.loads(vmss_list.stdout.decode('utf-8'))
+            vmss_list_json = json.loads(vmss_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
@@ -774,11 +778,11 @@ class az(connection):
         for i in range(len(vmss_list_json)):
             # Get vmss info
             vmss_list = subprocess.run(['az','vmss', 'list', '--resource-group', vmss_list_json[i]['rgrp'], '--query', '[].{name:name, vmss_size:sku.name, os_distro:virtualMachineProfile.storageProfile.imageReference.offer,os_version:virtualMachineProfile.storageProfile.imageReference.sku, username:virtualMachineProfile.osProfile.adminUsername, rgrp: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE)
-            vmss_list_json = json.loads(vmss_list.stdout.decode('utf-8'))
+            vmss_list_json = json.loads(vmss_list.stdout.decode(self.decoder))
             pprint.pprint(vmss_list_json[i])
             # Get vmss IP
             vmss_iplist = subprocess.run(['az','vmss', 'list-instance-public-ips', '--resource-group', vmss_list_json[i]['rgrp'], '--name', vmss_list_json[i]['name'],  '--query', '[].{ipAddress:ipAddress}'], shell = self.windows, stdout=subprocess.PIPE)
-            vmss_iplist_json = json.loads(vmss_iplist.stdout.decode('utf-8'))
+            vmss_iplist_json = json.loads(vmss_iplist.stdout.decode(self.decoder))
             pprint.pprint(vmss_iplist_json)
 
 ###############################################################################
@@ -816,7 +820,7 @@ class az(connection):
 
         commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', mimiaz_script], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            commander_json = json.loads(commander.stdout.decode('utf-8'))
+            commander_json = json.loads(commander.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
@@ -845,7 +849,7 @@ class az(connection):
 
         commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', script_path], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            commander_json = json.loads(commander.stdout.decode('utf-8'))
+            commander_json = json.loads(commander.stdout.decode(self.decoder))
         except:
             self.logger.error("Script Execution Failed")
             return
@@ -876,10 +880,10 @@ class az(connection):
 
 
     def spn_list(self):
-
+        # az ad sp list --all
         spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
+            spn_list_json = json.loads(spnn_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
@@ -901,7 +905,14 @@ class az(connection):
         # az ad sp list --all --query [].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}
         spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
+            spn_list_json = json.loads(spnn_list.stdout.decode(self.decoder))
+        except:
+            decode_fail = True
+            pass
+        # this added try/catch is because windows is F'd
+        try:
+            if decode_fail:
+                spn_list_json = json.loads(spnn_list.stdout.decode('cp1252'))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
@@ -924,7 +935,7 @@ class az(connection):
         spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--show-mine'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         #spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--show-mine', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
+            spn_list_json = json.loads(spnn_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
@@ -968,7 +979,7 @@ class az(connection):
         #app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         app_list = subprocess.run(['az','ad', 'app', 'list', '--all'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            app_list_json = json.loads(app_list.stdout.decode('utf-8'))
+            app_list_json = json.loads(app_list.stdout.decode(self.decoder))
         except:
             self.logger.error("Current user has no VM subscriptions")
             return
