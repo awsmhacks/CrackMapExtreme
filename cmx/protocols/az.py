@@ -31,6 +31,7 @@ class az(connection):
         self.username = ''
         self.domain = ''
         self.username_full = ''
+        self.windows = False
 
         if args.config:
             self.config1()
@@ -128,13 +129,15 @@ class az(connection):
 
     def config1(self):
         self.proto_logger()
+        if os.name == 'nt': 
+            self.windows = True
 
-        login = subprocess.run(['az','login', '--allow-no-subscriptions'], stdout=subprocess.PIPE)
+        login = subprocess.run(['az','login', '--allow-no-subscriptions'], shell = self.windows, stdout=subprocess.PIPE)
         user = re.findall('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', str(login.stdout))
         self.logger.success('Logged in as {}'.format(user[0])) #maybe not working
         print(" ")
-        subs_resp = subprocess.run(['az','account', 'list', '--query', '[].{SubscriptionName:name, Id:id, TenantId:tenantId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        roles_resp = subprocess.run(['az','role', 'assignment', 'list', '--all', '--query', "[?principalName=='$User'].{Role:roleDefinitionName,ResoureGroup:resourceGroup}" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subs_resp = subprocess.run(['az','account', 'list', '--query', '[].{SubscriptionName:name, Id:id, TenantId:tenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        roles_resp = subprocess.run(['az','role', 'assignment', 'list', '--all', '--query', "[?principalName=='$User'].{Role:roleDefinitionName,ResoureGroup:resourceGroup}" ], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
     #Show subs
         try:
@@ -217,7 +220,7 @@ class az(connection):
 
     def whoami(self):
 
-        my_user_id = subprocess.run(['az','ad', 'signed-in-user', 'show'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        my_user_id = subprocess.run(['az','ad', 'signed-in-user', 'show'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             my_user_id_json = json.loads(my_user_id.stdout.decode('utf-8'))
         except:
@@ -244,7 +247,7 @@ class az(connection):
             self.whoami()
             return
 
-        user_id = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.user], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        user_id = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.user], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             user_id_json = json.loads(user_id.stdout.decode('utf-8'))
         except:
@@ -273,7 +276,7 @@ class az(connection):
 
 
     def usergroups(self):
-        users_groups = subprocess.run(['az','ad', 'user', 'get-member-groups', '--id', self.args.usergroups], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        users_groups = subprocess.run(['az','ad', 'user', 'get-member-groups', '--id', self.args.usergroups], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             users_groups_json = json.loads(users_groups.stdout.decode('utf-8'))
         except:
@@ -284,7 +287,7 @@ class az(connection):
 
     def users(self):
         self.logger.announce("Getting all users info, this might take a minute")
-        user_id = subprocess.run(['az','ad', 'user', 'list'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        user_id = subprocess.run(['az','ad', 'user', 'list'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             user_id_json = json.loads(user_id.stdout.decode('utf-8'))
         except:
@@ -334,7 +337,7 @@ class az(connection):
             self.logger.error('Must provide a group name or objectID')
             return
         
-        group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'member', 'list', '--group', self.args.group ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'member', 'list', '--group', self.args.group ], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             group_list_json = json.loads(group_list.stdout.decode('utf-8'))
         except:
@@ -344,7 +347,7 @@ class az(connection):
 
 
     def groups(self):
-        group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'list', '--query', '[].{display_name:displayName, description: description, object_id: objectId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'list', '--query', '[].{display_name:displayName, description: description, object_id: objectId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             group_list_json = json.loads(group_list.stdout.decode('utf-8'))
         except:
@@ -375,13 +378,13 @@ class az(connection):
 
         # Grab user UPN
         self.logger.announce("Function is a work-in-progress, try running --privs to see current privileges")
-        upn_resp = subprocess.run(['az', 'ad', 'signed-in-user', 'show','--query', '{upn:userPrincipalName}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        upn_resp = subprocess.run(['az', 'ad', 'signed-in-user', 'show','--query', '{upn:userPrincipalName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         upn_json_obj = json.loads(upn_resp.stdout.decode('utf-8'))
         upn = upn_json_obj['upn']
         logging.debug('upn: {}'.format(upn))
 
         # GetCurrent users roles
-        role_resp = subprocess.run(['az', 'role', 'assignment', 'list', '--assignee', upn, '--query', '[].{roleDefinitionName:roleDefinitionName}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        role_resp = subprocess.run(['az', 'role', 'assignment', 'list', '--assignee', upn, '--query', '[].{roleDefinitionName:roleDefinitionName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             role_json_obj = json.loads(role_resp.stdout.decode('utf-8'))
         except:
@@ -400,7 +403,7 @@ class az(connection):
 
         tmp_list_perms = []
         for role in role_list:
-            role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role], stdout=subprocess.PIPE)
+            role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role], shell = self.windows, stdout=subprocess.PIPE)
             role_show_json = json.loads(role_show.stdout.decode('utf-8'))
             tmp_list_perms.append(role_show_json[0]['permissions'][0]['actions'][0])
 
@@ -492,9 +495,9 @@ class az(connection):
         #az ad user show --id XXXX 
         logging.debug("Starting privs")
         if self.args.privs == '':
-            upn_resp = subprocess.run(['az', 'ad', 'signed-in-user', 'show','--query', '{upn:userPrincipalName}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            upn_resp = subprocess.run(['az', 'ad', 'signed-in-user', 'show','--query', '{upn:userPrincipalName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
-            upn_resp = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.privs, '--query', '{upn:userPrincipalName}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            upn_resp = subprocess.run(['az','ad', 'user', 'show', '--id', self.args.privs, '--query', '{upn:userPrincipalName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
         try:
@@ -507,7 +510,7 @@ class az(connection):
 
         # Get target user's roles
         # az role assignment list --assignee XXX
-        role_resp = subprocess.run(['az', 'role', 'assignment', 'list', '--assignee', upn], stdout=subprocess.PIPE)
+        role_resp = subprocess.run(['az', 'role', 'assignment', 'list', '--assignee', upn], shell = self.windows, stdout=subprocess.PIPE)
         try:
             role_json_obj = json.loads(role_resp.stdout.decode('utf-8'))
         except:
@@ -538,8 +541,8 @@ class az(connection):
         self.logger.highlight("{:<20}  | {}".format('    Role', '     Description'))
         for role in role_list:
             #print(role.upper())
-            #role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role, '--query', '[].{actions:permissions[].actions[], dataActions:permissions[].dataActions[], notActions:permissions[].notActions[], notDataActions:permissions[].notDataActions[]}'], stdout=subprocess.PIPE)
-            role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role], stdout=subprocess.PIPE)
+            #role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role, '--query', '[].{actions:permissions[].actions[], dataActions:permissions[].dataActions[], notActions:permissions[].notActions[], notDataActions:permissions[].notDataActions[]}'], shell = self.windows, stdout=subprocess.PIPE)
+            role_show = subprocess.run(['az', 'role', 'definition', 'list', '--name', role], shell = self.windows, stdout=subprocess.PIPE)
             role_show_json = json.loads(role_show.stdout.decode('utf-8'))
             for role in role_show_json:
                     self.logger.highlight("{:<20}  |  {} ".format(role['roleName'],
@@ -566,7 +569,7 @@ class az(connection):
 
     def rgroups(self):
         # az group list --query
-        rgroup = subprocess.run(['az','group', 'list', '--query', '[].{name:name, location: location, id: id}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        rgroup = subprocess.run(['az','group', 'list', '--query', '[].{name:name, location: location, id: id}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             rgroup_json = json.loads(rgroup.stdout.decode('utf-8'))
         except:
@@ -597,7 +600,7 @@ class az(connection):
 
         # Get server list
         # az sql server list
-        sql_info = subprocess.run(['az', 'sql', 'server', 'list', '--query', '[].{fqdn:fullyQualifiedDomainName, name:name, rgrp: resourceGroup, admin_username:administratorLogin} '], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sql_info = subprocess.run(['az', 'sql', 'server', 'list', '--query', '[].{fqdn:fullyQualifiedDomainName, name:name, rgrp: resourceGroup, admin_username:administratorLogin} '], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             sql_info_json = json.loads(sql_info.stdout.decode('utf-8'))
         except:
@@ -610,7 +613,7 @@ class az(connection):
 
         # Get server list
         # az sql server list
-        sql_info = subprocess.run(['az', 'sql', 'server', 'list', '--query', '[].{name:name, rgrp: resourceGroup} '], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sql_info = subprocess.run(['az', 'sql', 'server', 'list', '--query', '[].{name:name, rgrp: resourceGroup} '], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             sql_info_json = json.loads(sql_info.stdout.decode('utf-8'))
         except:
@@ -627,7 +630,7 @@ class az(connection):
         # Get DBs
         # az sql db list --server XXX --resource-group XXX
         for i in range(len(servers)):
-            sql_info = subprocess.run(['az', 'sql', 'db', 'list', '--server', servers[i], '--resource-group', rgrps[i], '--query', '[].{collation:collation, name:name, location:location, dbId:databaseId}'], stdout=subprocess.PIPE)
+            sql_info = subprocess.run(['az', 'sql', 'db', 'list', '--server', servers[i], '--resource-group', rgrps[i], '--query', '[].{collation:collation, name:name, location:location, dbId:databaseId}'], shell = self.windows, stdout=subprocess.PIPE)
             sql_info_json = json.loads(sql_info.stdout.decode('utf-8'))
             print(servers[i], "\n")
             pprint.pprint(sql_info_json)
@@ -653,7 +656,7 @@ class az(connection):
 
     def storage_list(self):
         # az storage account list
-        stg_list = subprocess.run(['az','storage', 'account', 'list', '--query', '[].{resource_group:resourceGroup, storage_types:primaryEndpoints}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stg_list = subprocess.run(['az','storage', 'account', 'list', '--query', '[].{resource_group:resourceGroup, storage_types:primaryEndpoints}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             stg_list_json = json.loads(stg_list.stdout.decode('utf-8'))
         except:
@@ -687,14 +690,14 @@ class az(connection):
         # Get all vms in subscription
         # az vm list
         if self.args.vm_list == '':
-            vm_list = subprocess.run(['az','vm', 'list', '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            vm_list = subprocess.run(['az','vm', 'list', '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             try:
                 vm_list_json = json.loads(vm_list.stdout.decode('utf-8'))
             except:
                 self.logger.error("Current user has no VM subscriptions")
                 return
             # az vm list-ip-addresses
-            vm_iplist = subprocess.run(['az','vm', 'list-ip-addresses', '--query', '[].{name:virtualMachine.name, privateIp:virtualMachine.network.privateIpAddresses, publicIp:virtualMachine.network.publicIpAddresses[].ipAddress}'], stdout=subprocess.PIPE)
+            vm_iplist = subprocess.run(['az','vm', 'list-ip-addresses', '--query', '[].{name:virtualMachine.name, privateIp:virtualMachine.network.privateIpAddresses, publicIp:virtualMachine.network.publicIpAddresses[].ipAddress}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
                 vm_iplist_json = json.loads(vm_iplist.stdout.decode('utf-8'))
             except:
@@ -703,14 +706,14 @@ class az(connection):
 
         else: # Get all vms in specified resource group
             # az vm list -g XXX 
-            vm_list = subprocess.run(['az','vm', 'list', '-g', self.args.vm_list, '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], stdout=subprocess.PIPE)
+            vm_list = subprocess.run(['az','vm', 'list', '-g', self.args.vm_list, '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
                 vm_list_json = json.loads(vm_list.stdout.decode('utf-8'))
             except:
                 self.logger.error("Current user has no VM subscriptions")
                 return
             # az vm list-ip-addresses -g XXX
-            vm_iplist = subprocess.run(['az','vm', 'list-ip-addresses', '-g', self.args.vm_list, '--query', '[].{name:virtualMachine.name, privateIp:virtualMachine.network.privateIpAddresses, publicIp:virtualMachine.network.publicIpAddresses[].ipAddress}'], stdout=subprocess.PIPE)
+            vm_iplist = subprocess.run(['az','vm', 'list-ip-addresses', '-g', self.args.vm_list, '--query', '[].{name:virtualMachine.name, privateIp:virtualMachine.network.privateIpAddresses, publicIp:virtualMachine.network.publicIpAddresses[].ipAddress}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
                 vm_iplist_json = json.loads(vm_iplist.stdout.decode('utf-8'))
             except:
@@ -730,18 +733,35 @@ class az(connection):
         for vm in vm_list_json:
             self.logger.highlight("{:<15} | {:<10} | {:<19} | {:<19} | {:<19} ".format(vm['name'],
                                                                                           vm['os'],
-                                                                                          vm['privateIp'][0],
-                                                                                          vm['publicIp'][0],
+                                                                                          vm['privateIp'][0] if vm['privateIp'] else 'Null',
+                                                                                          vm['publicIp'][0] if vm['publicIp'] else 'Null',
                                                                                           vm['resource_group'],
-                                                                                          vm['username']
                                                                                           ))
+# to see if its running, check the output from
+# az vm get-instance-view --ids /subscriptions/51eae010-e6eb-48e2-8f01-e89b22a86d26/resourceGroups/RESOURCE1/providers/Microsoft.Compute/virtualMachines/test1
 
+#"statuses": [
+#      {
+#        "code": "ProvisioningState/succeeded",
+#        "displayStatus": "Provisioning succeeded",
+#        "level": "Info",
+#        "message": null,
+#        "time": "2019-12-19T22:49:17.337039+00:00"
+#      },
+#      {
+#        "code": "PowerState/deallocated",
+#        "displayStatus": "VM deallocated",
+#        "level": "Info",
+#        "message": null,
+#        "time": null
+#      }
+#    ],
 
     def vmss_list(self):
 
         # Get list of vmss
         # az vmss list
-        vmss_list = subprocess.run(['az','vmss', 'list', '--query', '[].{name:name, rgrp:resourceGroup}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        vmss_list = subprocess.run(['az','vmss', 'list', '--query', '[].{name:name, rgrp:resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             vmss_list_json = json.loads(vmss_list.stdout.decode('utf-8'))
         except:
@@ -750,11 +770,11 @@ class az(connection):
 
         for i in range(len(vmss_list_json)):
             # Get vmss info
-            vmss_list = subprocess.run(['az','vmss', 'list', '--resource-group', vmss_list_json[i]['rgrp'], '--query', '[].{name:name, vmss_size:sku.name, os_distro:virtualMachineProfile.storageProfile.imageReference.offer,os_version:virtualMachineProfile.storageProfile.imageReference.sku, username:virtualMachineProfile.osProfile.adminUsername, rgrp: resourceGroup}'], stdout=subprocess.PIPE)
+            vmss_list = subprocess.run(['az','vmss', 'list', '--resource-group', vmss_list_json[i]['rgrp'], '--query', '[].{name:name, vmss_size:sku.name, os_distro:virtualMachineProfile.storageProfile.imageReference.offer,os_version:virtualMachineProfile.storageProfile.imageReference.sku, username:virtualMachineProfile.osProfile.adminUsername, rgrp: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE)
             vmss_list_json = json.loads(vmss_list.stdout.decode('utf-8'))
             pprint.pprint(vmss_list_json[i])
             # Get vmss IP
-            vmss_iplist = subprocess.run(['az','vmss', 'list-instance-public-ips', '--resource-group', vmss_list_json[i]['rgrp'], '--name', vmss_list_json[i]['name'],  '--query', '[].{ipAddress:ipAddress}'], stdout=subprocess.PIPE)
+            vmss_iplist = subprocess.run(['az','vmss', 'list-instance-public-ips', '--resource-group', vmss_list_json[i]['rgrp'], '--name', vmss_list_json[i]['name'],  '--query', '[].{ipAddress:ipAddress}'], shell = self.windows, stdout=subprocess.PIPE)
             vmss_iplist_json = json.loads(vmss_iplist.stdout.decode('utf-8'))
             pprint.pprint(vmss_iplist_json)
 
@@ -791,7 +811,7 @@ class az(connection):
         mimiaz_script = '@' + str(mimiaz_path)
         self.logger.announce("Running mimikatz on {}, please allow at least 30 seconds".format(self.args.vm[0]))
 
-        commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', mimiaz_script], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', mimiaz_script], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             commander_json = json.loads(commander.stdout.decode('utf-8'))
         except:
@@ -820,7 +840,7 @@ class az(connection):
 
         self.logger.announce("Running script on {}, please allow at least 30 seconds".format(self.args.vm[0]))
 
-        commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        commander = subprocess.run(['az','vm', 'run-command', 'invoke', '--command-id', 'RunPowerShellScript', '--name', self.args.vm[0], '-g', self.args.rg[0], '--scripts', script_path], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             commander_json = json.loads(commander.stdout.decode('utf-8'))
         except:
@@ -854,7 +874,7 @@ class az(connection):
 
     def spn_list(self):
 
-        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
         except:
@@ -876,7 +896,7 @@ class az(connection):
 
     def spn(self):
         # az ad sp list --all --query [].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}
-        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
         except:
@@ -898,8 +918,8 @@ class az(connection):
 
     def spn_mine(self):
         # az ad sp list --show-mine
-        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--show-mine'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--show-mine', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--show-mine'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--show-mine', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             spn_list_json = json.loads(spnn_list.stdout.decode('utf-8'))
         except:
@@ -942,8 +962,8 @@ class az(connection):
 
     def app_list(self):
 
-        #app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        app_list = subprocess.run(['az','ad', 'app', 'list', '--all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #app_list = subprocess.run(['az','ad', 'app', 'list', '--all', '--query', '[].{DisplayName:displayName, appId:appId, homepage:homepage}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        app_list = subprocess.run(['az','ad', 'app', 'list', '--all'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             app_list_json = json.loads(app_list.stdout.decode('utf-8'))
         except:
