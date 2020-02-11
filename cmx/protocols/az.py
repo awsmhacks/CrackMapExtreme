@@ -984,6 +984,10 @@ class az(connection):
             self.logger.error("Current user has no VM subscriptions")
             return
 
+        if self.args.full: 
+            pprint.pprint(app_list_json)
+            return
+
         self.logger.highlight("{:<35}     {:<35}    {}     {}  ".format('     displayName',
                                                                         'homepage',
                                                                         'keyProps',
@@ -993,8 +997,5 @@ class az(connection):
             if not self.args.full:
                 self.logger.highlight("{:<35}  |  {:<35}  | {:<9}  |  {:<}".format((app['displayName'][:33] + (app['displayName'][33:] and '..')),
                                                                                   ((app['homepage'][:33] + (app['homepage'][33:] and '..')) if app['homepage'] else ' '),
-                                                                                  ('Check' if app['keyCredentials'] else ' '),
-                                                                                  ('Check' if app['passwordCredentials'] else ' ') ) )
-
-        if self.args.full: 
-            pprint.pprint(app_list_json)
+                                                                                  ('CheckDB' if app['keyCredentials'] else ' '),
+                                                                                  ('CheckDB' if app['passwordCredentials'] else ' ') ) )
