@@ -101,12 +101,17 @@ class az(connection):
             self.call_cmd_args()
 
     def proto_logger(self):
+        if os.name == 'nt': 
+            self.windows = True
         self.logger = CMXLogAdapter(extra={'protocol': 'AZURE',
                                         'host': self.username,
                                         'port': self.domain,
                                         'hostname': 'CLI'})
 
     def test_connection(self):
+        if os.name == 'nt': 
+            self.windows = True
+            
         if not cfg.AZ_CONFIG_PATH.is_file():
             self.logger.error('Azure connection has not been configured.')
             self.logger.error('Run: cmx az 1 --config')
@@ -129,8 +134,6 @@ class az(connection):
 
     def config1(self):
         self.proto_logger()
-        if os.name == 'nt': 
-            self.windows = True
 
         login = subprocess.run(['az','login', '--allow-no-subscriptions'], shell = self.windows, stdout=subprocess.PIPE)
         user = re.findall('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', str(login.stdout))
