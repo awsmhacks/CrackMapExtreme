@@ -29,6 +29,7 @@ from datetime import datetime
 import cmx
 from cmx.helpers.logger import highlight, write_log
 from cmx import config as cfg
+import pdb
 
 def pass_pol(self):
     """
@@ -171,6 +172,157 @@ def group1(smb):
     #self.logger.announce('Finished Domain Group Enum')
     return
 
+def group1_full(smb):
+    """Enum domain groups and display their members
+
+    Prints output and adds them to cmxdb
+    """
+    self = smb
+
+    if self.args.groups:
+        targetGroup = self.args.groups
+
+    groupFound = False
+    groupLog = ''
+    #self.logger.announce('Starting Domain Group Enum')
+
+    try:
+        rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
+        dce = rpctransport.get_dce_rpc()
+        dce.connect()
+        try:
+            logging.debug('Get net groups Binding start')
+            dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
+            try:
+                logging.debug('Connect w/ hSamrConnect...')
+                resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)  
+                logging.debug('Dump of hSamrConnect response:') 
+                if self.debug:
+                    resp.dump()
+                serverHandle = resp['ServerHandle'] 
+
+                self.logger.debug('Looking up reachable domain(s)')
+                resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
+                logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:') 
+                if self.debug:
+                    resp2.dump()
+
+                domains = resp2['Buffer']['Buffer']
+                tmpdomain = domains[0]['Name']
+
+                logging.debug('Looking up groups in domain: '+ domains[0]['Name'])
+                resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+                logging.debug('Dump of hSamrLookupDomainInSamServer response:' )
+                if self.debug:
+                    resp.dump()
+
+                resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
+                logging.debug('Dump of hSamrOpenDomain response:')
+                if self.debug:
+                    resp.dump()
+
+                domainHandle = resp['DomainHandle']
+
+                status = impacket.nt_errors.STATUS_MORE_ENTRIES
+                enumerationContext = 0
+
+                self.logger.success('Domain Groups enumerated')
+                self.logger.highlight("    {} Domain Group Accounts".format(tmpdomain))
+
+                while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
+                    try:
+                        resp = impacket.dcerpc.v5.samr.hSamrEnumerateGroupsInDomain(dce, domainHandle, enumerationContext=enumerationContext)
+                        logging.debug('Dump of hSamrEnumerateGroupsInDomain response:')
+                        if self.debug:
+                            resp.dump()
+
+                    except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
+                        if str(e).find('STATUS_MORE_ENTRIES') < 0:
+                            raise
+                        resp = e.get_packet()
+
+                    for group in resp['Buffer']['Buffer']:
+                        gid = group['RelativeId']
+                        r = impacket.dcerpc.v5.samr.hSamrOpenGroup(dce, domainHandle, groupId=gid)
+                        logging.debug('Dump of hSamrOpenUser response:')
+                        if self.debug:
+                            r.dump()
+
+                        info = impacket.dcerpc.v5.samr.hSamrQueryInformationGroup(dce, r['GroupHandle'],impacket.dcerpc.v5.samr.GROUP_INFORMATION_CLASS.GroupGeneralInformation)
+                        #info response object (SAMPR_GROUP_GENERAL_INFORMATION) defined in  impacket/samr.py # 2.2.5.7 SAMPR_GROUP_INFO_BUFFER
+
+                        logging.debug('Dump of hSamrQueryInformationGroup response:')
+                        if self.debug:
+                            info.dump()
+
+                        #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                        #print('')
+                        self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                        groupLog += '{:<30}  membercount: {}\n'.format(group['Name'], info['Buffer']['General']['MemberCount'])
+
+
+                        groupResp = impacket.dcerpc.v5.samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
+                        logging.debug('Dump of hSamrGetMembersInGroup response:')
+                        if self.debug:
+                            groupResp.dump()
+
+                        for member in groupResp['Members']['Members']:
+                            try:
+                                m = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, member)
+                                if self.debug:
+                                    m.dump()
+                                guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
+                                self.logger.highlight('     {}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
+                                groupLog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
+
+                                logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                                if self.debug:
+                                    guser.dump()
+                            except Exception as e: #failed function
+                                logging.debug('failed a user lookup with error: {}'.format(str(e)))
+                                self.logger.error('    Member with SID {} might be a group'.format(member.fields['Data']))
+                                pass
+
+                        impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['GroupHandle'])
+
+                    enumerationContext = resp['EnumerationContext']
+                    status = resp['ErrorCode']
+
+
+            except Exception as e: #failed function
+                logging.debug('failed function {}'.format(str(e)))
+                self.logger.error('Failed to enum Domain Groups')
+                dce.disconnect()
+                return
+        except Exception as e: #failed bind
+            logging.debug('failed bind {}'.format(str(e)))
+            dce.disconnect()
+            return
+    except Exception as e: #failed connect
+        logging.debug('failed connect in group1.a {}'.format(str(e)))
+        self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
+        self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        try:
+            dce.disconnect()
+        except:
+            logging.debug('failed disconnect in group1.a')
+            pass
+        return
+
+    try:
+        dce.disconnect()
+    except:
+        pass
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Domain_Groups_of_{}_on_{}.log'.format(tmpdomain, ctime)
+        write_log(str(groupLog), log_name)
+        self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
+    #self.logger.announce('Finished Domain Group Enum')
+    return
 
 def users1(smb):
     """Enum domain users."""

@@ -186,6 +186,7 @@ class smb(connection):
         egroup.add_argument('--users', nargs='?', const='', metavar='USER', help='Enumerate and return all domain users')
         egroup.add_argument("--groups", nargs='?', const='', metavar='GROUP', help='Enumerate all domain groups')
         egroup.add_argument("--group", nargs='?', const='', metavar='targetGroup', help='Return users of a specified domain group')
+        egroup.add_argument("--groups-full", action='store_true', help='Enumerate all domain groups and display their members')
         egroup.add_argument("--computers", nargs='?', const='', metavar='COMPUTER', help='Enumerate all domain computers')
         egroup.add_argument("--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='Enumerate all local groups')
         egroup.add_argument("--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='Enumerate all local users')
@@ -1468,6 +1469,15 @@ class smb(connection):
         from cmx.protocols.smb.ENUM.domainenum import group1
         try:
             group1(self)
+        except:
+            pass
+        return
+
+    @requires_dc
+    def groups_full(self):
+        from cmx.protocols.smb.ENUM.domainenum import group1_full
+        try:
+            group1_full(self)
         except:
             pass
         return
