@@ -19,6 +19,7 @@ import argparse
 import sys
 import pkg_resources
 from argparse import RawTextHelpFormatter
+import random
 #import argcomplete
 #from argcomplete.completers import ChoicesCompleter
 
@@ -30,8 +31,12 @@ from cmx import config as cfg
 def gen_cli_args():
 
     VERSION = (pkg_resources.get_distribution('cmx').version).split('+')
-    #VERSION = cfg.VERSION
     RELEASED = cfg.RELEASED
+
+    #tips stolen from https://vincentyiu.com/red-team-tips/
+    links = open((cfg.DATA_PATH / 'rt').with_suffix('.tips')).read().splitlines()
+    link = random.choice(links)
+
 
     p_loader =  protocol_loader()
     protocols = p_loader.get_protocols()
@@ -57,22 +62,21 @@ def gen_cli_args():
            highlight(VERSION[0], 'cyan'),
            highlight('(/.__.)/ The python3 EXTREME edition \(.__.\)', 'yellow')),
            formatter_class=RawTextHelpFormatter,
-           epilog="""Usage: 
-       cmx [-D] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]  
+           epilog="""Usage:
+       cmx [-D] PROTOCOL [-h] TARGET [target options] [-M MODULE [module options]]
 
-       cmx smb -M mimikatz --options    (List a particular module's options)
        cmx smb 10.10.10.10 -u Administrator -p Password --recon
        cmx -D smb 192.168.1.1 -u username -p password -M mimikatz
 
-  Azure!
        cmx az --config   (get an azure session up, follow prompts)
-       cmx az --user <useremail>   (gets all info about a single user)
        cmx az --users      (gets all users)
        cmx az -h  (for all current azure stuffs)
 
- *Check https://awsmhacks.github.io/cmxdocs/index for detailed usage* 
+ *Check https://awsmhacks.github.io/cmxdocs/index for detailed usage*
 
-""",
+{}
+ 
+""".format(highlight(link, 'red')),
            add_help=False, usage=argparse.SUPPRESS)
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
