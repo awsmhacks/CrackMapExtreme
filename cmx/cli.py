@@ -31,7 +31,7 @@ from cmx import config as cfg
 
 def gen_cli_args():
 
-    VERSION = (pkg_resources.get_distribution('cmx').version).split('+')
+    VERSION = (pkg_resources.get_distribution('cmx').version).split('-')
     RELEASED = cfg.RELEASED
 
     #tips stolen from https://vincentyiu.com/red-team-tips/
