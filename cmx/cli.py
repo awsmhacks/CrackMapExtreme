@@ -20,6 +20,7 @@ import sys
 import pkg_resources
 from argparse import RawTextHelpFormatter
 import random
+import textwrap
 #import argcomplete
 #from argcomplete.completers import ChoicesCompleter
 
@@ -40,9 +41,9 @@ def gen_cli_args():
 
     p_loader =  protocol_loader()
     protocols = p_loader.get_protocols()
-    title = """____ ____ ____ ____ _  _   _  _ ____ ___    ____ _  _ ___ ____ ____ _  _ ____ 
-|    |__/ |__| |    |_/    |\/| |__| |__]   |___  \/   |  |__/ |___ |\/| |___ 
-|___ |  \ |  | |___ | \_   |  | |  | |      |___ _/\_  |  |  \ |___ |  | |___ 
+    title = """   ____ ____ ____ ____ _  _   _  _ ____ ___    ____ _  _ ___ ____ ____ _  _ ____ 
+   |    |__/ |__| |    |_/    |\/| |__| |__]   |___  \/   |  |__/ |___ |\/| |___ 
+   |___ |  \ |  | |___ | \_   |  | |  | |      |___ _/\_  |  |  \ |___ |  | |___ 
 """
 
     parser = argparse.ArgumentParser(description="""
@@ -76,7 +77,7 @@ def gen_cli_args():
 
 {}
  
-""".format(highlight(link, 'red')),
+""".format(highlight('\n\t\t'.join(textwrap.wrap(link, 80, break_long_words=False)), 'red')),
            add_help=False, usage=argparse.SUPPRESS)
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
