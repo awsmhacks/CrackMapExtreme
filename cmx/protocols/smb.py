@@ -209,7 +209,7 @@ class smb(connection):
         sgroup.add_argument("--only-dir", action='store_true', help='only list contents of a directory')
 
         execgroup = smb_parser.add_argument_group("Command Execution", "Options for executing commands")
-        execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
+        execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec", "all"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
         execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
         execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
         execgroup.add_argument('--kd','-kd', action='store_true', help='Shut down defender before executing command (wmiexec)')
@@ -299,6 +299,18 @@ class smb(connection):
 
         if hasattr(self, 'server'):
             self.server.track_host(self.host)
+
+
+        #special case, test all execMethods
+        if method == 'all':
+            try:
+                exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender)
+                self.logger.announce('Executed command via wmiexec')
+            except:
+                self.logger.error('Failed to initiate wmiexec')
+                logging.debug('Error executing via wmiexec, traceback:')
+                logging.debug(format_exc())
+                return
 
 
     # Start of execution method object builders

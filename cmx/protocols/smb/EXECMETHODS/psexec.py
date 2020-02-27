@@ -175,7 +175,7 @@ class PSEXEC:
                                          r'\%s%s%d' % (RemComSTDIN, packet['Machine'], packet['ProcessID']),
                                          smb.FILE_WRITE_DATA | smb.FILE_APPEND_DATA, installService.getShare(),
                                          command)
-            
+
             stdin_pipe.start()
             stdout_pipe = RemoteStdOutPipe(rpctransport,
                                            r'\%s%s%d' % (RemComSTDOUT, packet['Machine'], packet['ProcessID']),
@@ -185,7 +185,7 @@ class PSEXEC:
                                            r'\%s%s%d' % (RemComSTDERR, packet['Machine'], packet['ProcessID']),
                                            smb.FILE_READ_DATA)
             stderr_pipe.start()
-            
+
             # And we stay here till the end
             ans = s.readNamedPipe(tid,fid_main,8)
             #pdb.set_trace()
@@ -233,7 +233,7 @@ class PSEXEC:
 
     def run(self, addr, dummy):
         """ starts interactive shell """
-        logging.debug('inside dcomshell.run')
+        logging.debug('inside PSEXEC.run')
 
         try:
             self.shell.cmdloop()
@@ -402,7 +402,7 @@ class RemoteShell(cmd.Cmd):
             pass
 
         self.send_data('\r\n')
- 
+
     def do_put(self, s):
         try:
             if self.transferClient is None:
