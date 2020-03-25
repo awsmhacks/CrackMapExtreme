@@ -220,10 +220,10 @@ class smb(connection):
         execegroup.add_argument("-dump", "--dump", action='store_true', help="Uses Procdumpx64 to dump lsass and retrieve the output.")
 
         supergroup = smb_parser.add_argument_group("Multi-execution Commands")
-        supergroup.add_argument("-netrecon", '--netrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
-        supergroup.add_argument("-hostrecon", '--hostrecon', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
-        supergroup.add_argument("-recon", '--recon', action='store_true', help='Runs all recon commands')
-        supergroup.add_argument("-a", '--all', action='store_true', help='Runs all the stuffs . this is for debugging, use at own risk')
+        supergroup.add_argument("-netrecon", '--netrecon', action='store_true', help='Runs all network recon.')
+        supergroup.add_argument("-hostrecon", '--hostrecon', action='store_true', help='Runs all host recon.')
+        supergroup.add_argument("-recon", '--recon', action='store_true', help='Runs all network+host recon commands')
+        supergroup.add_argument("-a", '--all', action='store_true', help='Runs a bunch of stuffs, this is for debugging, use at own risk')
 
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-fix-uac", '--fix-uac', action='store_true', help='Sets the proper Keys for remote high-integrity processes')
@@ -1337,55 +1337,71 @@ class smb(connection):
 
     def disks(self):
         from cmx.protocols.smb.ENUM.hostenum import disks1
-        disks1(self)
-
+        try:
+            disks1(self)
+        except:
+            pass
         return
 
 
     def sessions(self):
         from cmx.protocols.smb.ENUM.hostenum import sessions1
-        sessions1(self)
-
-        return   
+        try:
+            sessions1(self)
+        except:
+            pass
+        return
 
     def loggedon(self):
         from cmx.protocols.smb.ENUM.hostenum import loggedon1
-        loggedon1(self)
-
+        try:
+            loggedon1(self)
+        except:
+            pass
         return
 
 
     def local_users(self):
         from cmx.protocols.smb.ENUM.hostenum import local_users1
-        local_users1(self)
-
+        try:
+            local_users1(self)
+        except:
+            pass
         return
 
 
     def local_groups(self):
         from cmx.protocols.smb.ENUM.hostenum import local_groups1
-        local_groups1(self)
-
+        try:
+            local_groups1(self)
+        except:
+            pass
         return
 
 
     def rid_brute(self, maxrid=None):
         from cmx.protocols.smb.ENUM.hostenum import rid_brute1
-        rid_brute1(self, maxrid)
-
+        try:
+            rid_brute1(self, maxrid)
+        except:
+            pass
         return
 
 
     def spider(self, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], depth=None, content=False, onlyfiles=True, onlydir=False):
         from cmx.protocols.smb.ENUM.hostenum import spider1
-        spider1(self, share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles, onlydir)
-
+        try:
+            spider1(self, share, folder, pattern, regex, exclude_dirs, depth, content, onlyfiles, onlydir)
+        except:
+            pass
         return
 
     def shares2(self): #session error not defined?
         from cmx.protocols.smb.ENUM.hostenum import shares1
-        shares1(self)
-
+        try:
+            shares1(self)
+        except:
+            pass
         return
 
 

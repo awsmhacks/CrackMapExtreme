@@ -24,7 +24,7 @@ import pdb
 class az(connection):
 
     def __init__(self, args, db, host):
-  
+
         self.db = db
         self.args = args
         self.az_cli = None
@@ -77,7 +77,7 @@ class az(connection):
         vmgroup = azure_parser.add_argument_group("VM Checks", "Interact with VMs and VM Scale Sets")
         vmgroup.add_argument('--vm-list', nargs='?', const='', metavar='TARGET_VM', help='List all VMs for current subscription or target resource group')
         vmgroup.add_argument('--vmss-list', nargs='?', const='', metavar='TARGET_VMSS', help='List all VM Scale Sets for current subscription or target resource group')
-        
+
         scriptgroup = azure_parser.add_argument_group("Script Execution", "Execute Scripts on Azure VMs")
         scriptgroup.add_argument('--mimiaz', action='store_true', help='Execute mimikats on a target VM')
         scriptgroup.add_argument('--script', nargs=1, metavar='Full_PATH_TO_SCRIPT', help='Execute Script on a target VM. Use full path to script')
@@ -86,6 +86,7 @@ class az(connection):
 
         spngroup = azure_parser.add_argument_group("SPN Checks", "Interact with Service Principals")
         spngroup.add_argument('--spn-list', action='store_true', help='List all SPNs for current subscription')
+        spngroup.add_argument('--spn-owner-list', action='store_true', help='List all SPNs for current subscription')
         spngroup.add_argument('--spn-mine', action='store_true', help='List all SPNs owned by current user')
         spngroup.add_argument('--spn', nargs='?', const='', metavar='OBJECTID', help='List all SPNs for current subscription')
 
@@ -94,7 +95,7 @@ class az(connection):
 
 
         return parser
-       
+
 
     def proto_flow(self):
         self.proto_logger()
@@ -102,7 +103,7 @@ class az(connection):
             self.call_cmd_args()
 
     def proto_logger(self):
-        if os.name == 'nt': 
+        if os.name == 'nt':
             self.windows = True
             self.decoder = 'cp1252'
         self.logger = CMXLogAdapter(extra={'protocol': 'AZURE',
@@ -111,7 +112,7 @@ class az(connection):
                                         'hostname': 'CLI'})
 
     def test_connection(self):
-        if os.name == 'nt': 
+        if os.name == 'nt':
             self.windows = True
             self.decoder = 'cp1252'
 
@@ -120,7 +121,7 @@ class az(connection):
             self.logger.error('Run: cmx az 1 --config')
             return False
 
-        # Grab our user/domain and re-init logger. 
+        # Grab our user/domain and re-init logger.
         # Config should have stored this in the config file.
         f = open(cfg.AZ_CONFIG_PATH,"r")
         data = f.read()
@@ -144,7 +145,7 @@ class az(connection):
         print(" ")
         subs_resp = subprocess.run(['az','account', 'list', '--query', '[].{SubscriptionName:name, Id:id, TenantId:tenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         roles_resp = subprocess.run(['az','role', 'assignment', 'list', '--all', '--query', "[?principalName=='$User'].{Role:roleDefinitionName,ResoureGroup:resourceGroup}" ], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+
     #Show subs
         try:
             subs_resp_json = json.loads(subs_resp.stdout.decode(self.decoder))
@@ -172,7 +173,7 @@ class az(connection):
         if not cfg.AZ_PATH.is_dir():
             cfg.AZ_PATH.mkdir(parents=True, exist_ok=True)
 
-    
+
         f = open(cfg.AZ_CONFIG_PATH,"w")
         f.write("{}".format(user[0]))
         f.close()
@@ -204,23 +205,23 @@ class az(connection):
 
 ###############################################################################
 
-           #       ######              ####### #     # #     # #     # 
-          # #      #     #             #       ##    # #     # ##   ## 
-         #   #     #     #             #       # #   # #     # # # # # 
-        #     #    #     #    #####    #####   #  #  # #     # #  #  # 
-        #######    #     #             #       #   # # #     # #     # 
-        #     #    #     #             #       #    ## #     # #     # 
-        #     #    ######              ####### #     #  #####  #     # 
-                                                                
+           #       ######              ####### #     # #     # #     #
+          # #      #     #             #       ##    # #     # ##   ##
+         #   #     #     #             #       # #   # #     # # # # #
+        #     #    #     #    #####    #####   #  #  # #     # #  #  #
+        #######    #     #             #       #   # # #     # #     #
+        #     #    #     #             #       #    ## #     # #     #
+        #     #    ######              ####### #     #  #####  #     #
+
 ###############################################################################
 ###############################################################################
 #   Network/Domain Enum functions
 #
 # This section:
-#   
-#   
-#   
-#   
+#
+#
+#
+#
 # (fold next line)
 ###############################################################################
 
@@ -236,7 +237,7 @@ class az(connection):
 
         self.logger.announce("Getting User Info")
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(my_user_id_json)
         else:
             self.logger.highlight("{:>26} {}".format('userPrincipalName: ', my_user_id_json['userPrincipalName']))
@@ -262,14 +263,14 @@ class az(connection):
             return
 
         self.db.add_user(user_id_json)
-        
+
         plans = []
         for plan in user_id_json["assignedPlans"]:
             plans.append(plan["service"])
 
         self.logger.announce("Getting User Info")
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(user_id_json)
         else:
             self.logger.highlight("{:<26} {}".format('userPrincipalName: ', user_id_json['userPrincipalName']))
@@ -314,14 +315,14 @@ class az(connection):
             savefile = open(filename,"w")
 
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(user_id_json)
 
         else:
             usercount = 0
             for user1 in user_id_json:
-                if user1['isCompromised'] == None: 
-                    comp = 'No' 
+                if user1['isCompromised'] == None:
+                    comp = 'No'
                 else:
                     comp = 'Yes'
 
@@ -331,7 +332,7 @@ class az(connection):
                 usercount = usercount + 1
                 self.logger.highlight("{:<36}  id:{}  compromised:{} ".format(user1['userPrincipalName'], user1['objectId'], comp))
 
-        if self.args.save: 
+        if self.args.save:
             savefile.close()
             self.logger.success("Email addresses saved to: {}".format(filename))
 
@@ -343,7 +344,7 @@ class az(connection):
         if self.args.group == '':
             self.logger.error('Must provide a group name or objectID')
             return
-        
+
         group_list = subprocess.runsubprocess.run(['az','ad', 'group', 'member', 'list', '--group', self.args.group ], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             group_list_json = json.loads(group_list.stdout.decode(self.decoder))
@@ -365,13 +366,13 @@ class az(connection):
 
 ###############################################################################
 
-        ######  ######     ###    #     #       #######  #####   #####  
-        #     # #     #     #     #     #       #       #     # #     # 
-        #     # #     #     #     #     #       #       #       #       
-        ######  ######      #     #     #       #####    #####  #       
-        #       #   #       #      #   #        #             # #       
-        #       #    #      #       # #         #       #     # #     # 
-        #       #     #    ###       #          #######  #####   #####  
+        ######  ######     ###    #     #       #######  #####   #####
+        #     # #     #     #     #     #       #       #     # #     #
+        #     # #     #     #     #     #       #       #       #
+        ######  ######      #     #     #       #####    #####  #
+        #       #   #       #      #   #        #             # #
+        #       #    #      #       # #         #       #     # #     #
+        #       #     #    ###       #          #######  #####   #####
 
 ###############################################################################
 ###############################################################################
@@ -466,7 +467,7 @@ class az(connection):
                 self.logger.highlight("Current user has permission to run all nsg related commands - consider running the nsg backdoor module")
             elif("Microsoft.Network/networkSecurityGroups/join/action" in perm):
                 self.logger.highlight("Current user has permission to join a network security group ")
-                
+
 
             if("Microsoft.Compute/virtualMachines/*" in perm):
                 self.logger.highlight("Current user has permission to run virtual machine commands - consider running the various vm modules ")
@@ -494,12 +495,12 @@ class az(connection):
                 self.logger.highlight("Current user has permission to run all sql server commands - consider running the sql server list or the sql backdoor firewall modules ")
             elif("Microsoft.Sql/servers/databases/*" in perm):
                 self.logger.highlight("Current user has permission to run all sql database commands - consider running the sql db list ")
-            
+
 
     def privs(self):
         # Grab user UPN
         #az ad signed-in-user show
-        #az ad user show --id XXXX 
+        #az ad user show --id XXXX
         logging.debug("Starting privs")
         if self.args.privs == '':
             upn_resp = subprocess.run(['az', 'ad', 'signed-in-user', 'show','--query', '{upn:userPrincipalName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -557,13 +558,13 @@ class az(connection):
 
 ###############################################################################
 
-    ######  #######  #####  ####### #     # ######   #####  ####### 
-    #     # #       #     # #     # #     # #     # #     # #       
-    #     # #       #       #     # #     # #     # #       #       
-    ######  #####    #####  #     # #     # ######  #       #####   
-    #   #   #             # #     # #     # #   #   #       #       
-    #    #  #       #     # #     # #     # #    #  #     # #       
-    #     # #######  #####  #######  #####  #     #  #####  ####### 
+    ######  #######  #####  ####### #     # ######   #####  #######
+    #     # #       #     # #     # #     # #     # #     # #
+    #     # #       #       #     # #     # #     # #       #
+    ######  #####    #####  #     # #     # ######  #       #####
+    #   #   #             # #     # #     # #   #   #       #
+    #    #  #       #     # #     # #     # #    #  #     # #
+    #     # #######  #####  #######  #####  #     #  #####  #######
 
 ###############################################################################
 ###############################################################################
@@ -587,14 +588,14 @@ class az(connection):
 
 ###############################################################################
 
-                     #####      #####     #       
-                    #     #    #     #    #       
-                    #          #     #    #       
-                     #####     #     #    #       
-                          #    #   # #    #       
-                    #     #    #    #     #       
-                     #####      #### #    ####### 
-                              
+                     #####      #####     #
+                    #     #    #     #    #
+                    #          #     #    #
+                     #####     #     #    #
+                          #    #   # #    #
+                    #     #    #    #     #
+                     #####      #### #    #######
+
 ###############################################################################
 ###############################################################################
 #
@@ -626,7 +627,7 @@ class az(connection):
         except:
             self.logger.error("Current user has no SQL subscriptions")
             return
-        
+
         servers = []
         rgrps = []
         for info in sql_info_json:
@@ -645,13 +646,13 @@ class az(connection):
 
 ###############################################################################
 
-         #####  ####### ####### ######     #     #####  ####### 
-        #     #    #    #     # #     #   # #   #     # #       
-        #          #    #     # #     #  #   #  #       #       
-         #####     #    #     # ######  #     # #  #### #####   
-              #    #    #     # #   #   ####### #     # #       
-        #     #    #    #     # #    #  #     # #     # #       
-         #####     #    ####### #     # #     #  #####  ####### 
+         #####  ####### ####### ######     #     #####  #######
+        #     #    #    #     # #     #   # #   #     # #
+        #          #    #     # #     #  #   #  #       #
+         #####     #    #     # ######  #     # #  #### #####
+              #    #    #     # #   #   ####### #     # #
+        #     #    #    #     # #    #  #     # #     # #
+         #####     #    ####### #     # #     #  #####  #######
 
 ###############################################################################
 ###############################################################################
@@ -676,14 +677,14 @@ class az(connection):
 
 ###############################################################################
 
-                    #     #          #     # 
-                    #     #          ##   ## 
-                    #     #          # # # # 
-                    #     #          #  #  # 
-                     #   #           #     # 
-                      # #            #     # 
-                       #             #     # 
-                                       
+                    #     #          #     #
+                    #     #          ##   ##
+                    #     #          # # # #
+                    #     #          #  #  #
+                     #   #           #     #
+                      # #            #     #
+                       #             #     #
+
 ###############################################################################
 ###############################################################################
 #
@@ -712,7 +713,7 @@ class az(connection):
                 return
 
         else: # Get all vms in specified resource group
-            # az vm list -g XXX 
+            # az vm list -g XXX
             vm_list = subprocess.run(['az','vm', 'list', '-g', self.args.vm_list, '--query', '[].{name:name,os:storageProfile.osDisk.osType, username:osProfile.adminUsername, vm_size:hardwareProfile.vmSize, resource_group: resourceGroup}'], shell = self.windows, stdout=subprocess.PIPE)
             try:
                 vm_list_json = json.loads(vm_list.stdout.decode(self.decoder))
@@ -730,13 +731,13 @@ class az(connection):
         #combine vm info
         for i in range(len(vm_list_json)):
             vm_list_json[i].update(vm_iplist_json[i])
-        
+
         if self.args.full:
             pprint.pprint(vm_list_json)
             return
 
         self.logger.highlight("{:<15}   {:<10}   {:<19}   {:<19}   {:<19} ".format('Name', 'os', 'privateIp', 'publicIp', 'ResourceGroup'))
-        
+
         for vm in vm_list_json:
             self.logger.highlight("{:<15} | {:<10} | {:<19} | {:<19} | {:<19} ".format(vm['name'],
                                                                                           vm['os'],
@@ -787,14 +788,14 @@ class az(connection):
 
 ###############################################################################
 
-         #####      #####     ######     ###    ######     ####### 
-        #     #    #     #    #     #     #     #     #       #    
-        #          #          #     #     #     #     #       #    
-         #####     #          ######      #     ######        #    
-              #    #          #   #       #     #             #    
-        #     #    #     #    #    #      #     #             #    
-         #####      #####     #     #    ###    #             #    
-                                                           
+         #####      #####     ######     ###    ######     #######
+        #     #    #     #    #     #     #     #     #       #
+        #          #          #     #     #     #     #       #
+         #####     #          ######      #     ######        #
+              #    #          #   #       #     #             #
+        #     #    #     #    #    #      #     #             #
+         #####      #####     #     #    ###    #             #
+
 
 ###############################################################################
 ###############################################################################
@@ -825,7 +826,7 @@ class az(connection):
             self.logger.error("Current user has no VM subscriptions")
             return
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(commander_json)
 
         else:
@@ -838,7 +839,7 @@ class az(connection):
             self.logger.error("script execution requires a --vm and --rg.")
             self.logger.error("Try `cmx az --vm-list` to find values")
             return
-        
+
         if Path(self.args.script[0]).is_file():
             script_path = '@' + self.args.script[0]
         else:
@@ -854,7 +855,7 @@ class az(connection):
             self.logger.error("Script Execution Failed")
             return
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(commander_json)
 
         else:
@@ -862,13 +863,13 @@ class az(connection):
 
 ###############################################################################
 
-             #####     ######     #     # 
-            #     #    #     #    ##    # 
-            #          #     #    # #   # 
-             #####     ######     #  #  # 
-                  #    #          #   # # 
-            #     #    #          #    ## 
-             #####     #          #     # 
+             #####     ######     #     #
+            #     #    #     #    ##    #
+            #          #     #    # #   #
+             #####     ######     #  #  #
+                  #    #          #   # #
+            #     #    #          #    ##
+             #####     #          #     #
 
 ###############################################################################
 ###############################################################################
@@ -881,6 +882,29 @@ class az(connection):
 
     def spn_list(self):
         # az ad sp list --all
+        spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId, publisherName:publisherName}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            spn_list_json = json.loads(spnn_list.stdout.decode(self.decoder))
+        except:
+            self.logger.error("Current user has no VM subscriptions")
+            return
+
+        self.logger.announce("Getting SPN Info")
+
+        if self.args.full:
+            pprint.pprint(spn_list_json)
+        else:
+            self.logger.highlight("{:<40}  |      {:<32} |   {:<32}   |   publisherName".format('    associated-app', '         appId', '         appOwnerTenantId'))
+            for spn in spn_list_json:
+
+                if spn['appDisplayName'] and spn['appId']:
+                    self.logger.highlight("{:<40}  |  {} | {} | {}".format((spn['appDisplayName'][:37] + (spn['appDisplayName'][37:] and '..')),
+                                                                 spn['appId'],
+                                                                 spn['appOwnerTenantId'],
+                                                                 spn['publisherName']))
+
+    def spn_owner_list(self):
+        # az ad sp list --all
         spnn_list = subprocess.run(['az','ad', 'sp', 'list', '--all', '--query', '[].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}'], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             spn_list_json = json.loads(spnn_list.stdout.decode(self.decoder))
@@ -890,16 +914,20 @@ class az(connection):
 
         self.logger.announce("Getting SPN Info")
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(spn_list_json)
         else:
             self.logger.highlight("{:<40}  |      {:<32} |   {}".format('    associated-app', '         appId', '         appOwnerTenantId'))
             for spn in spn_list_json:
+                spn_own_list = subprocess.run(['az','ad', 'sp', 'owner', 'list', '--id', spn['appId']], shell = self.windows, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                try:
+                    spn_own_list_json = json.loads(spn_own_list.stdout.decode(self.decoder))
+                except:
+                    self.logger.error("Error getting owner list")
+                    return
+                print("app:{}".format(spn['appDisplayName']))
+                pprint.pprint(spn_own_list_json)
 
-                if spn['appDisplayName'] and spn['appId']:
-                    self.logger.highlight("{:<40}  |  {} | {}".format((spn['appDisplayName'][:37] + (spn['appDisplayName'][37:] and '..')),
-                                                                 spn['appId'],
-                                                                 spn['appOwnerTenantId']))
 
     def spn(self):
         # az ad sp list --all --query [].{appDisplayName:appDisplayName, appId:appId, appOwnerTenantId:appOwnerTenantId}
@@ -919,7 +947,7 @@ class az(connection):
 
         self.logger.announce("Getting SPN Info")
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(spn_list_json)
         else:
             self.logger.highlight("{:<40}  |      {:<32} |   {}".format('    associated-app', '         appId', '         appOwnerTenantId'))
@@ -942,7 +970,7 @@ class az(connection):
 
         self.logger.announce("Getting SPN Info For Current User")
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(spn_list_json)
         else:
             self.logger.highlight("{:<40}  |      {:<32} |   {}".format('    associated-app', '         appId', '         appOwnerTenantId'))
@@ -957,13 +985,13 @@ class az(connection):
 
 ###############################################################################
 
-               #       ######     ###### 
+               #       ######     ######
               # #      #     #    #     #
              #   #     #     #    #     #
-            #     #    ######     ###### 
-            #######    #          #      
-            #     #    #          #      
-            #     #    #          #      
+            #     #    ######     ######
+            #######    #          #
+            #     #    #          #
+            #     #    #          #
 
 ###############################################################################
 ###############################################################################
@@ -984,7 +1012,7 @@ class az(connection):
             self.logger.error("Current user has no VM subscriptions")
             return
 
-        if self.args.full: 
+        if self.args.full:
             pprint.pprint(app_list_json)
             return
 
