@@ -179,22 +179,22 @@ class smb(connection):
         spraygroup.add_argument("--useraspass", action='store_true', help='Try usernames as passwords')
 
         egroup = smb_parser.add_argument_group("Mapping/Enumeration", "Options for Mapping/Enumerating")
-        egroup.add_argument("--shares", action="store_true", help="Enumerate shares and access")
-        egroup.add_argument("--sessions", action='store_true', help='Enumerate active sessions')
-        egroup.add_argument('--disks', action='store_true', help='Enumerate disks')
-        egroup.add_argument("--loggedon", action='store_true', help='Enumerate logged on users')
-        egroup.add_argument('--users', nargs='?', const='', metavar='USER', help='Enumerate and return all domain users')
-        egroup.add_argument("--groups", nargs='?', const='', metavar='GROUP', help='Enumerate all domain groups')
-        egroup.add_argument("--group", nargs='?', const='', metavar='targetGroup', help='Return users of a specified domain group')
-        egroup.add_argument("--groups-full", action='store_true', help='Enumerate all domain groups and display their members')
-        egroup.add_argument("--computers", nargs='?', const='', metavar='COMPUTER', help='Enumerate all domain computers')
-        egroup.add_argument("--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='Enumerate all local groups')
-        egroup.add_argument("--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='Enumerate all local users')
-        egroup.add_argument("--pass-pol", action='store_true', help='dump password policy')
-        egroup.add_argument("--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='Enumerate users by bruteforcing RID\'s (default: 4000)')
-        egroup.add_argument("--wmi", metavar='QUERY', type=str, help='issues the specified WMI query')
-        egroup.add_argument("--dualhome", action="store_true", help='check for dual home')
-        egroup.add_argument("--wmi-namespace", metavar='NAMESPACE', default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
+        egroup.add_argument("-shares", "--shares", action="store_true", help="Enumerate shares and access")
+        egroup.add_argument("-sessions", "--sessions", action='store_true', help='Enumerate active sessions')
+        egroup.add_argument('-disks', '--disks', action='store_true', help='Enumerate disks')
+        egroup.add_argument("-loggedon", "--loggedon", action='store_true', help='Enumerate logged on users')
+        egroup.add_argument('-users', '--users', nargs='?', const='', metavar='USER', help='Enumerate and return all domain users')
+        egroup.add_argument("-groups", "--groups", nargs='?', const='', metavar='GROUP', help='Enumerate all domain groups')
+        egroup.add_argument("-group", "--group", nargs='?', const='', metavar='targetGroup', help='Return users of a specified domain group')
+        egroup.add_argument("-groups-full", "--groups-full", action='store_true', help='Enumerate all domain groups and display their members')
+        egroup.add_argument("-computers", "--computers", nargs='?', const='', metavar='COMPUTER', help='Enumerate all domain computers')
+        egroup.add_argument("-local-groups", "--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='Enumerate all local groups')
+        egroup.add_argument("-local-users","--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='Enumerate all local users')
+        egroup.add_argument("-pass-pol", "--pass-pol", action='store_true', help='dump password policy')
+        egroup.add_argument("-rid-brute", "--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='Enumerate users by bruteforcing RID\'s (default: 4000)')
+        egroup.add_argument("-wmi", "--wmi", metavar='QUERY', type=str, help='issues the specified WMI query')
+        egroup.add_argument("-dualhome", "--dualhome", action="store_true", help='check for dual home')
+        egroup.add_argument("-wmi-namespace", "--wmi-namespace", metavar='NAMESPACE', default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
 
         sgroup = smb_parser.add_argument_group("Spidering", "Options for spidering shares")
         sgroup.add_argument("--spider", metavar='SHARE', type=str, help='share to spider, requires a pattern!')
@@ -311,7 +311,6 @@ class smb(connection):
                 logging.debug('Error executing via wmiexec, traceback:')
                 logging.debug(format_exc())
                 return
-
 
     # Start of execution method object builders
         if method == 'wmiexec':

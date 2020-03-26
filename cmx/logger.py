@@ -157,10 +157,9 @@ class CMXLogAdapter(logging.LoggerAdapter):
 
         # DATE              PROTOCOL    hostIP:PORT     HOSTNAME      MSG
         # Dec.04.19 14:16:49  SMB    192.168.1.1:445     WIN1923    [-] error
-        return u'{:<19} {:<21} {:<15}:{:<13} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
+        return u'{:<19} {:<21} {:<15} {:<16} {}'.format(datetime.datetime.now().strftime("%b.%d.%y %H:%M:%S"),
                                                     module_name,
                                                     host_ip,
-                                                    host_port,
                                                     host_name,
                                                     msg), kwargs
 
