@@ -45,6 +45,9 @@ def disks1(smb):
 
     """
     self = smb
+    enumlog = ''
+    enumlog += 'Executed as {} \n'.format(self.username)
+
     try:
         #self.logger.info('Attempting to enum disks...')
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
@@ -63,7 +66,7 @@ def disks1(smb):
                     if disk['Disk'] != '\x00':
                         #self.logger.results('Disk: {} found on {}'.format(disk['Disk'], self.host))
                         self.logger.highlight("Found Disk: {}\\ ".format(disk['Disk']))
-                return
+                        enumlog += "Found Disk: {}\\  \n".format(disk['Disk'])
 
             except Exception as e: #failed function
                 logging.debug('failed function {}'.format(str(e)))
@@ -79,6 +82,13 @@ def disks1(smb):
         dce.disconnect()
         return
 
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Disks_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Saved Disks output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
     #self.logger.info('Finished disk enum')
     dce.disconnect()
     return
@@ -91,6 +101,9 @@ def sessions1(smb):
     Using impackets hNetrSessionEnum from https://github.com/SecureAuthCorp/impacket/blob/ec9d119d102251d13e2f9b4ff25966220f4005e9/impacket/dcerpc/v5/srvs.py
     """
     self = smb
+    enumlog = ''
+    enumlog += 'Executed as {} \n'.format(self.username)
+
     try:
         #self.logger.announce('Starting Session Enum')
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\srvsvc', smb_connection=self.conn)
@@ -101,7 +114,6 @@ def sessions1(smb):
             dce.bind(impacket.dcerpc.v5.srvs.MSRPC_UUID_SRVS)
             try:
                 logging.debug('Get netsessions via hNetrSessionEnum...')
-                self.logger.success('Sessions enumerated on {} !'.format(self.host))
                 resp = impacket.dcerpc.v5.srvs.hNetrSessionEnum(dce, '\x00', '\x00', 10)  #no clue why \x00 is used for client and username?? but it works!
 
                 for session in resp['InfoStruct']['SessionInfo']['Level10']['Buffer']:
@@ -109,20 +121,30 @@ def sessions1(smb):
                     sourceIP = session['sesi10_cname'][:-1][2:]
                     #self.logger.results('User: {} has session originating from {}'.format(userName, sourceIP))
                     self.logger.highlight("{} has session originating from {} on {}".format(userName, sourceIP, self.host,))
-                return
+                    enumlog += "{} has session originating from {} on {}  \n".format(userName, sourceIP, self.host,)
 
+                self.logger.success('Sessions enumerated on {} !'.format(self.host))
             except Exception as e: #failed function
                 logging.debug('failed function {}'.format(str(e)))
+                self.logger.error('Failed to enum Sessions, win10 may require LocalAdmin')
                 dce.disconnect()
                 return
         except Exception as e: #failed bind
             logging.debug('failed bind {}'.format(str(e)))
+            self.logger.error('Failed to enum Sessions, win10 may require LocalAdmin')
             dce.disconnect()
             return
     except Exception as e: #failed connect
         logging.debug('failed connect {}'.format(str(e)))
+        self.logger.error('Failed to enum Sessions, win10 may require LocalAdmin')
         dce.disconnect()
         return
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Sessions_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Sessions output saved to {}/{}".format(cfg.LOGS_PATH,log_name))
 
     #self.logger.announce('Finished Session Enum')
     dce.disconnect()
@@ -135,6 +157,9 @@ def loggedon1(smb):
     I think it requires localadmin, but handles if it doesnt work.
     """
     self = smb
+    enumlog = ''
+    enumlog += 'Executed as {} \n'.format(self.username)
+
     try:
         #self.logger.announce('Checking for logged on users')
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\wkssvc', smb_connection=self.conn)
@@ -153,12 +178,11 @@ def loggedon1(smb):
                     wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
                     #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
                     self.logger.highlight("{} is currently logged on {} ({})".format(wkst_username, self.host, self.hostname))
-
-                return
+                    enumlog += "{} is currently logged on {} ({})  \n".format(wkst_username, self.host, self.hostname)
 
             except Exception as e: #failed function
                 logging.debug('failed function {}'.format(str(e)))
-                self.logger.error('Failed to enum Loggedon Users, are you localadmin?')
+                self.logger.error('Failed to enum Loggedon Users, win10 may require localadmin?')
                 dce.disconnect()
                 return
         except Exception as e: #failed bind
@@ -169,6 +193,13 @@ def loggedon1(smb):
         logging.debug('failed connect {}'.format(str(e)))
         dce.disconnect()
         return
+
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Loggedon-Users_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Saved Loggedon-Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
     #self.logger.announce('Finished checking for logged on users')
     dce.disconnect()
@@ -181,6 +212,9 @@ def local_users1(smb):
     Need to figure out if needs localadmin or its a waste of effort
     """
     self = smb
+    enumlog = ''
+    enumlog += 'Executed as {} \n'.format(self.username)
+
     try:
         #self.logger.announce('Checking Local Users')
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
@@ -249,6 +283,7 @@ def local_users1(smb):
                         self.logger.highlight("{}\\{:<15} :{} ".format(self.hostname, user['Name'], user['RelativeId']))
 
                         self.db.add_user(self.hostname, user['Name'])
+                        enumlog += "{}\\{:<15} :{}  \n".format(self.hostname, user['Name'], user['RelativeId'])
 
                         info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                         logging.debug('Dump of hSamrQueryInformationUser2 response:')
@@ -272,6 +307,13 @@ def local_users1(smb):
         dce.disconnect()
         return
 
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Local-Users_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Saved Local Users output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
     #self.logger.announce('Finished Checking Local Users')
     dce.disconnect()
     return
@@ -283,6 +325,9 @@ def local_groups1(smb):
     Need to figure out if needs localadmin or its a waste of effort
     """
     self = smb
+    enumlog = ''
+    enumlog += 'Executed as {} \n'.format(self.username)
+
     try:
         #self.logger.announce('Checking Local Groups')
         rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\samr', username=self.username, password=self.password, smb_connection=self.conn)
@@ -350,6 +395,7 @@ def local_groups1(smb):
                             info.dump()
                         #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                         self.logger.highlight('Group: {:<20}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
+                        enumlog += 'Group: {:<20}  membercount: {} \n'.format(group['Name'], info['Buffer']['General']['MemberCount'])
 
                         groupResp = impacket.dcerpc.v5.samr.hSamrGetMembersInGroup(dce, r['GroupHandle'])
                         logging.debug('Dump of hSamrGetMembersInGroup response:')
@@ -360,6 +406,7 @@ def local_groups1(smb):
                             m = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, member)
                             guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                             self.logger.highlight('{}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
+                            enumlog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
 
                             logging.debug('Dump of hSamrQueryInformationUser2 response:')
                             if self.debug:
@@ -383,6 +430,13 @@ def local_groups1(smb):
         dce.disconnect()
         return
 
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Local-Groups_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Saved Local Groups output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
     #self.logger.announce('Finished Checking Local Groups')
     dce.disconnect()
     return
@@ -391,6 +445,9 @@ def local_groups1(smb):
 def rid_brute1(smb, maxrid=None):
     """Brute force RIDs."""
     self = smb
+    enumlog = ''
+    enumlog += 'Executed as {} \n'.format(self.username)
+
     logging.debug('Starting RID Brute')
 
     if not maxrid:
@@ -461,6 +518,8 @@ def rid_brute1(smb, maxrid=None):
                             user   = item['Name']
                             sid_type = impacket.dcerpc.v5.samr.SID_NAME_USE.enumItems(item['Use']).name
                             self.logger.highlight("{}\\{:<15} :{} ({})".format(domain, user, rid, sid_type))
+                            enumlog += "{}\\{:<15} :{} ({}) \n".format(domain, user, rid, sid_type)
+
 
                     soFar += SIMULTANEOUS
 
@@ -479,6 +538,13 @@ def rid_brute1(smb, maxrid=None):
         dce.disconnect()
         return
 
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'RID-Brute_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Saved RID Brute output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
     dce.disconnect()
 
     logging.debug('Finished RID brute')
@@ -496,6 +562,7 @@ def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], 
 
     """
     self = smb
+
     logging.debug('Starting Spider')
     spider = SMBSpider(self.conn, self.logger)
 
@@ -515,6 +582,7 @@ def spider1(smb, share=None, folder='.', pattern=[], regex=[], exclude_dirs=[], 
     self.logger.success("Done spidering (Completed in %02d hours, %02d minutes, %02d seconds)"%(hrs,mins,seconds))
     self.logger.success('Total Directories: {}'.format(spider.dircount))
     self.logger.success('Total Files: {}'.format(spider.filecount))
+
     return spider.results
 
 
@@ -528,6 +596,7 @@ def shares1(smb):
     temp_dir = ntpath.normpath("\\" + gen_random_string())
     permissions = []
     #self.logger.announce('Starting Share Enumeration')
+    enumlog = ''
 
     try:
         for share in self.conn.listShares():
@@ -560,15 +629,26 @@ def shares1(smb):
 
         self.logger.highlight('{:<15} {:<15} {}'.format('Share', 'Permissions', 'Remark'))
         self.logger.highlight('{:<15} {:<15} {}'.format('-----', '-----------', '------'))
+        enumlog += 'Executed as {} \n'.format(self.username)
+        enumlog += '{:<15} {:<15} {} \n'.format('Share', 'Permissions', 'Remark')
+        enumlog += '{:<15} {:<15} {} \n'.format('-----', '-----------', '------')
         for share in permissions:
             name   = share['name']
             remark = share['remark']
             perms  = share['access']
 
             self.logger.highlight('{:<15} {:<15} {}'.format(name, ','.join(perms), remark))
+            enumlog += '{:<15} {:<15} {} \n'.format(name, ','.join(perms), remark)
 
     except Exception as e:
         self.logger.error('Error enumerating shares: {}'.format(e))
+
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Shares_of_{}_on_{}.log'.format(self.host, ctime)
+        write_log(str(enumlog), log_name)
+        self.logger.announce("Saved Shares output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
     #self.logger.announce('Finished Share Enumeration')
     return permissions

