@@ -159,7 +159,7 @@ class smb(connection):
         dgroup.add_argument("-d", metavar="DOMAIN.DOMAIN", dest='domain', type=str, help="domain to authenticate to, MUST BE fully qualified. ie CONTOSO.LOCAL or CONTOSO.COM ")
         dgroup.add_argument("--local-auth", action='store_true', help='authenticate locally to each target')
 
-        smb_parser.add_argument("--port", type=int, choices={445, 139}, default=445, help="SMB port (default: 445)")
+        smb_parser.add_argument("--port", type=int, default=445, help="SMB port (default: 445)")
         smb_parser.add_argument("--share", metavar="SHARE", default="C$", help="specify a share (default: C$)")
         smb_parser.add_argument("--gen-relay-list", metavar='OUTPUT_FILE', help="outputs all hosts that don't require SMB signing to the specified file")
         smb_parser.add_argument("--continue-on-success", action='store_true', help="continues authentication attempts even after successes")
