@@ -521,12 +521,12 @@ class smb(connection):
             elif str(e).find('No route to host') != -1:
                 logging.debug('Could not connect to {}, no route to host. Can you ping it?'.format(self.host))
             else:
-                logging.debug('Something went wrong, Could not connect to {}, tried smbv1'.format(self.host))
+                logging.debug('Something went wrong, Could not connect to {}:{}, tried smbv1'.format(self.host, self.args.port))
             return False
         except Exception as e:
             logging.debug('Error creating SMBv1 connection to {}: {}'.format(self.host, e))
             return False
-        logging.debug('Connected using SMBv1 to: {}'.format(self.host))
+        logging.debug('Connected using SMBv1 to: {}:{}'.format(self.host, self.args.port))
         return True
 
     def create_smbv3_conn(self):
@@ -543,12 +543,12 @@ class smb(connection):
                 logging.debug('No route to host {}'.format(self.host))
                 self.logger.announce('Could not connect to {}, no route to host. Can you ping it?'.format(self.host))
             else:
-                logging.debug('Something went wrong, Could not connect to {}, tried smbv3'.format(self.host))
+                logging.debug('Something went wrong, Could not connect to {}:{}, tried smbv3'.format(self.host, self.args.port))
             return False
         except Exception as e:
             logging.debug('Error creating SMBv3 connection to {}: {}'.format(self.host, e))
             return False
-        logging.debug('Connected using SMBv3 to: {}'.format(self.host))
+        logging.debug('Connected using SMBv3 to: {}:{}'.format(self.host, self.args.port))
         return True
 
 
