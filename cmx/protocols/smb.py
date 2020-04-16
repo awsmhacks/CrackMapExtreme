@@ -168,7 +168,7 @@ class smb(connection):
         cegroup = cgroup.add_mutually_exclusive_group()
         cegroup.add_argument("--sam", action='store_true', help='dump SAM hashes from target systems')
         cegroup.add_argument("--lsa", action='store_true', help='dump LSA secrets from target systems')
-        #cegroup.add_argument("--dcsync", action='store_true', help='dcsync')
+        # cegroup.add_argument("--dcsync", action='store_true', help='dcsync')
         cegroup.add_argument("--ntds", choices={'vss', 'drsuapi'}, nargs='?', const='drsuapi', help="dump the NTDS.dit from target DCs using the specifed method\n(default: drsuapi)")
         cgroup.add_argument("--ntds-history", action='store_true', help='Dump NTDS.dit password history - Can only be used with --ntds')
         cgroup.add_argument("--ntds-pwdLastSet", action='store_true', help='Shows the pwdLastSet attribute for each NTDS.dit account. Can only be used with --ntds')
@@ -189,7 +189,7 @@ class smb(connection):
         egroup.add_argument("-groups-full", "--groups-full", action='store_true', help='Enumerate all domain groups and display their members')
         egroup.add_argument("-computers", "--computers", nargs='?', const='', metavar='COMPUTER', help='Enumerate all domain computers')
         egroup.add_argument("-local-groups", "--local-groups", nargs='?', const='', metavar='LOCAL_GROUPS', help='Enumerate all local groups')
-        egroup.add_argument("-local-users","--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='Enumerate all local users')
+        egroup.add_argument("-local-users", "--local-users", nargs='?', const='', metavar='LOCAL_USERS', help='Enumerate all local users')
         egroup.add_argument("-pass-pol", "--pass-pol", action='store_true', help='dump password policy')
         egroup.add_argument("-rid-brute", "--rid-brute", nargs='?', type=int, const=4000, metavar='MAX_RID', help='Enumerate users by bruteforcing RID\'s (default: 4000)')
         egroup.add_argument("-wmi", "--wmi", metavar='QUERY', type=str, help='issues the specified WMI query')
@@ -513,6 +513,7 @@ class smb(connection):
         """Setup connection using smbv1."""
         try:
             logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
+            logging.debug('using args.port: {}'.format(self.args.port))
             self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port) #, preferredDialect=impacket.smb.SMB_DIALECT)
         except socket.error as e:
             if str(e).find('Connection reset by peer') != -1:
@@ -535,6 +536,7 @@ class smb(connection):
         """
         try:
             logging.debug('Attempting SMBv3 connection to {}'.format(self.host))
+            logging.debug('using args.port: {}'.format(self.args.port))
             self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port)
         except socket.error as e:
             if str(e).find('No route to host') != -1:
@@ -1188,6 +1190,7 @@ class smb(connection):
             self.logger.success('Null login allowed')
         except impacket.smbconnection.SessionError as e:
             if "STATUS_ACCESS_DENIED" in str(e):
+                logging.debug("Null login not allowed")
                 pass
 
         self.domain     = self.conn.getServerDomain()           # OCEAN

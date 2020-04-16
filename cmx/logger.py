@@ -114,7 +114,6 @@ class CMXLogAdapter(logging.LoggerAdapter):
         self.extra = extra
         self.hostname = ''
 
-
     def process(self, msg, kwargs):
         if self.extra is None:
             return u'{}'.format(msg), kwargs
@@ -272,6 +271,12 @@ class CMXLogAdapter(logging.LoggerAdapter):
         return out
 
 
+# this added until https://github.com/urllib3/urllib3/pull/1665
+class SuppressFilter(logging.Filter):
+    def filter(self, record):
+        return 'wsman' not in record.getMessage()
+
+
 
 def setup_debug_logger():
     debug_output_string = "{} %(message)s".format(colored('DEBUG', 'magenta', attrs=['bold']))
@@ -298,6 +303,7 @@ def setup_verbose_logger(loglevel=0):
     root_logger.addHandler(streamHandler)
     #root_logger.addHandler(fileHandler)
     root_logger.setLevel(logging.DEBUG)
+    root_logger.addFilter(SuppressFilter()) # this added until https://github.com/urllib3/urllib3/pull/1665
     return root_logger
 
 

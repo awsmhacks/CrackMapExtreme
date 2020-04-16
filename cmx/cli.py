@@ -81,12 +81,13 @@ def gen_cli_args():
            add_help=False, usage=argparse.SUPPRESS)
 
     parser.add_argument("--threads", type=int, dest="threads", default=100, help=argparse.SUPPRESS)
-    parser.add_argument("--timeout", default=0, type=int, help=argparse.SUPPRESS) # use --timeout 0 for no timeout
-    parser.add_argument("-D","--debug", action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("--timeout", default=0, type=int, help=argparse.SUPPRESS)  # use --timeout 0 for no timeout
+    parser.add_argument("-D", "--debug", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--darrell", action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--rekt", action='store_true', help=argparse.SUPPRESS)
 
-    subparsers = parser.add_subparsers(title='protocols', dest='protocol', help=argparse.SUPPRESS) #suppressing cause it looks cleaner. gonna have to hit the wiki for helps.
+    # suppressing cause it looks cleaner. gonna have to hit the wiki for helps.
+    subparsers = parser.add_subparsers(title='protocols', dest='protocol', help=argparse.SUPPRESS)
 
     std_parser = argparse.ArgumentParser(add_help=False)
     std_parser.add_argument("target", nargs='*', type=str, help="the target IP(s), range(s), CIDR(s), hostname(s), FQDN(s), file(s) containing a list of targets, NMap XML or .Nessus file(s)")
