@@ -45,7 +45,7 @@ CMX_DIR = Path(__file__).parents[0]
 
 WORKSPACE = 'default'
 last_used_db = None
-pwn3d_label = 'Pwn3d!'
+pwn3d_label = 'LocalAdmin!'
 
 #Modify the home directory where everything gets stored
 CMX_HOME = Path.home() / '.cmx'

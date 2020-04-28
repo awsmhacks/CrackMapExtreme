@@ -25,6 +25,7 @@ import argparse
 import time
 import random
 import logging
+import os
 
 from impacket.examples import logger
 from impacket import version
@@ -33,6 +34,7 @@ from impacket.dcerpc.v5.dtypes import NULL
 from impacket.dcerpc.v5.rpcrt import RPC_C_AUTHN_GSS_NEGOTIATE
 
 from cmx.helpers.misc import gen_random_string
+from cmx import config as cfg
 from gevent import sleep
 
 
@@ -75,6 +77,7 @@ class TSCH_EXEC:
 
     def output_callback(self, data):
         self.__outputBuffer = data
+        logging.debug('output_callback data={}'.format(data))
 
     def execute_handler(self, data):
         if self.__retOutput:
@@ -174,6 +177,7 @@ class TSCH_EXEC:
             resp = tsch.hSchRpcGetLastRunInfo(dce, '\\%s' % tmpName)
             if resp['pLastRuntime']['wYear'] != 0:
                 done = True
+                logging.debug('SchRpcGetLastRunInfo is done')
             else:
                 sleep(2)
 
@@ -184,32 +188,48 @@ class TSCH_EXEC:
         if taskCreated is True:
             tsch.hSchRpcDelete(dce, '\\%s' % tmpName)
 
+        dce.disconnect()
+        waitOnce = True
+        logging.debug('start returnoutput')
         if self.__retOutput:
             if fileless:
                 while True:
                     try:
-                        with open(os.path.join('/tmp', 'cmx_hosted', tmpFileName), 'r') as output:
+                        with open(os.path.join(cfg.TMP_PATH, tmpFileName), 'r') as output:
+                            logging.debug('reading output1')
                             self.output_callback(output.read())
+                            logging.debug('reading output2')
                         break
                     except IOError:
-                        sleep(2)
+                        logging.debug('ioerror')
+                        sleep(3)
             else:
                 peer = ':'.join(map(str, self.__rpctransport.get_socket().getpeername()))
                 smbConnection = self.__rpctransport.get_smb_connection()
+                logging.debug('got smbconnection')
                 while True:
                     try:
-                        #logging.info('Attempting to read ADMIN$\\Temp\\%s' % tmpFileName)
                         smbConnection.getFile('ADMIN$', 'Temp\\%s' % tmpFileName, self.output_callback)
+                        logging.debug('get ADMIN')
                         break
                     except Exception as e:
                         if str(e).find('SHARING') > 0:
+                            logging.debug('SHARING fail')
                             sleep(3)
                         elif str(e).find('STATUS_OBJECT_NAME_NOT_FOUND') >= 0:
-                            sleep(3)
+                            logging.debug('STATUS_OBJECT_NAME_NOT_FOUND fail')
+                            if waitOnce is True:
+                                sleep(3)
+                                waitOnce = False
+                                logging.debug('waitOnce fail')
+                            else:
+                                raise
                         else:
                             raise
-                #logging.debug('Deleting file ADMIN$\\Temp\\%s' % tmpFileName)
-                smbConnection.deleteFile('ADMIN$', 'Temp\\%s' % tmpFileName)
 
+                logging.debug('Deleting file ADMIN$\\Temp\\%s' % tmpFileName)
+                smbConnection.deleteFile('ADMIN$', 'Temp\\%s' % tmpFileName)
+    try:
         dce.disconnect()
-        
+    except:
+        pass

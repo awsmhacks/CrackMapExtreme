@@ -110,6 +110,7 @@ class PSEXEC:
 
         rpctransport.set_kerberos(self.__doKerberos, self.__kdcHost)
 
+        #doStuff in impacket
         dce = rpctransport.get_dce_rpc()
         try:
             dce.connect()
@@ -138,7 +139,7 @@ class PSEXEC:
                     logging.critical(str(e))
                     sys.exit(1)
                 installService = serviceinstall.ServiceInstall(rpctransport.get_smb_connection(), f)
-    
+
             if installService.install() is False:
                 return
 
@@ -279,10 +280,11 @@ class Pipes(Thread):
         try:
             lock.acquire()
             global dialect
-            #self.server = SMBConnection('*SMBSERVER', self.transport.get_smb_connection().getRemoteHost(), sess_port = self.port, preferredDialect = SMB_DIALECT)
             self.server = SMBConnection(self.transport.get_smb_connection().getRemoteName(), self.transport.get_smb_connection().getRemoteHost(),
                                         sess_port=self.port, preferredDialect=dialect)
+
             user, passwd, domain, lm, nt, aesKey, TGT, TGS = self.credentials
+
             if self.transport.get_kerberos() is True:
                 self.server.kerberosLogin(user, passwd, domain, lm, nt, aesKey, kdcHost=self.transport.get_kdcHost(), TGT=TGT, TGS=TGS)
             else:
@@ -362,10 +364,11 @@ class RemoteShell(cmd.Cmd):
         self.intro = '[!] Press help for extra shell commands'
 
     def connect_transferClient(self):
-        #self.transferClient = SMBConnection('*SMBSERVER', self.server.getRemoteHost(), sess_port = self.port, preferredDialect = SMB_DIALECT)
         self.transferClient = SMBConnection('*SMBSERVER', self.server.getRemoteHost(), sess_port=self.port,
                                             preferredDialect=dialect)
+
         user, passwd, domain, lm, nt, aesKey, TGT, TGS = self.credentials
+
         if self.transport.get_kerberos() is True:
             self.transferClient.kerberosLogin(user, passwd, domain, lm, nt, aesKey,
                                               kdcHost=self.transport.get_kdcHost(), TGT=TGT, TGS=TGS)
