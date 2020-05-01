@@ -217,7 +217,7 @@ class PSEXEC:
         tries = 50
         while pipeReady is False and tries > 0:
             try:
-                s.waitNamedPipe(tid,pipe)
+                s.waitNamedPipe(tid, pipe)
                 pipeReady = True
             except:
                 tries -= 1
@@ -349,6 +349,31 @@ class RemoteStdErrPipe(Pipes):
                     pass
 
 
+class RemoteStdInPipe(Pipes):
+    def __init__(self, transport, pipe, permisssions, share=None, command=''):
+        self.shell = None
+        self.command = command
+        Pipes.__init__(self, transport, pipe, permisssions, share)
+
+    def run(self):
+        self.connectPipe()
+        self.shell = RemoteShell(self.server, self.port, self.credentials, self.tid, self.fid, self.share, self.transport)
+        #self.shell.cmdloop()
+
+        #store OG stdout
+        a, b, c = sys.stdout, sys.stdin, sys.stderr
+
+        #switch stdout to our 'buffer'
+        buff = open(cfg.TEST_PATH,"w")
+        sys.stdout, sys.stdin, sys.stderr = buff, buff, buff
+
+        self.shell.onecmd(self.command)
+
+        # switch back to normal
+        sys.stdout, sys.stdin, sys.stderr = a, b, c 
+        buff.close()
+
+
 class RemoteShell(cmd.Cmd):
     def __init__(self, server, port, credentials, tid, fid, share, transport):
         cmd.Cmd.__init__(self, False)
@@ -458,28 +483,3 @@ class RemoteShell(cmd.Cmd):
         else:
             LastDataSent = ''
         self.server.writeFile(self.tid, self.fid, data)
-
-
-class RemoteStdInPipe(Pipes):
-    def __init__(self, transport, pipe, permisssions, share=None, command=''):
-        self.shell = None
-        self.command = command
-        Pipes.__init__(self, transport, pipe, permisssions, share)
-
-    def run(self):
-        self.connectPipe()
-        self.shell = RemoteShell(self.server, self.port, self.credentials, self.tid, self.fid, self.share, self.transport)
-        #self.shell.cmdloop()
-
-        #store OG stdout
-        a, b, c = sys.stdout, sys.stdin, sys.stderr
-
-        #switch stdout to our 'buffer'
-        buff = open(cfg.TEST_PATH,"w")
-        sys.stdout, sys.stdin, sys.stderr = buff, buff, buff
-
-        self.shell.onecmd(self.command)
-
-        # switch back to normal
-        sys.stdout, sys.stdin, sys.stderr = a, b, c 
-        buff.close()
