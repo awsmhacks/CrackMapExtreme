@@ -1022,6 +1022,7 @@ class az(connection):
                                                                         'passwordProps' ))
         for app in app_list_json:
             #self.db.add_app(str(app['displayName']), str(app['appId']), str(app['homepage']), str(app['objectId']), str(app['allowGuestsSignIn']), str(app['keyCredentials']), str(app['passwordCredentials']), str(app['wwwHomepage']) )
+            self.db.add_app(app)
             if not self.args.full:
                 self.logger.highlight("{:<35}  |  {:<35}  | {:<9}  |  {:<}".format((app['displayName'][:33] + (app['displayName'][33:] and '..')),
                                                                                   ((app['homepage'][:33] + (app['homepage'][33:] and '..')) if app['homepage'] else ' '),

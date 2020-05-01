@@ -160,17 +160,7 @@ class database:
             "tokenEncryptionKeyId" TEXT,
             "trustedCertificateSubjects" TEXT,
             "verifiedPublisher" TEXT,
-            PRIMARY KEY ("objectId"),
-            CHECK ("allowActAsForAllClients" IN (0, 1)),
-            CHECK ("allowPassthroughUsers" IN (0, 1)),
-            CHECK ("availableToOtherTenants" IN (0, 1)),
-            CHECK ("isDeviceOnlyAuthSupported" IN (0, 1)),
-            CHECK ("oauth2AllowIdTokenImplicitFlow" IN (0, 1)),
-            CHECK ("oauth2AllowImplicitFlow" IN (0, 1)),
-            CHECK ("oauth2AllowUrlPathMatching" IN (0, 1)),
-            CHECK ("oauth2RequirePostResponse" IN (0, 1)),
-            CHECK ("publicClient" IN (0, 1)),
-            CHECK ("supportsConvergence" IN (0, 1))
+            PRIMARY KEY ("objectId")
             )''')
 
         db_conn.execute('''CREATE TABLE "Contacts" (
@@ -683,24 +673,6 @@ class database:
 
 
 
-
-    def add_app(self, DisplayName, appId, homepage, objectId, allowGuestsSignIn, keyCredentials, passwordCredentials, wwwHomepage):
-        """Check if this app has already been added to the database, if not add it in.
-        """
-
-        cur = self.conn.cursor()
-
-        cur.execute('SELECT * FROM apps WHERE appId LIKE ?', [appId])
-        results = cur.fetchall()
-
-        if not len(results):
-            cur.execute("INSERT INTO apps (DisplayName, appId, Homepage, objectId, allowGuestsSignIn, keyCredentials, passwordCredentials, wwwHomepage) VALUES (?,?,?,?,?,?,?,?)", [DisplayName, appId, homepage, objectId, allowGuestsSignIn, keyCredentials, passwordCredentials, wwwHomepage])
-
-        cur.close()
-
-        return cur.lastrowid
-
-
 #    def add_user(self, userObj):
 #        """Check if this user has already been added to the database, if not add them in.
 #
@@ -771,6 +743,25 @@ class database:
         if not len(results):
             #cur.execute("INSERT INTO users (assignedPlans, displayName, mail, mailNickname, objectId, sid, otherMails, telephoneNumber, userPrincipalName) VALUES (?,?,?,?,?,?,?,?,?)", [assignedPlans, displayName, mail, mailNickname, objectId, onPremisesSecurityIdentifier, otherMails, telephoneNumber, userPrincipalName])
             cur.execute('INSERT INTO "Users" ("objectType", "objectId", "deletionTimestamp", "acceptedAs", "acceptedOn", "accountEnabled", "ageGroup", "alternativeSecurityIds", "signInNames", "signInNamesInfo", "appMetadata", "assignedLicenses", "assignedPlans", city, "cloudAudioConferencingProviderInfo", "cloudMSExchRecipientDisplayType", "cloudMSRtcIsSipEnabled", "cloudMSRtcOwnerUrn", "cloudMSRtcPolicyAssignments", "cloudMSRtcPool", "cloudMSRtcServiceAttributes", "cloudRtcUserPolicies", "cloudSecurityIdentifier", "cloudSipLine", "cloudSipProxyAddress", "companyName", "consentProvidedForMinor", country, "createdDateTime", "creationType", department, "dirSyncEnabled", "displayName", "employeeId", "extensionAttribute1", "extensionAttribute2", "extensionAttribute3", "extensionAttribute4", "extensionAttribute5", "extensionAttribute6", "extensionAttribute7", "extensionAttribute8", "extensionAttribute9", "extensionAttribute10", "extensionAttribute11", "extensionAttribute12", "extensionAttribute13", "extensionAttribute14", "extensionAttribute15", "facsimileTelephoneNumber", "givenName", "hasOnPremisesShadow", "immutableId", "invitedAsMail", "invitedOn", "inviteReplyUrl", "inviteResources", "inviteTicket", "isCompromised", "isResourceAccount", "jobTitle", "jrnlProxyAddress", "lastDirSyncTime", "lastPasswordChangeDateTime", "legalAgeGroupClassification", mail, "mailNickname", mobile, "msExchRecipientTypeDetails", "msExchRemoteRecipientType", "msExchMailboxGuid", "netId", "onPremisesDistinguishedName", "onPremisesPasswordChangeTimestamp", "onPremisesSecurityIdentifier", "onPremisesUserPrincipalName", "otherMails", "passwordPolicies", "passwordProfile", "physicalDeliveryOfficeName", "postalCode", "preferredDataLocation", "preferredLanguage", "primarySMTPAddress", "provisionedPlans", "provisioningErrors", "proxyAddresses", "refreshTokensValidFromDateTime", "releaseTrack", "searchableDeviceKey", "selfServePasswordResetData", "shadowAlias", "shadowDisplayName", "shadowLegacyExchangeDN", "shadowMail", "shadowMobile", "shadowOtherMobile", "shadowProxyAddresses", "shadowTargetAddress", "shadowUserPrincipalName", "showInAddressList", "sipProxyAddress", "smtpAddresses", state, "streetAddress", surname, "telephoneNumber", "thumbnailPhoto", "usageLocation", "userPrincipalName", "userState", "userStateChangedOn", "userType", "strongAuthenticationDetail", "windowsInformationProtectionKey") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [ user_id_json.get("objectType", ""), user_id_json.get("objectId", ""), user_id_json.get("deletionTimestamp", ""), user_id_json.get("acceptedAs", ""), user_id_json.get("acceptedOn", ""), user_id_json.get("accountEnabled", ""), user_id_json.get("ageGroup", ""), user_id_json.get("alternativeSecurityIds", ""), json.dumps(user_id_json.get("signInNames", "")),  user_id_json.get("signInNamesInfo", ""), user_id_json.get("appMetadata", ""),  json.dumps(user_id_json.get("assignedLicenses", "")), json.dumps(user_id_json.get("assignedPlans", "")), user_id_json.get("city", ""), user_id_json.get("cloudAudioConferencingProviderInfo", ""), user_id_json.get("cloudMSExchRecipientDisplayType", ""), user_id_json.get("cloudMSRtcIsSipEnabled", ""), user_id_json.get("cloudMSRtcOwnerUrn", ""), user_id_json.get("cloudMSRtcPolicyAssignments", ""), user_id_json.get("cloudMSRtcPool", ""), user_id_json.get("cloudMSRtcServiceAttributes", ""), user_id_json.get("cloudRtcUserPolicies", ""), user_id_json.get("cloudSecurityIdentifier", ""), user_id_json.get("cloudSipLine", ""), user_id_json.get("cloudSipProxyAddress", ""), user_id_json.get("companyName", ""), user_id_json.get("consentProvidedForMinor", ""), user_id_json.get("country", ""), user_id_json.get("createdDateTime", ""), user_id_json.get("creationType", ""), user_id_json.get("department", ""), user_id_json.get("dirSyncEnabled", ""), user_id_json.get("displayName", ""), user_id_json.get("employeeId", ""), user_id_json.get("extensionAttribute1", ""), user_id_json.get("extensionAttribute2", ""), user_id_json.get("extensionAttribute3", ""), user_id_json.get("extensionAttribute4", ""), user_id_json.get("extensionAttribute5", ""), user_id_json.get("extensionAttribute6", ""), user_id_json.get("extensionAttribute7", ""), user_id_json.get("extensionAttribute8", ""), user_id_json.get("extensionAttribute9", ""), user_id_json.get("extensionAttribute10", ""), user_id_json.get("extensionAttribute11", ""), user_id_json.get("extensionAttribute12", ""), user_id_json.get("extensionAttribute13", ""), user_id_json.get("extensionAttribute14", ""), user_id_json.get("extensionAttribute15", ""), user_id_json.get("facsimileTelephoneNumber", ""), user_id_json.get("givenName", ""), user_id_json.get("hasOnPremisesShadow", ""), user_id_json.get("immutableId", ""), user_id_json.get("invitedAsMail", ""), user_id_json.get("invitedOn", ""), user_id_json.get("inviteReplyUrl", ""), user_id_json.get("inviteResources", ""), user_id_json.get("inviteTicket", ""), user_id_json.get("isCompromised", ""), user_id_json.get("isResourceAccount", ""), user_id_json.get("jobTitle", ""), user_id_json.get("jrnlProxyAddress", ""), user_id_json.get("lastDirSyncTime", ""), user_id_json.get("lastPasswordChangeDateTime", ""), user_id_json.get("legalAgeGroupClassification", ""), user_id_json.get("mail", ""), user_id_json.get("mailNickname", ""), user_id_json.get("mobile", ""), user_id_json.get("msExchRecipientTypeDetails", ""), user_id_json.get("msExchRemoteRecipientType", ""), user_id_json.get("msExchMailboxGuid", ""), user_id_json.get("netId", ""), user_id_json.get("onPremisesDistinguishedName", ""), user_id_json.get("onPremisesPasswordChangeTimestamp", ""), user_id_json.get("onPremisesSecurityIdentifier", ""), user_id_json.get("onPremisesUserPrincipalName", ""), json.dumps(user_id_json.get("otherMails", "")), user_id_json.get("passwordPolicies", ""), user_id_json.get("passwordProfile", ""), user_id_json.get("physicalDeliveryOfficeName", ""), user_id_json.get("postalCode", ""), user_id_json.get("preferredDataLocation", ""), user_id_json.get("preferredLanguage", ""), user_id_json.get("primarySMTPAddress", ""), json.dumps(user_id_json.get("provisionedPlans", "")), json.dumps(user_id_json.get("provisioningErrors", "")), json.dumps(user_id_json.get("proxyAddresses", "")), user_id_json.get("refreshTokensValidFromDateTime", ""), user_id_json.get("releaseTrack", ""), user_id_json.get("searchableDeviceKey", ""), user_id_json.get("selfServePasswordResetData", ""), user_id_json.get("shadowAlias", ""), user_id_json.get("shadowDisplayName", ""), user_id_json.get("shadowLegacyExchangeDN", ""), user_id_json.get("shadowMail", ""), user_id_json.get("shadowMobile", ""), user_id_json.get("shadowOtherMobile", ""), user_id_json.get("shadowProxyAddresses", ""), user_id_json.get("shadowTargetAddress", ""), user_id_json.get("shadowUserPrincipalName", ""), user_id_json.get("showInAddressList", ""), user_id_json.get("sipProxyAddress", ""), user_id_json.get("smtpAddresses", ""), user_id_json.get("state", ""), user_id_json.get("streetAddress", ""), user_id_json.get("surname", ""), user_id_json.get("telephoneNumber", ""), user_id_json.get("thumbnailPhoto", ""), user_id_json.get("usageLocation", ""), user_id_json.get("userPrincipalName", ""), user_id_json.get("userState", ""), user_id_json.get("userStateChangedOn", ""), user_id_json.get("userType", ""), user_id_json.get("strongAuthenticationDetail", ""), user_id_json.get("windowsInformationProtectionKey", "") ] )
+        cur.close()
+
+        return cur.lastrowid
+
+
+    def add_app(self, app_json):
+        """Check if this app has already been added to the database, if not add it in.
+        """
+
+        cur = self.conn.cursor()
+
+        objectId = str(app_json['objectId'])
+
+        cur.execute('SELECT * FROM Applications WHERE objectId=?', [objectId])
+        results = cur.fetchall()
+
+        if not len(results):
+            #cur.execute("INSERT INTO apps (DisplayName, appId, Homepage, objectId, allowGuestsSignIn, keyCredentials, passwordCredentials, wwwHomepage) VALUES (?,?,?,?,?,?,?,?)", [DisplayName, appId, homepage, objectId, allowGuestsSignIn, keyCredentials, passwordCredentials, wwwHomepage])
+            cur.execute('INSERT INTO "Applications" ("objectType", "objectId", "deletionTimestamp", "addIns", "allowActAsForAllClients", "allowPassthroughUsers", "appBranding", "appCategory", "appData", "appId", "applicationTemplateId", "appMetadata", "appRoles", "availableToOtherTenants", "displayName", "encryptedMsiApplicationSecret", "errorUrl", "groupMembershipClaims", "homepage", "identifierUris", "informationalUrls", "isDeviceOnlyAuthSupported", "keyCredentials", "knownClientApplications", "logo", "logoUrl", "logoutUrl", "mainLogo", "oauth2AllowIdTokenImplicitFlow", "oauth2AllowImplicitFlow", "oauth2AllowUrlPathMatching", "oauth2Permissions", "oauth2RequirePostResponse", "optionalClaims", "parentalControlSettings", "passwordCredentials", "publicClient", "publisherDomain", "recordConsentConditions", "replyUrls", "requiredResourceAccess", "samlMetadataUrl", "supportsConvergence", "tokenEncryptionKeyId", "trustedCertificateSubjects", "verifiedPublisher") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',[ app_json.get("objectType", ""), app_json.get("objectId", ""), app_json.get("deletionTimestamp", ""), json.dumps(app_json.get("addIns", "")), app_json.get("allowActAsForAllClients", ""), app_json.get("allowPassthroughUsers", ""), app_json.get("appBranding", ""), app_json.get("appCategory", ""), app_json.get("appData", ""), app_json.get("appId", ""), app_json.get("applicationTemplateId", ""), app_json.get("appMetadata", ""), json.dumps(app_json.get("appRoles", "")), app_json.get("availableToOtherTenants", ""), app_json.get("displayName", ""), app_json.get("encryptedMsiApplicationSecret", ""), app_json.get("errorUrl", ""), app_json.get("groupMembershipClaims", ""), app_json.get("homepage", ""), json.dumps(app_json.get("identifierUris", "")), json.dumps(app_json.get("informationalUrls", "")), app_json.get("isDeviceOnlyAuthSupported", ""), json.dumps(app_json.get("keyCredentials", "")), json.dumps(app_json.get("knownClientApplications", "")), app_json.get("logo", ""), app_json.get("logoUrl", ""), app_json.get("logoutUrl", ""), app_json.get("mainLogo", ""), app_json.get("oauth2AllowIdTokenImplicitFlow", ""), app_json.get("oauth2AllowImplicitFlow", ""), app_json.get("oauth2AllowUrlPathMatching", ""), json.dumps(app_json.get("oauth2Permissions", "")), app_json.get("oauth2RequirePostResponse", ""), app_json.get("optionalClaims", ""), json.dumps(app_json.get("parentalControlSettings", "")), json.dumps(app_json.get("passwordCredentials", "")), app_json.get("publicClient", ""), app_json.get("publisherDomain", ""), app_json.get("recordConsentConditions", ""), json.dumps(app_json.get("replyUrls", "")), json.dumps(app_json.get("requiredResourceAccess", "")), app_json.get("samlMetadataUrl", ""), app_json.get("supportsConvergence", ""), app_json.get("tokenEncryptionKeyId", ""), app_json.get("trustedCertificateSubjects", ""), app_json.get("verifiedPublisher", "")])
         cur.close()
 
         return cur.lastrowid
