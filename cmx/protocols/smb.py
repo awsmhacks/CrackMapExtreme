@@ -1333,10 +1333,10 @@ class smb(connection):
     def shares(self): #session error not defined?
         from cmx.protocols.smb.ENUM.hostenum import shares1
         try:
-            shares1(self)
+            perms = shares1(self)
         except:
             pass
-        return
+        return perms
 
 
     def shares2(self):

@@ -104,6 +104,7 @@ class WMIEXEC:
             self.__remoteshell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
 
         except  (Exception, KeyboardInterrupt) as e:
+            logging.debug('here')
             if logging.getLogger().level == logging.DEBUG:
                 import traceback
                 traceback.print_exc()
@@ -127,6 +128,22 @@ class WMIEXEC:
 
         if self.__smbconnection is not None:
             self.__smbconnection.logoff()
+        #self.__dcom.disconnect()   # does this leave a sess up?
+        return self.__outputBuffer
+
+    def execute1(self, command, output=False):
+        self.__retOutput = output
+        if self.__retOutput:
+            self.__smbconnection.setTimeout(100000)
+
+        if self.__killDefender:
+            self.disable_defender()
+
+        #changed this up using new function to execute comands
+        self.__outputBuffer = self.__remoteshell.onecmd(command)
+
+        #if self.__smbconnection is not None:
+        #    self.__smbconnection.logoff()
         #self.__dcom.disconnect()   # does this leave a sess up?
         return self.__outputBuffer
 
