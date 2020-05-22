@@ -65,7 +65,7 @@ class CMXServer(threading.Thread):
 
 
         except Exception as e:
-            errno, message = e.args
+            errno, message = e.args[0], e.args[1]
             if errno == 98 and message == 'Address already in use':
                 logger.error('Error starting HTTP(S) server: the port is already in use, try specifying a diffrent port using --server-port')
             else:

@@ -41,7 +41,7 @@ class CMXSMBServer(threading.Thread):
             
 
         except Exception as e:
-            errno, message = e.args
+            errno, message = e.args[0], e.args[1]
             if errno == 98 and message == 'Address already in use':
                 logger.error('Error starting SMB server on port 445: the port is already in use')
             else:
