@@ -18,6 +18,7 @@
 ####################################################################
 
 from gevent.pool import Pool
+from gevent import Timeout
 from cmx.logger import setup_logger, setup_debug_logger, CMXLogAdapter
 from cmx.helpers.logger import highlight
 from cmx.helpers.misc import identify_target_file
@@ -214,7 +215,7 @@ def main():
         for job in jobs:
             job.join(timeout=args.timeout)
 
-    except (KeyboardInterrupt, gevent.Timeout):
+    except (KeyboardInterrupt, Timeout):
         logging.info("Timed out")
         pass
 

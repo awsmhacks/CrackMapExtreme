@@ -5,7 +5,7 @@ import logging
 from sys import exit
 from impacket import smbserver
 from pathlib import Path
-from impacket.ntlm import compute_lmhash, compute_nthash
+#from impacket.ntlm import compute_lmhash, compute_nthash
 from cmx import config as cfg
 
 
@@ -22,11 +22,11 @@ class CMXSMBServer(threading.Thread):
             if verbose: self.server.setLogFile('')
             
             # password can be a list of passwords, we only gonna make this work if you pass 1 password for now...
-            if password != '':
-                lmhash = compute_lmhash(password[0])
-                nthash = compute_nthash(password[0])
-            else:
-                lmhash, nthash = hashes.split(':')
+            #if password != '':
+            #    lmhash = compute_lmhash(password[0])
+            #    nthash = compute_nthash(password[0])
+            #else:
+            #    lmhash, nthash = hashes.split(':')
             
         # adding credentials if the org has disabled anon smb access
         # this will make wmiexec methods not work, must auth in as the user.
@@ -41,7 +41,7 @@ class CMXSMBServer(threading.Thread):
             
 
         except Exception as e:
-            errno, message = e.args
+            errno, message = e.args[0], e.args[1]
             if errno == 98 and message == 'Address already in use':
                 logger.error('Error starting SMB server on port 445: the port is already in use')
             else:
