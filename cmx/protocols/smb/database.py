@@ -26,8 +26,18 @@ class database:
             "credtype" text,
             "pillaged_from_computerid" integer,
             "da" boolean,
+            "ea" boolean,
+            "bo" boolean,
+            "ao" boolean,
+            "a" boolean,
             FOREIGN KEY(pillaged_from_computerid) REFERENCES computers(id)
             )''')
+        #da - domain admin
+        #ea - enterprise admin
+        #bo - backup operator
+        #ao - account operator
+        #a - -Administrators (group)
+
 
         db_conn.execute('''CREATE TABLE "groups" (
             "id" integer PRIMARY KEY,
@@ -187,7 +197,7 @@ class database:
 
         return user_rowid
 
-
+#prolly changing this to add_priv -- to make it work for all privilege types
     def add_da(self, domain, username):
 
         logging.debug('enter add_da')
