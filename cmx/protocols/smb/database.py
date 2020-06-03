@@ -25,6 +25,7 @@ class database:
             "password" text,
             "credtype" text,
             "pillaged_from_computerid" integer,
+            "da" boolean,
             FOREIGN KEY(pillaged_from_computerid) REFERENCES computers(id)
             )''')
 
@@ -39,8 +40,12 @@ class database:
             "id" integer PRIMARY KEY,
             "userid" integer,
             "computerid" integer,
+            "username" text,
+            "hostname" text,
             FOREIGN KEY(userid) REFERENCES users(id),
-            FOREIGN KEY(computerid) REFERENCES computers(id)
+            FOREIGN KEY(computerid) REFERENCES computers(id),
+            FOREIGN KEY(username) REFERENCES users(username),
+            FOREIGN KEY(hostname) REFERENCES computers(hostname)
             )''')
 
         db_conn.execute('''CREATE TABLE "loggedin_relations" (
@@ -182,6 +187,31 @@ class database:
 
         return user_rowid
 
+
+    def add_da(self, domain, username):
+
+        logging.debug('enter add_da')
+        domain = domain.split('.')[0].upper()
+        user_rowid = None
+        cur = self.conn.cursor()
+
+        cur.execute("SELECT * FROM users WHERE LOWER(domain)=LOWER(?) AND LOWER(username)=LOWER(?)", [domain, username])
+        results = cur.fetchall()
+
+        if len(results):
+            print('found {} and id={}'.format(len(results),results[0][0]))
+            cur.execute("UPDATE users SET da=? WHERE id=?", [True, results[0][0]])
+        else:
+            #user isnt in the DB?
+            logging.debug('user {} isnt in the DB'.format(username))
+
+        cur.close()
+
+        logging.debug('add_da(domain={}, username={}'.format(domain, username))
+
+        return
+
+
     def add_group(self, domain, name):
 
         domain = domain.split('.')[0].upper()
@@ -226,7 +256,9 @@ class database:
         if len(users) and len(hosts):
             for user, host in zip(users, hosts):
                 userid = user[0]
+                username = user[2]
                 hostid = host[0]
+                hostname = host[2]
 
                 #Check to see if we already added this link
                 cur.execute("SELECT * FROM admin_relations WHERE userid=? AND computerid=?", [userid, hostid])
@@ -234,8 +266,10 @@ class database:
 
                 if not len(links):
                     cur.execute("INSERT INTO admin_relations (userid, computerid) VALUES (?,?)", [userid, hostid])
+                    cur.execute("INSERT INTO admin_relations (username, hostname) VALUES (?,?)", [username, hostname])
 
         cur.close()
+        logging.debug('add_admin_user(domain={}, username={}, hostname={})'.format(domain, username, hostname,))
 
     def get_admin_relations(self, userID=None, hostID=None):
 

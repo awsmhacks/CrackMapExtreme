@@ -212,7 +212,7 @@ class smb(connection):
         execgroup.add_argument('--exec-method', choices={"wmiexec", "dcomexec", "smbexec", "atexec", "psexec", "all"}, default='wmiexec', help="method to execute the command. (default: wmiexec)")
         execgroup.add_argument('--force-ps32', action='store_true', help='force the PowerShell command to run in a 32-bit process')
         execgroup.add_argument('--no-output', action='store_true', help='do not retrieve command output')
-        execgroup.add_argument('--kd','-kd', action='store_true', help='Shut down defender before executing command (wmiexec)')
+        execgroup.add_argument('--kd', '-kd', action='store_true', help='Shut down defender before executing command (wmiexec)')
         execegroup = execgroup.add_mutually_exclusive_group()
         execegroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
@@ -228,8 +228,8 @@ class smb(connection):
         reggroup = smb_parser.add_argument_group("Registry Attacks and Enum")
         reggroup.add_argument("-fix-uac", '--fix-uac', action='store_true', help='Sets the proper Keys for remote high-integrity processes')
         reggroup.add_argument("-uac-status", '--uac-status', action='store_true', help='Check Remote UAC Status')
-        reggroup.add_argument("--disable-tamper",'--dt', '-dt', action='store_true', help='Disable Tamper Protection via registry key')
-        reggroup.add_argument("--check-tamper",'--ct', '-ct', action='store_true', help='Disable Tamper Protection via registry key')
+        reggroup.add_argument("--disable-tamper", '--dt', '-dt', action='store_true', help='Disable Tamper Protection via registry key')
+        reggroup.add_argument("--check-tamper", '--ct', '-ct', action='store_true', help='Disable Tamper Protection via registry key')
 
         servicegroup = smb_parser.add_argument_group("Interact with Services")
         servicegroup.add_argument("-start-service", '--start-service', action='store_true', help='not finished')
@@ -252,6 +252,403 @@ class smb(connection):
                                     'hostname': self.hostname
                                     })
         self.options.logger = self.logger
+
+
+
+###############################################################################
+
+        #####  ####### #     # #     # #######  #####  #######
+       #     # #     # ##    # ##    # #       #     #    #
+       #       #     # # #   # # #   # #       #          #
+       #       #     # #  #  # #  #  # #####   #          #
+       #       #     # #   # # #   # # #       #          #
+       #     # #     # #    ## #    ## #       #     #    #
+        #####  ####### #     # #     # #######  #####     #
+
+###############################################################################
+###############################################################################
+#   Connection functions
+#
+#       Sets the self.conn object up
+#
+# This section:
+#   create_conn_obj
+#   create_smbv1_conn
+#   create_smbv3_conn
+#   enum_host_info
+# (fold next line)
+###############################################################################
+
+    def create_conn_obj(self):
+        if self.create_smbv1_conn():
+            return True
+        elif self.create_smbv3_conn():
+            return True
+
+        return False
+
+    def create_smbv1_conn(self):
+        """Setup connection using smbv1."""
+        try:
+            logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
+            logging.debug('using args.port: {}'.format(self.args.port))
+            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port) #, preferredDialect=impacket.smb.SMB_DIALECT)
+        except socket.error as e:
+            if str(e).find('Connection reset by peer') != -1:
+                logging.debug('Connection was reset by target. SMBv1 might be disabled on {}'.format(self.host))
+            elif str(e).find('No route to host') != -1:
+                logging.debug('Could not connect to {}, no route to host. Can you ping it?'.format(self.host))
+            else:
+                logging.debug('Something went wrong, Could not connect to {}:{}, tried smbv1'.format(self.host, self.args.port))
+            return False
+        except Exception as e:
+            logging.debug('Error creating SMBv1 connection to {}: {}'.format(self.host, e))
+            return False
+        logging.debug('Connected using SMBv1 to: {}:{}'.format(self.host, self.args.port))
+        return True
+
+    def create_smbv3_conn(self):
+        """Setup connection using smbv3.
+
+        Used for both SMBv2 and SMBv3
+        """
+        try:
+            logging.debug('Attempting SMBv3 connection to {}'.format(self.host))
+            logging.debug('using args.port: {}'.format(self.args.port))
+            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port)
+        except socket.error as e:
+            if str(e).find('No route to host') != -1:
+                logging.debug('No route to host {}'.format(self.host))
+                self.logger.announce('Could not connect to {}, no route to host. Can you ping it?'.format(self.host))
+            else:
+                logging.debug('Something went wrong, Could not connect to {}:{}, tried smbv3'.format(self.host, self.args.port))
+            return False
+        except Exception as e:
+            logging.debug('Error creating SMBv3 connection to {}: {}'.format(self.host, e))
+            return False
+        logging.debug('Connected using SMBv3 to: {}:{}'.format(self.host, self.args.port))
+        return True
+
+
+    def enum_host_info(self):
+        """Fingerprint host via smb connection.
+
+        Grabs info prior to authentication
+        """
+        self.local_ip = self.conn.getSMBServer().get_socket().getsockname()[0]
+
+        try:
+            self.conn.login('', '')
+            logging.debug("Null login?")
+            self.logger.success('Null login allowed')
+        except impacket.smbconnection.SessionError as e:
+            if "STATUS_ACCESS_DENIED" in str(e):
+                logging.debug("Null login not allowed")
+                pass
+
+        self.domain     = self.conn.getServerDomain()           # OCEAN
+        self.hostname   = self.conn.getServerName()             # WIN7-PC
+        self.server_os  = self.conn.getServerOS()               # WIndows 6.1 Build 7601
+        self.signing    = self.conn.isSigningRequired()         # True/false
+        self.os_arch    = self.get_os_arch()                    # 64
+        self.domain_dns = self.conn.getServerDNSDomainName()    # ocean.depth
+
+        self.logger.hostname = self.hostname
+        dialect = self.conn.getDialect()
+
+        #print (self.conn.getServerDomain())            # OCEAN
+        #print (self.conn.getServerName())              # WIN7-PC
+        #print (self.conn.getServerOS())                # WIndows 6.1 Build 7601
+        #print (self.conn.isSigningRequired())          # True
+        #print (self.get_os_arch())                     # 64
+        #print (self.conn.getDialect())                 # 528
+        #print (self.conn.getRemoteHost())              # IPaddress
+        #print (self.conn.getRemoteName())              # win7-pc
+        #print (self.conn.getServerDNSDomainName())     # ocean.depth
+        #print (self.conn.getServerOSMajor())           # 6
+        #print (self.conn.getServerOSMinor())           # 1
+        #print (self.conn.getServerOSBuild())           # 7601
+        #print (self.conn.doesSupportNTLMv2())          # True
+        #print (self.conn.isLoginRequired())            # True
+
+        if dialect == impacket.smb.SMB_DIALECT:
+            self.smbv = '1'
+            logging.debug("SMBv1 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_002:
+            self.smbv = '2.0'
+            logging.debug("SMBv2.0 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_21:
+            self.smbv = '2.1'
+            logging.debug("SMBv2.1 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_30:
+            self.smbv = '3.0'
+            logging.debug("SMBv3.0 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_302:
+            self.smbv = '3.0.2'
+            logging.debug("SMBv3.0.2 dialect used")
+        elif dialect == impacket.smb3structs.SMB2_DIALECT_311:
+            self.smbv = '3.1.1'
+            logging.debug("SMBv3.1.1 dialect used")
+        else:
+            self.smbv = '??'
+            logging.debug("SMB version couldnt be determined?")
+
+        # Get the DC if we arent local-auth and didnt specify
+        if not self.args.local_auth and self.dc_ip == '':
+            self.dc_ip = self.conn.getServerDNSDomainName()
+
+        if self.args.domain:
+            self.domain = self.args.domain
+
+        if not self.domain:
+            self.domain = self.hostname
+
+        self.db.add_computer(self.host, self.hostname, self.domain, self.server_os)
+
+
+        try:
+            ''' DC's seem to want us to logoff first, windows workstations sometimes reset the connection
+            '''
+            self.conn.logoff()
+        except:
+            pass
+
+        if self.args.local_auth:
+            self.domain = self.hostname
+
+        self.output_filename = '{}/{}_{}_{}'.format(cfg.LOGS_PATH,self.hostname, self.host, datetime.now().strftime("%Y-%m-%d_%H%M%S"))
+        #Re-connect since we logged off
+        self.create_conn_obj()
+
+
+    def check_if_admin(self):
+        """Check for localadmin privs.
+
+        Checked by view all services for sc_manager_all_access
+        Returns:
+            True if localadmin
+            False if not localadmin
+        """
+        try:
+            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\svcctl', smb_connection=self.conn)
+            dce = rpctransport.get_dce_rpc()
+            dce.connect()
+            try:
+                logging.debug('localadmin Binding start')
+                dce.bind(impacket.dcerpc.v5.scmr.MSRPC_UUID_SCMR)
+                try:
+                    # 0xF003F - SC_MANAGER_ALL_ACCESS
+                    # this val comes from https://docs.microsoft.com/en-us/windows/win32/services/service-security-and-access-rights
+                    # https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/scmr.py
+
+                    logging.debug('Verify localadmin via ServicesActive...')
+                    ans = impacket.dcerpc.v5.scmr.hROpenSCManagerW(dce, '{}\x00'.format(self.hostname),'ServicesActive\x00', 0xF003F)
+                    logging.debug('pewpewpewPwned baby')
+                    dce.disconnect()
+                    return True
+                except impacket.dcerpc.v5.rpcrt.DCERPCException:
+                    logging.debug('a {}'.format(str(e)))
+                    dce.disconnect()
+                    pass
+            except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
+                logging.debug('b {}'.format(str(e)))
+                dce.disconnect()
+                return False
+        except Exception:
+            logging.debug('Something went wrong ... Not localadmin :( ')
+            dce.disconnect()
+            return False
+
+        dce.disconnect()
+        return False
+
+###############################################################################
+
+        #       #######  #####  ### #     #
+        #       #     # #     #  #  ##    #
+        #       #     # #        #  # #   #
+        #       #     # #  ####  #  #  #  #
+        #       #     # #     #  #  #   # #
+        #       #     # #     #  #  #    ##
+        ####### #######  #####  ### #     #
+
+###############################################################################
+###############################################################################
+#   Login functions
+#
+# This section:
+#   plaintext_login
+#   hash_login
+# (fold next line)
+###############################################################################
+
+
+    def plaintext_login(self, domain, username, password):
+        """Login using user+password.
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        try:
+            self.conn.login(username, password, domain)
+
+            self.password = password
+            self.username = username
+            self.domain = domain
+            self.admin_privs = self.check_if_admin()
+            self.db.add_credential('plaintext', domain, username, password)
+
+            if self.admin_privs:
+                self.db.add_admin_user('plaintext', domain, username, password, self.host)
+
+            out = '{}\\{}:{} {}'.format(domain,
+                                        username,
+                                        password,
+                                        highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
+
+            self.logger.success(out)
+            if not self.args.continue_on_success:
+                return True
+        except impacket.smbconnection.SessionError as e:
+            error, desc = e.getErrorString()
+            self.logger.error('{}\\{}:{} {} {}'.format(domain,
+                                                       username,
+                                                       password,
+                                                       error,
+                                                       '({})'.format(desc) if self.args.verbose else ''))
+
+            if error == 'STATUS_LOGON_FAILURE': self.inc_failed_login(username)
+
+            return False
+
+
+    def hash_login(self, domain, username, ntlm_hash):
+        """Login using user + Hash.
+
+        Args:
+
+        Raises:
+
+        Returns:
+
+        """
+        lmhash = ''
+        nthash = ''
+
+        #Checks to see if we didn't provide the LM Hash
+        if ntlm_hash.find(':') != -1:
+            lmhash, nthash = ntlm_hash.split(':')
+        else:
+            nthash = ntlm_hash
+
+        try:
+            self.conn.login(username, '', domain, lmhash, nthash)
+
+            self.hash = ntlm_hash
+            if lmhash:
+                self.lmhash = lmhash
+            if nthash:
+                self.nthash = nthash
+
+            self.username = username
+            self.domain = domain
+            self.admin_privs = self.check_if_admin()
+            self.db.add_credential('hash', domain, username, ntlm_hash)
+
+            if self.admin_privs:
+                self.db.add_admin_user('hash', domain, username, ntlm_hash, self.host)
+
+            out = '{}\\{} {} {}'.format(domain,
+                                        username,
+                                        ntlm_hash,
+                                        highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
+
+            self.logger.success(out)
+            if not self.args.continue_on_success:
+                return True
+        except impacket.smbconnection.SessionError as e:
+            error, desc = e.getErrorString()
+            self.logger.error('{}\\{} {} {} {}'.format(domain,
+                                                       username,
+                                                       ntlm_hash,
+                                                       error,
+                                                       '({})'.format(desc) if self.args.verbose else ''))
+
+            if error == 'STATUS_LOGON_FAILURE':
+                self.inc_failed_login(username)
+
+            return False
+
+
+    def kerberosLogin(self, user, password, domain='', ntlm_hash='', aesKey='', kdcHost=None, TGT=None,
+                      TGS=None):
+        """
+        logins into the target system explicitly using Kerberos. Hashes are used if RC4_HMAC is supported.
+
+        :param string user: username
+        :param string password: password for the user
+        :param string domain: domain where the account is valid for (required)
+        :param string lmhash: LMHASH used to authenticate using hashes (password is not used)
+        :param string nthash: NTHASH used to authenticate using hashes (password is not used)
+        :param string aesKey: aes256-cts-hmac-sha1-96 or aes128-cts-hmac-sha1-96 used for Kerberos authentication
+        :param string kdcHost: hostname or IP Address for the KDC. If None, the domain will be used (it needs to resolve tho)
+        :param struct TGT: If there's a TGT available, send the structure here and it will be used
+        :param struct TGS: same for TGS. See smb3.py for the format
+
+        :return: None, raises a Session Error if error.
+        """
+
+        from impacket.krb5.ccache import CCache
+        from impacket.krb5.kerberosv5 import KerberosError
+        from impacket.krb5 import constants
+
+        if kdcHost is None:
+            self._kdcHost = self.dc_ip
+
+        lmhash = ''
+        nthash = ''
+
+        #This checks to see if we didn't provide the LM Hash
+        if ntlm_hash.find(':') != -1:
+            lmhash, nthash = ntlm_hash.split(':')
+        else:
+            nthash = ntlm_hash
+
+
+        if TGT is None and TGS is None:
+            self.logger.error("TGT or TGS required")
+            return False
+
+
+        while True:
+            try:
+                if self.smbv == '1':
+                    return self.conn.kerberos_login(user, password, domain, lmhash, nthash, aesKey, kdcHost,
+                                                              TGT, TGS)
+                return self.conn.kerberosLogin(user, password, domain, lmhash, nthash, aesKey, kdcHost, TGT,
+                                                         TGS)
+            except (smb.SessionError, smb3.SessionError) as e:
+                raise impacket.smbconnection.SessionError(e.get_error_code(), e.get_error_packet())
+            except KerberosError as e:
+                if e.getErrorCode() == constants.ErrorCodes.KDC_ERR_ETYPE_NOSUPP.value:
+                    # We might face this if the target does not support AES
+                    # So, if that's the case we'll force using RC4 by converting
+                    # the password to lm/nt hashes and hope for the best. If that's already
+                    # done, byebye.
+                    if lmhash == '' and nthash == '' and (aesKey == '' or aesKey is None) and TGT is None and TGS is None:
+                        lmhash = compute_lmhash(password)
+                        nthash = compute_nthash(password) 
+                    else:
+                        raise e
+                else:
+                    raise e
+
+
+
 
 
 ###############################################################################
@@ -284,7 +681,8 @@ class smb(connection):
         if self.args.exec_method:
             method = self.args.exec_method
         else:
-            method = 'wmiexec' # 'dcomexec', 'atexec', 'smbexec', 'psexec'
+            # 'wmiexec', 'dcomexec', 'atexec', 'smbexec', 'psexec'
+            method = 'wmiexec'
 
         if not payload:
             payload = self.args.execute
@@ -486,265 +884,7 @@ class smb(connection):
 
 
 
-###############################################################################
 
-        #####  ####### #     # #     # #######  #####  #######
-       #     # #     # ##    # ##    # #       #     #    #
-       #       #     # # #   # # #   # #       #          #
-       #       #     # #  #  # #  #  # #####   #          #
-       #       #     # #   # # #   # # #       #          #
-       #     # #     # #    ## #    ## #       #     #    #
-        #####  ####### #     # #     # #######  #####     #
-
-###############################################################################
-###############################################################################
-#   Connection functions
-#
-#       Sets the self.conn object up
-#
-# This section:
-#   create_smbv1_conn
-#   create_smbv3_conn
-#   create_conn_obj
-# (fold next line)
-###############################################################################
-
-    def create_smbv1_conn(self):
-        """Setup connection using smbv1."""
-        try:
-            logging.debug('Attempting SMBv1 connection to {}'.format(self.host))
-            logging.debug('using args.port: {}'.format(self.args.port))
-            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port) #, preferredDialect=impacket.smb.SMB_DIALECT)
-        except socket.error as e:
-            if str(e).find('Connection reset by peer') != -1:
-                logging.debug('Connection was reset by target. SMBv1 might be disabled on {}'.format(self.host))
-            elif str(e).find('No route to host') != -1:
-                logging.debug('Could not connect to {}, no route to host. Can you ping it?'.format(self.host))
-            else:
-                logging.debug('Something went wrong, Could not connect to {}:{}, tried smbv1'.format(self.host, self.args.port))
-            return False
-        except Exception as e:
-            logging.debug('Error creating SMBv1 connection to {}: {}'.format(self.host, e))
-            return False
-        logging.debug('Connected using SMBv1 to: {}:{}'.format(self.host, self.args.port))
-        return True
-
-    def create_smbv3_conn(self):
-        """Setup connection using smbv3.
-
-        Used for both SMBv2 and SMBv3
-        """
-        try:
-            logging.debug('Attempting SMBv3 connection to {}'.format(self.host))
-            logging.debug('using args.port: {}'.format(self.args.port))
-            self.conn = impacket.smbconnection.SMBConnection(self.host, self.host, None, self.args.port)
-        except socket.error as e:
-            if str(e).find('No route to host') != -1:
-                logging.debug('No route to host {}'.format(self.host))
-                self.logger.announce('Could not connect to {}, no route to host. Can you ping it?'.format(self.host))
-            else:
-                logging.debug('Something went wrong, Could not connect to {}:{}, tried smbv3'.format(self.host, self.args.port))
-            return False
-        except Exception as e:
-            logging.debug('Error creating SMBv3 connection to {}: {}'.format(self.host, e))
-            return False
-        logging.debug('Connected using SMBv3 to: {}:{}'.format(self.host, self.args.port))
-        return True
-
-
-    def create_conn_obj(self):
-        if self.create_smbv1_conn():
-            return True
-        elif self.create_smbv3_conn():
-            return True
-
-        return False
-
-
-###############################################################################
-
-        #       #######  #####  ### #     #
-        #       #     # #     #  #  ##    #
-        #       #     # #        #  # #   #
-        #       #     # #  ####  #  #  #  #
-        #       #     # #     #  #  #   # #
-        #       #     # #     #  #  #    ##
-        ####### #######  #####  ### #     #
-
-###############################################################################
-###############################################################################
-#   Login functions
-#
-# This section:
-#   plaintext_login
-#   hash_login
-# (fold next line)
-###############################################################################
-
-
-    def plaintext_login(self, domain, username, password):
-        """Login using user+password.
-
-        Args:
-
-        Raises:
-
-        Returns:
-
-        """
-        try:
-            self.conn.login(username, password, domain)
-
-            self.password = password
-            self.username = username
-            self.domain = domain
-            self.admin_privs = self.check_if_admin()
-            self.db.add_credential('plaintext', domain, username, password)
-
-            if self.admin_privs:
-                self.db.add_admin_user('plaintext', domain, username, password, self.host)
-
-            out = '{}\\{}:{} {}'.format(domain,
-                                        username,
-                                        password,
-                                        highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
-
-            self.logger.success(out)
-            if not self.args.continue_on_success:
-                return True
-        except impacket.smbconnection.SessionError as e:
-            error, desc = e.getErrorString()
-            self.logger.error('{}\\{}:{} {} {}'.format(domain,
-                                                       username,
-                                                       password,
-                                                       error,
-                                                       '({})'.format(desc) if self.args.verbose else ''))
-
-            if error == 'STATUS_LOGON_FAILURE': self.inc_failed_login(username)
-
-            return False
-
-
-    def hash_login(self, domain, username, ntlm_hash):
-        """Login using user + Hash.
-
-        Args:
-
-        Raises:
-
-        Returns:
-
-        """
-        lmhash = ''
-        nthash = ''
-
-        #Checks to see if we didn't provide the LM Hash
-        if ntlm_hash.find(':') != -1:
-            lmhash, nthash = ntlm_hash.split(':')
-        else:
-            nthash = ntlm_hash
-
-        try:
-            self.conn.login(username, '', domain, lmhash, nthash)
-
-            self.hash = ntlm_hash
-            if lmhash:
-                self.lmhash = lmhash
-            if nthash:
-                self.nthash = nthash
-
-            self.username = username
-            self.domain = domain
-            self.admin_privs = self.check_if_admin()
-            self.db.add_credential('hash', domain, username, ntlm_hash)
-
-            if self.admin_privs:
-                self.db.add_admin_user('hash', domain, username, ntlm_hash, self.host)
-
-            out = '{}\\{} {} {}'.format(domain,
-                                        username,
-                                        ntlm_hash,
-                                        highlight('({})'.format(cfg.pwn3d_label) if self.admin_privs else ''))
-
-            self.logger.success(out)
-            if not self.args.continue_on_success:
-                return True
-        except impacket.smbconnection.SessionError as e:
-            error, desc = e.getErrorString()
-            self.logger.error('{}\\{} {} {} {}'.format(domain,
-                                                       username,
-                                                       ntlm_hash,
-                                                       error,
-                                                       '({})'.format(desc) if self.args.verbose else ''))
-
-            if error == 'STATUS_LOGON_FAILURE':
-                self.inc_failed_login(username)
-
-            return False
-
-
-    def kerberosLogin(self, user, password, domain='', ntlm_hash='', aesKey='', kdcHost=None, TGT=None,
-                      TGS=None):
-        """
-        logins into the target system explicitly using Kerberos. Hashes are used if RC4_HMAC is supported.
-
-        :param string user: username
-        :param string password: password for the user
-        :param string domain: domain where the account is valid for (required)
-        :param string lmhash: LMHASH used to authenticate using hashes (password is not used)
-        :param string nthash: NTHASH used to authenticate using hashes (password is not used)
-        :param string aesKey: aes256-cts-hmac-sha1-96 or aes128-cts-hmac-sha1-96 used for Kerberos authentication
-        :param string kdcHost: hostname or IP Address for the KDC. If None, the domain will be used (it needs to resolve tho)
-        :param struct TGT: If there's a TGT available, send the structure here and it will be used
-        :param struct TGS: same for TGS. See smb3.py for the format
-
-        :return: None, raises a Session Error if error.
-        """
-
-        from impacket.krb5.ccache import CCache
-        from impacket.krb5.kerberosv5 import KerberosError
-        from impacket.krb5 import constants
-
-        if kdcHost is None:
-            self._kdcHost = self.dc_ip
-
-        lmhash = ''
-        nthash = ''
-
-        #This checks to see if we didn't provide the LM Hash
-        if ntlm_hash.find(':') != -1:
-            lmhash, nthash = ntlm_hash.split(':')
-        else:
-            nthash = ntlm_hash
-
-
-        if TGT is None and TGS is None:
-            self.logger.error("TGT or TGS required")
-            return False
-
-
-        while True:
-            try:
-                if self.smbv == '1':
-                    return self.conn.kerberos_login(user, password, domain, lmhash, nthash, aesKey, kdcHost,
-                                                              TGT, TGS)
-                return self.conn.kerberosLogin(user, password, domain, lmhash, nthash, aesKey, kdcHost, TGT,
-                                                         TGS)
-            except (smb.SessionError, smb3.SessionError) as e:
-                raise impacket.smbconnection.SessionError(e.get_error_code(), e.get_error_packet())
-            except KerberosError as e:
-                if e.getErrorCode() == constants.ErrorCodes.KDC_ERR_ETYPE_NOSUPP.value:
-                    # We might face this if the target does not support AES
-                    # So, if that's the case we'll force using RC4 by converting
-                    # the password to lm/nt hashes and hope for the best. If that's already
-                    # done, byebye.
-                    if lmhash == '' and nthash == '' and (aesKey == '' or aesKey is None) and TGT is None and TGS is None:
-                        lmhash = compute_lmhash(password)
-                        nthash = compute_nthash(password) 
-                    else:
-                        raise e
-                else:
-                    raise e
 
 ###############################################################################
 
@@ -916,6 +1056,9 @@ class smb(connection):
 
         return
 
+
+
+
 ###############################################################################
 
          #####  ####### ######  #     # ###  #####  #######  #####
@@ -931,8 +1074,8 @@ class smb(connection):
 #   Do stuff with services
 #
 # This section:
-#   wmi
-#   dualhome
+#
+#
 #
 # (fold next line)
 ###############################################################################
@@ -1166,7 +1309,7 @@ class smb(connection):
 #    Host Enum Functions
 #
 # This section:
-#   enum_host_info
+#
 #   disks
 #   sessions
 #   loggedon
@@ -1176,97 +1319,6 @@ class smb(connection):
 #   spider
 # (fold next line)
 ####################################################################################
-
-    def enum_host_info(self):
-        """Fingerprint host via smb connection.
-
-        Grabs info prior to unauthenticated
-        """
-        self.local_ip = self.conn.getSMBServer().get_socket().getsockname()[0]
-
-        try:
-            self.conn.login('', '')
-            logging.debug("Null login?")
-            self.logger.success('Null login allowed')
-        except impacket.smbconnection.SessionError as e:
-            if "STATUS_ACCESS_DENIED" in str(e):
-                logging.debug("Null login not allowed")
-                pass
-
-        self.domain     = self.conn.getServerDomain()           # OCEAN
-        self.hostname   = self.conn.getServerName()             # WIN7-PC
-        self.server_os  = self.conn.getServerOS()               # WIndows 6.1 Build 7601
-        self.signing    = self.conn.isSigningRequired()         # True/false
-        self.os_arch    = self.get_os_arch()                    # 64
-        self.domain_dns = self.conn.getServerDNSDomainName()    # ocean.depth
-
-        self.logger.hostname = self.hostname
-        dialect = self.conn.getDialect()
-
-        #print (self.conn.getServerDomain())            # OCEAN
-        #print (self.conn.getServerName())              # WIN7-PC
-        #print (self.conn.getServerOS())                # WIndows 6.1 Build 7601
-        #print (self.conn.isSigningRequired())          # True
-        #print (self.get_os_arch())                     # 64
-        #print (self.conn.getDialect())                 # 528
-        #print (self.conn.getRemoteHost())              # IPaddress
-        #print (self.conn.getRemoteName())              # win7-pc
-        #print (self.conn.getServerDNSDomainName())     # ocean.depth
-        #print (self.conn.getServerOSMajor())           # 6
-        #print (self.conn.getServerOSMinor())           # 1
-        #print (self.conn.getServerOSBuild())           # 7601
-        #print (self.conn.doesSupportNTLMv2())          # True
-        #print (self.conn.isLoginRequired())            # True
-
-        if dialect == impacket.smb.SMB_DIALECT:
-            self.smbv = '1'
-            logging.debug("SMBv1 dialect used")
-        elif dialect == impacket.smb3structs.SMB2_DIALECT_002:
-            self.smbv = '2.0'
-            logging.debug("SMBv2.0 dialect used")
-        elif dialect == impacket.smb3structs.SMB2_DIALECT_21:
-            self.smbv = '2.1'
-            logging.debug("SMBv2.1 dialect used")
-        elif dialect == impacket.smb3structs.SMB2_DIALECT_30:
-            self.smbv = '3.0'
-            logging.debug("SMBv3.0 dialect used")
-        elif dialect == impacket.smb3structs.SMB2_DIALECT_302:
-            self.smbv = '3.0.2'
-            logging.debug("SMBv3.0.2 dialect used")
-        elif dialect == impacket.smb3structs.SMB2_DIALECT_311:
-            self.smbv = '3.1.1'
-            logging.debug("SMBv3.1.1 dialect used")
-        else:
-            self.smbv = '??'
-            logging.debug("SMB version couldnt be determined?")
-
-        # Get the DC if we arent local-auth and didnt specify
-        if not self.args.local_auth and self.dc_ip == '':
-            self.dc_ip = self.conn.getServerDNSDomainName()
-
-        if self.args.domain:
-            self.domain = self.args.domain
-
-        if not self.domain:
-            self.domain = self.hostname
-
-        self.db.add_computer(self.host, self.hostname, self.domain, self.server_os)
-
-
-        try:
-            ''' DC's seem to want us to logoff first, windows workstations sometimes reset the connection
-            '''
-            self.conn.logoff()
-        except:
-            pass
-
-        if self.args.local_auth:
-            self.domain = self.hostname
-
-        self.output_filename = '{}/{}_{}_{}'.format(cfg.LOGS_PATH,self.hostname, self.host, datetime.now().strftime("%Y-%m-%d_%H%M%S"))
-        #Re-connect since we logged off
-        self.create_conn_obj()
-
 
 
     def disks(self):
@@ -1466,6 +1518,15 @@ class smb(connection):
     def pass_pol(self):
         """Grab domain password policy."""
         return PassPolDump(self).dump()
+
+    @requires_dc
+    def find_da(self):
+        from cmx.protocols.smb.ENUM.domainenum import find_da1
+        try:
+            find_da1(self)
+        except:
+            pass
+        return
 
 
 
@@ -1735,6 +1796,7 @@ class smb(connection):
         return set(credentials)
 
 
+
 ####################################################################################
 ####################################################################################
 
@@ -1800,47 +1862,6 @@ class smb(connection):
 
         return 64
 
-
-    def check_if_admin(self):
-        """Check for localadmin privs.
-
-        Checked by view all services for sc_manager_all_access
-        Returns:
-            True if localadmin
-            False if not localadmin
-        """
-        try:
-            rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.host, 445, r'\svcctl', smb_connection=self.conn)
-            dce = rpctransport.get_dce_rpc()
-            dce.connect()
-            try:
-                logging.debug('localadmin Binding start')
-                dce.bind(impacket.dcerpc.v5.scmr.MSRPC_UUID_SCMR)
-                try:
-                    # 0xF003F - SC_MANAGER_ALL_ACCESS
-                    # this val comes from https://docs.microsoft.com/en-us/windows/win32/services/service-security-and-access-rights
-                    # https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/scmr.py
-
-                    logging.debug('Verify localadmin via ServicesActive...')
-                    ans = impacket.dcerpc.v5.scmr.hROpenSCManagerW(dce, '{}\x00'.format(self.hostname),'ServicesActive\x00', 0xF003F)
-                    logging.debug('pewpewpewPwned baby')
-                    dce.disconnect()
-                    return True
-                except impacket.dcerpc.v5.rpcrt.DCERPCException:
-                    logging.debug('a {}'.format(str(e)))
-                    dce.disconnect()
-                    pass
-            except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
-                logging.debug('b {}'.format(str(e)))
-                dce.disconnect()
-                return False
-        except Exception:
-            logging.debug('Something went wrong ... Not localadmin :( ')
-            dce.disconnect()
-            return False
-
-        dce.disconnect()
-        return False
 
 
     def enable_remoteops(self):

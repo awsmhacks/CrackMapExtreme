@@ -255,8 +255,6 @@ def group1_full(smb):
                         if self.debug:
                             info.dump()
 
-                        #self.logger.results('Groupname: {:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
-                        #print('')
                         self.logger.highlight('{:<30}  membercount: {}'.format(group['Name'], info['Buffer']['General']['MemberCount']))
                         groupLog += '{:<30}  membercount: {}\n'.format(group['Name'], info['Buffer']['General']['MemberCount'])
 
@@ -274,6 +272,9 @@ def group1_full(smb):
                                 guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 self.logger.highlight('     {}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
                                 groupLog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
+
+                                if group['Name'] == 'Domain Admins':
+                                    self.db.add_da(self.domain, guser['Buffer']['All']['UserName'])
 
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
@@ -778,6 +779,182 @@ def group2(smb):
         self.logger.announce("Saved Group Members output to {}/{}".format(cfg.LOGS_PATH,log_name))
 
     #self.logger.announce('Finished Group Enum')
+    return
+
+
+def find_da1(smb):
+    """Enum Domain Computers.
+
+    Prints output and adds them to cmxdb
+    """
+    comps = ''
+    self = smb
+    #self.logger.announce('Starting Domain Computers Enum')
+    if self.args.save:
+        filename = "{}-computers.txt".format(self.domain)
+        savefile = open(filename,"w")
+
+    try:
+        rpctransport = impacket.dcerpc.v5.transport.SMBTransport(self.dc_ip, 445, r'\samr', username=self.username, password=self.password) #domain=self.domain
+        dce = rpctransport.get_dce_rpc()
+        dce.connect()
+        try:
+            logging.debug('NetUsers Binding start')
+            dce.bind(impacket.dcerpc.v5.samr.MSRPC_UUID_SAMR)
+            try:
+                logging.debug('Connect w/ hSamrConnect...')
+                resp = impacket.dcerpc.v5.samr.hSamrConnect(dce)
+                logging.debug('Dump of hSamrConnect response:')
+                if self.debug:
+                    resp.dump()
+                serverHandle = resp['ServerHandle']
+
+                self.logger.debug('Looking up domain name(s)')
+                resp2 = impacket.dcerpc.v5.samr.hSamrEnumerateDomainsInSamServer(dce, serverHandle)
+                logging.debug('Dump of hSamrEnumerateDomainsInSamServer response:')
+                if self.debug:
+                    resp2.dump()
+
+                domains = resp2['Buffer']['Buffer']
+                tmpdomain = domains[0]['Name']
+
+                self.logger.debug('Looking up domain:' + domains[0]['Name'])
+                resp = impacket.dcerpc.v5.samr.hSamrLookupDomainInSamServer(dce, serverHandle, domains[0]['Name'])
+                logging.debug('Dump of hSamrLookupDomainInSamServer response:')
+                if self.debug:
+                    resp.dump()
+
+                resp = impacket.dcerpc.v5.samr.hSamrOpenDomain(dce, serverHandle=serverHandle, domainId = resp['DomainId'])
+                logging.debug('Dump of hSamrOpenDomain response:')
+                if self.debug:
+                    resp.dump()
+
+                domainHandle = resp['DomainHandle']
+
+                status = impacket.nt_errors.STATUS_MORE_ENTRIES
+                enumerationContext = 0
+
+                while status == impacket.nt_errors.STATUS_MORE_ENTRIES:
+                    try:
+                        #need one for workstations and second gets the DomainControllers
+                        respComps = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, impacket.dcerpc.v5.samr.USER_WORKSTATION_TRUST_ACCOUNT, enumerationContext=enumerationContext)
+                        respServs = impacket.dcerpc.v5.samr.hSamrEnumerateUsersInDomain(dce, domainHandle, impacket.dcerpc.v5.samr.USER_SERVER_TRUST_ACCOUNT, enumerationContext=enumerationContext)
+
+                        logging.debug('Dump of hSamrEnumerateUsersInDomain Comps response:')
+                        if self.debug:
+                            respComps.dump()
+                        logging.debug('Dump of hSamrEnumerateUsersInDomain Servs response:')
+                        if self.debug:
+                            respServs.dump()
+
+                    except impacket.dcerpc.v5.rpcrt.DCERPCException as e:
+                        if str(e).find('STATUS_MORE_ENTRIES') < 0:
+                            raise
+                        resp = e.get_packet()
+
+
+                    self.logger.success('Domain Controllers enumerated')
+                    self.logger.highlight("      {} Domain Controllers".format(tmpdomain))
+                    comps += 'Domain Controllers  \n'
+
+                    for user in respServs['Buffer']['Buffer']:
+                        #servers
+                        r = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, user['RelativeId'])
+                        logging.debug('Dump of hSamrOpenUser response:')
+                        if self.debug:
+                            r.dump()
+
+                        # r has the clases defined here:
+                            #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+
+                        self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                        comps += '{:<23} rid: {} \n'.format(user['Name'], user['RelativeId'])
+
+                        #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
+                        self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain, dc='Yes')
+                        if self.args.save:
+                            savefile.write("{}\n".format(user['Name']))
+
+                        info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
+                        logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                        if self.debug:
+                            info.dump()
+                        impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
+
+
+                    print('')
+                    self.logger.success('Domain Computers enumerated')
+                    self.logger.highlight("      {} Domain Computer Accounts".format(tmpdomain))
+                    comps += '\nDomain Computers \n'
+
+
+                    for user in respComps['Buffer']['Buffer']:
+                        #workstations
+                        r = impacket.dcerpc.v5.samr.hSamrOpenUser(dce, domainHandle, impacket.dcerpc.v5.samr.MAXIMUM_ALLOWED, user['RelativeId'])
+                        logging.debug('Dump of hSamrOpenUser response:')
+                        if self.debug:
+                            r.dump()
+
+                        # r has the clases defined here:
+                            #https://github.com/SecureAuthCorp/impacket/impacket/dcerpc/v5/samr.py #2.2.7.29 SAMPR_USER_INFO_BUFFER
+
+                        #self.logger.results('Computername: {:<25}  rid: {}'.format(user['Name'], user['RelativeId']))
+                        self.logger.highlight('{:<23} rid: {}'.format(user['Name'], user['RelativeId']))
+                        comps += '{:<23} rid: {}\n'.format(user['Name'], user['RelativeId'])
+
+                        #def add_computer(self, ip='', hostname='', domain=None, os='', dc='No'):
+                        self.db.add_computer(hostname=user['Name'][:-1], domain=tmpdomain)
+                        if self.args.save:
+                            savefile.write("{}\n".format(user['Name']))
+
+                        info = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, r['UserHandle'],impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
+                        logging.debug('Dump of hSamrQueryInformationUser2 response:')
+                        if self.debug:
+                            info.dump()
+                        impacket.dcerpc.v5.samr.hSamrCloseHandle(dce, r['UserHandle'])
+
+
+                    enumerationContext = respComps['EnumerationContext']
+                    status = respComps['ErrorCode']
+
+            except Exception as e: #failed function
+                logging.debug('failed function {}'.format(str(e)))
+                self.logger.error('Failed to enum Domain Computers')
+                dce.disconnect()
+                return
+        except Exception as e: #failed bind
+            logging.debug('failed bind {}'.format(str(e)))
+            dce.disconnect()
+            return
+    except Exception as e: #failed connect
+        logging.debug('failed connect in computers1.a {}'.format(str(e)))
+        self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
+        self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        try:
+            dce.disconnect()
+        except:
+            logging.debug('failed disconnect in computers')
+            pass
+        return
+
+    if self.args.save: 
+        savefile.close()
+        self.logger.success("Computers saved to: {}".format(filename))
+
+    try:
+        dce.disconnect()
+    except:
+        self.logging.error('Failed dce disconnect during computers')
+        pass
+
+    if self.args.logs:
+        ctime = datetime.now().strftime("%b.%d.%y_at_%H%M")
+        log_name = 'Domain_Computers_of_{}_on_{}.log'.format(tmpdomain, ctime)
+        write_log(str(comps), log_name)
+        self.logger.announce("Saved Domain Computers output to {}/{}".format(cfg.LOGS_PATH,log_name))
+
+    #self.logger.announce('Finished Domain Computer Enum')
     return
 
 

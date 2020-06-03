@@ -105,6 +105,7 @@ class connection(object):
     def hash_login(self, domain, username, ntlm_hash):
         return
 
+
     def proto_flow(self):
         """ Program flow of cmx """ 
         self.proto_logger()
@@ -116,6 +117,7 @@ class connection(object):
                 self.call_modules()
             else:
                 self.call_cmd_args()
+
 
     def call_cmd_args(self):
         for k, v in list(vars(self.args).items()):
