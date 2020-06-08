@@ -27,16 +27,27 @@ class database:
             "pillaged_from_computerid" integer,
             "da" boolean,
             "ea" boolean,
-            "bo" boolean,
-            "ao" boolean,
             "a" boolean,
+            "sa" boolean,
+            "bo" boolean,
+            "po" boolean,
+            "so" boolean,
+            "ao" boolean,
+            "dns" boolean,
+            "gpo" boolean,
             FOREIGN KEY(pillaged_from_computerid) REFERENCES computers(id)
             )''')
         #da - domain admin
         #ea - enterprise admin
-        #bo - backup operator
-        #ao - account operator
-        #a - -Administrators (group)
+        #a  - Administrators (group)
+        #sa - schema admin
+        #bo - backup operators
+        #po - print operators
+        #so - server operators
+        #ao - account operators
+        #dns - DNSAdmins
+        #gpo - Group Policy Creator Owners
+
 
 
         db_conn.execute('''CREATE TABLE "groups" (
@@ -204,20 +215,40 @@ class database:
         domain = domain.split('.')[0].upper()
         user_rowid = None
         cur = self.conn.cursor()
-
         cur.execute("SELECT * FROM users WHERE LOWER(domain)=LOWER(?) AND LOWER(username)=LOWER(?)", [domain, username])
         results = cur.fetchall()
-
         if len(results):
             print('found {} and id={}'.format(len(results),results[0][0]))
             cur.execute("UPDATE users SET da=? WHERE id=?", [True, results[0][0]])
         else:
             #user isnt in the DB?
             logging.debug('user {} isnt in the DB'.format(username))
+        cur.close()
+        logging.debug('add_da(domain={}, username={}'.format(domain, username))
+        return
+
+
+    def add_priv(self, domain, username, privilege):
+
+        #priv can be = "da", "ea", "bo", "ao", "a"
+        logging.debug('enter add_priv')
+        domain = domain.split('.')[0].upper()
+        cur = self.conn.cursor()
+        cur.execute("SELECT * FROM users WHERE LOWER(domain)=LOWER(?) AND LOWER(username)=LOWER(?)", [domain, username])
+        results = cur.fetchall()
+
+        query = 'UPDATE users SET {}=? WHERE id=?'.format(privilege)
+
+        if len(results):
+            logging.debug('found user with id={}, adding priv {}'.format(results[0][0], privilege))
+
+            cur.execute(query, [True, results[0][0]])
+        else:
+            #user isnt in the DB?
+            logging.debug('user {} isnt in the DB'.format(username))
 
         cur.close()
-
-        logging.debug('add_da(domain={}, username={}'.format(domain, username))
+        logging.debug('add_priv(domain={}, username={}, priv={}'.format(domain, username, privilege))
 
         return
 

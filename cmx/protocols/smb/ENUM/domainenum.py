@@ -272,9 +272,30 @@ def group1_full(smb):
                                 guser = impacket.dcerpc.v5.samr.hSamrQueryInformationUser2(dce, m['UserHandle'], impacket.dcerpc.v5.samr.USER_INFORMATION_CLASS.UserAllInformation)
                                 self.logger.highlight('     {}\\{:<30}  '.format(tmpdomain, guser['Buffer']['All']['UserName']))
                                 groupLog += '{}\\{:<30}  \n'.format(tmpdomain, guser['Buffer']['All']['UserName'])
+                                self.db.add_user(self.domain, guser['Buffer']['All']['UserName'])
 
+                                #if group['Name'] == 'Domain Admins':
+                                #    self.db.add_da(self.domain, guser['Buffer']['All']['UserName'])
                                 if group['Name'] == 'Domain Admins':
-                                    self.db.add_da(self.domain, guser['Buffer']['All']['UserName'])
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'da')
+                                if group['Name'] == 'Enterprise Admins':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'ea')
+                                if group['Name'] == 'Administrators':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'a')
+                                if group['Name'] == 'Schema Admins':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'sa')
+                                if group['Name'] == 'Backup Operators':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'bo')
+                                if group['Name'] == 'Print Operators':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'po')
+                                if group['Name'] == 'Server Operators':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'so')
+                                if group['Name'] == 'Account Operators':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'ao')
+                                if group['Name'] == 'DNSAdmins':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'dns')
+                                if group['Name'] == 'Group Policy Creator Owners':
+                                    self.db.add_priv(self.domain, guser['Buffer']['All']['UserName'], 'gpo')
 
                                 logging.debug('Dump of hSamrQueryInformationUser2 response:')
                                 if self.debug:
@@ -303,7 +324,7 @@ def group1_full(smb):
         logging.debug('failed connect in group1.a {}'.format(str(e)))
         self.logger.error('Failed to identify the domain controller for {} Can you ping it?'.format(self.domain))
         self.logger.error('    Try adding the switch -dc ip.ad.dr.es  with a known DC')
-        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s)')
+        self.logger.error('    or ensure your /etc/resolv.conf file includes target DC(s) at the top of the list')
         try:
             dce.disconnect()
         except:
