@@ -107,8 +107,11 @@ class connection(object):
 
 
     def proto_flow(self):
-        """ Program flow of cmx """ 
+        """ Program flow of cmx """
         self.proto_logger()
+        if self.args.admins == True:
+            self.call_cmd_args()
+            return
         if self.create_conn_obj():    # calls the create_conn_object method of the protocol class we are in     
             self.enum_host_info()
             self.print_host_info()

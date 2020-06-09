@@ -529,3 +529,16 @@ class database:
         cur.close()
         logging.debug('get_groups(filterTerm={}, groupName={}, groupDomain={}) => {}'.format(filterTerm, groupName, groupDomain, results))
         return results
+
+    def get_admin(self, privilege):
+        """
+        Return privileged users from the DB
+        """
+        cur = self.conn.cursor()
+        query = 'SELECT * FROM users WHERE {}=True'.format(privilege)
+
+        cur.execute(query)
+        results = cur.fetchall()
+        cur.close()
+
+        return results

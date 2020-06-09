@@ -237,6 +237,8 @@ class smb(connection):
 
         smb_parser.add_argument('--save', action='store_true', help='Saves names to a file in current directory when doing user or computer enum')
 
+        smb_parser.add_argument('-admins', '--admins', action='store_true', help='List out privileged users discovered')
+
         return parser
 
 
@@ -280,6 +282,7 @@ class smb(connection):
 ###############################################################################
 
     def create_conn_obj(self):
+
         if self.create_smbv1_conn():
             return True
         elif self.create_smbv3_conn():
@@ -1340,8 +1343,14 @@ class smb(connection):
 
     def loggedon(self):
         from cmx.protocols.smb.ENUM.hostenum import loggedon1
+        priv_list = self.admin_list()
+        priv_users = []
+
+        for user in priv_list:
+            priv_users.append(user[1] + '\\' + user[2])
+
         try:
-            loggedon1(self)
+            loggedon1(self, priv_users)
         except:
             pass
         return
@@ -1938,6 +1947,126 @@ class smb(connection):
                         relay_list.write(self.host + '\n')
 
 
+    def admins(self):
+        self.logger.success("Pulling Privileged Users from the DB")
+        results = self.db.get_admin('ea')
+        if len(results):
+            self.logger.highlight('Enterprise Admins')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('da')
+        if len(results):
+            self.logger.highlight('Domain Admins')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('a')
+        if len(results):
+            self.logger.highlight('Administrators')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('sa')
+        if len(results):
+            self.logger.highlight('Schema Admins')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('bo')
+        if len(results):
+            self.logger.highlight('Backup Operators')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('po')
+        if len(results):
+            self.logger.highlight('Print Operators')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('so')
+        if len(results):
+            self.logger.highlight('Server Operators')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('ao')
+        if len(results):
+            self.logger.highlight('Account Operators')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('dns')
+        if len(results):
+            self.logger.highlight('DNSAdmins')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+        results = self.db.get_admin('gpo')
+        if len(results):
+            self.logger.highlight('Group Policy Creator Owners')
+            for user in results:
+                self.logger.highlight('    {}\\{}'.format(user[1],user[2]))
+
+
+
+    def admin_list(self):
+        """Returns a set containing all privileged users"""
+        ad_list = set()
+        results = self.db.get_admin('ea')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('da')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('a')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('sa')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('bo')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('po')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('so')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('ao')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('dns')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        results = self.db.get_admin('gpo')
+        if len(results):
+            for user in results:
+                ad_list.add(user)
+
+        return ad_list
+
+
 ###############################################################################
 ###############################################################################
 
@@ -2068,6 +2197,9 @@ class smb(connection):
 
         self.args.group = 'Domain Admins'
         self.group()
+        time.sleep(1)
+
+        self.groups_full()
         time.sleep(1)
 
         print('')

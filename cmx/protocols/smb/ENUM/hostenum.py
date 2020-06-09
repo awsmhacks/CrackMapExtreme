@@ -151,7 +151,7 @@ def sessions1(smb):
     return
 
 
-def loggedon1(smb):
+def loggedon1(smb, priv_user_set):
     """Enumerate Loggedon users.
 
     I think it requires localadmin, but handles if it doesnt work.
@@ -172,12 +172,20 @@ def loggedon1(smb):
                 logging.debug('Get loggedonUsers via hNetrWkstaUserEnum...')
                 #self.logger.announce('Attempting to enum loggedon users...')
                 resp = impacket.dcerpc.v5.wkst.hNetrWkstaUserEnum(dce, 1)   # theres a version that takes 0, not sure the difference?
-                self.logger.success('Loggedon-Users enumerated on {} !'.format(self.host))
+                if self.debug:
+                    resp.dump()
+
+                self.logger.success('Loggedon-Users enumerated on {} !\n'.format(self.host))
 
                 for wksta_user in resp['UserInfo']['WkstaUserInfo']['Level1']['Buffer']:
                     wkst_username = wksta_user['wkui1_username'][:-1] # These are defined in https://github.com/SecureAuthCorp/impacket/blob/master/impacket/dcerpc/v5/wkst.py#WKSTA_USER_INFO_1
+                    wkst_domain = wksta_user['wkui1_logon_domain'][:-1]
+                    domuser = wkst_domain + '\\' + wkst_username
+
                     #self.logger.results('User:{} is currently logged on {}'.format(wkst_username,self.host))
-                    self.logger.highlight("{} is currently logged on {} ({})".format(wkst_username, self.host, self.hostname))
+                    self.logger.highlight("{}\\{} is currently logged on {} ({})".format(wkst_domain, wkst_username, self.host, self.hostname))
+                    if domuser in priv_user_set:
+                        self.logger.success("{}\\{} is a privileged domain user! Check --admins output for more info\n".format(wkst_domain, wkst_username))
                     enumlog += "{} is currently logged on {} ({})  \n".format(wkst_username, self.host, self.hostname)
 
             except Exception as e: #failed function
