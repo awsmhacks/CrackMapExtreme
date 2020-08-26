@@ -4,6 +4,7 @@ azure-cli==2.0.77
 certifi==2019.6.16
 cffi==1.12.3
 chardet==3.0.4
+cchardet==2.1.6
 Click==7.0
 colorama==0.4.1
 cryptography==2.8

@@ -73,3 +73,5 @@ target/
 
 .vs
 .vs/
+
+*.DS_Store
