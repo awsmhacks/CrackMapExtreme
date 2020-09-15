@@ -68,6 +68,8 @@ PS_PATH = DATA_PATH / 'powershell_scripts'
 
 PROC_PATH = CMX_HOME / 'procdump64.exe'
 DUMP_PATH = 'safe.dmp'
+DUMP_BIN = 'safety.bin'
+DUMP_VBS = PS_PATH / 'dumper.vbs'
 
 AZ_PATH = CMX_HOME / 'azure'
 AZ_CONFIG_PATH = AZ_PATH / 'configdone.txt'

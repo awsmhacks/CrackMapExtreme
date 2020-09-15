@@ -18,7 +18,7 @@ class CMXModule:
 
     name = 'mimikatz'
     description = "Dumps all logon credentials from memory"
-    supported_protocols = ['smb']
+    supported_protocols = ['smb','wmi']
     opsec_safe = True
     multiple_hosts = True
 

@@ -119,7 +119,7 @@ class SMBEXEC:
 
         s = self.__rpctransport.get_smb_connection()
         # We don't wanna deal with timeouts from now on.
-        s.setTimeout(100000)
+        s.setTimeout(900)
 
         self.__scmr.bind(scmr.MSRPC_UUID_SCMR)
         resp = scmr.hROpenSCManagerW(self.__scmr)

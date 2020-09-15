@@ -129,7 +129,7 @@ class PSEXEC:
             s = rpctransport.get_smb_connection()
 
             # We don't wanna deal with timeouts from now on.
-            s.setTimeout(100000)
+            s.setTimeout(900)
             if self.__exeFile is None:
                 installService = serviceinstall.ServiceInstall(rpctransport.get_smb_connection(), remcomsvc.RemComSvc(), self.__serviceName)
             else:

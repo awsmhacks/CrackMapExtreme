@@ -87,9 +87,10 @@ class wmi(connection):
         
         egroup = wmi_parser.add_argument_group("Mapping/Enumeration", "Options for Mapping/Enumerating")
         egroup.add_argument("--query", metavar='QUERY', type=str, help='issues the specified WMI query')
-        egroup.add_argument("--execute", metavar='EXECUTE', type=str, help='creates a new cmd.exe /c process and executes the specified command with output')
         egroup.add_argument("--namespace", metavar='NAMESPACE', type=str, default='root\\cimv2', help='WMI Namespace (default: root\\cimv2)')
-        
+        egroup.add_argument("-x", metavar="COMMAND", dest='execute', help="execute the specified command")
+        egroup.add_argument("-X", metavar="PS_COMMAND", dest='ps_execute', help='execute the specified PowerShell command')
+
         return parser
 
     def proto_flow(self):
@@ -189,6 +190,7 @@ class wmi(connection):
         self.RPCRequest = RPCRequester(self.host, self.domain, self.username, self.password, self.lmhash, self.nthash)
      
         self.hostname = self.get_values(self.query('Select Name From Win32_ComputerSystem', self.namespace, printable=False))['Name'] 
+        self.server_os = 'WIndows 6.1 Build 7601'
 
         if self.args.local_auth:
             self.domain = self.hostname
@@ -246,11 +248,12 @@ class wmi(connection):
         return values
 
     def update(self, wmi_object_name='Win32_OSRecoveryConfiguration', wmi_property='DebugFilePath', namespace=None, update_value=None):
-    #print 'Filename: ' + sys._getframe(0).f_code.co_filename + '       Method: ' + sys._getframe(0).f_code.co_name
+        #print 'Filename: ' + sys._getframe(0).f_code.co_filename + '       Method: ' + sys._getframe(0).f_code.co_name
 
         def check_error(banner, resp):
             if resp.GetCallStatus(0) != 0:
-                print ('%s - marshall ERROR (0x%x)' % (banner, resp.GetCallStatus(0)))
+                print('marshal error')
+                #print ('%s - marshall ERROR (0x%x)' % (banner, resp.GetCallStatus(0)))
             else:
                 #print '%s - marshall OK' % banner
                 pass
@@ -313,7 +316,7 @@ class wmi(connection):
         ############ IMPORTANT : after update, ExpandedDebugFilePath has garbage byte values, so we reset it (will be replaced by Windows later, so no pb)
             wmiClass.ExpandedDebugFilePath = "" 
 
-            check_error('Writing to DebugFilePath', iWbemServices.PutInstance(wmiClass.marshalMe()))
+            #check_error('Writing to DebugFilePath', iWbemServices.PutInstance(wmiClass.marshalMe()))
             dcom.disconnect()
     
         except Exception as e:
@@ -322,9 +325,12 @@ class wmi(connection):
 
     def execute(self, command=None):
         #print 'Filename: ' + sys._getframe(0).f_code.co_filename + '       Method: ' + sys._getframe(0).f_code.co_name
+        if self.args.execute != None: command = self.args.execute
+
         if not command:
             self.logger.error("Missing command in wmi exec() !")
             return
+        print('executing + ' + command)
         shell_cmd = 'cmd.exe /Q /c ' + command
 
         dcom = DCOMConnection(self.host, self.username, self.password, self.domain, self.lmhash, self.nthash, oxidResolver=True)
@@ -370,7 +376,7 @@ class wmi(connection):
         #print 'Decode script command is : ' + decode_script_command
         ps_comm = create_ps_command(decode_script_command, force_ps32=False, dont_obfs=False)
     
-        #print 'Executing : ' + ps_comm
+        print('Executing : ' + ps_comm)
         self.execute(ps_comm)
         
         #sys.stdout.write('Waiting a few seconds for output to be inserted in DebugFilePath ..')
