@@ -139,7 +139,7 @@ class az(connection):
     def config1(self):
         self.proto_logger()
 
-        login = subprocess.run(['az','login', '--allow-no-subscriptions'], shell = self.windows, stdout=subprocess.PIPE)
+        login = subprocess.run(['az','login', ,'--use-device-code', '--allow-no-subscriptions'], shell = self.windows, stdout=subprocess.PIPE)
         user = re.findall('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', str(login.stdout))
         self.logger.success('Logged in as {}'.format(user[0])) #maybe not working
         print(" ")
