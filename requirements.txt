@@ -5,6 +5,7 @@ colorama
 future
 gevent
 impacket @ git+https://github.com/SecureAuthCorp/impacket.git
+netaddr
 prompt-toolkit
 pywinrm
 requests
