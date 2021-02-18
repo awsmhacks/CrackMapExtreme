@@ -141,7 +141,7 @@ function Invoke-UpdateMimikatzScript {
     }
 
     elseif($DllArch -eq "32-bit") {
-        Write-Host "[+] powerkatz.dll is an x68 Architecture";
+        Write-Host "[+] powerkatz.dll is an x86 Architecture";
         Start-Sleep -Seconds 1
         
         try {
